@@ -16,6 +16,7 @@ workmanager = "2.11.1"
 timber = "5.0.1"
 firebaseBom = "34.11.0"
 coroutines = "1.10.2"
+moshi = "1.15.0"
 
 # Convention plugin dependencies
 androidTools = "32.1.0"
@@ -73,6 +74,10 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 
 # === Logging ===
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+
+# === Moshi ===
+moshi = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
+moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", version.ref = "moshi" }
 
 # === Testing ===
 junit = { group = "junit", name = "junit", version.ref = "junit" }

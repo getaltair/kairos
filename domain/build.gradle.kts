@@ -1,12 +1,3 @@
 plugins {
-    id("java-library")
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
-
-dependencies {
-    // Pure Kotlin - no Android dependencies
+    id("kairos.jvm.library")
 }
