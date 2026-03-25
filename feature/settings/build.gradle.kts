@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.kairos.feature.settings"
+    namespace = "com.getaltair.kairos.feature.settings"
 }
 
 dependencies {

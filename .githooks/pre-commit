@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Get only staged .kt and .kts files (add, copy, modify - not delete)
+STAGED_KT_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.kts?$' || true)
+
+# Filter to only existing files
+EXISTING_KT_FILES=""
+for file in $STAGED_KT_FILES; do
+    if [ -f "$file" ]; then
+        EXISTING_KT_FILES="$EXISTING_KT_FILES $file"
+    fi
+done
+
+if [ -z "$EXISTING_KT_FILES" ]; then
+    echo "No Kotlin files staged — skipping lint checks."
+    exit 0
+fi
+
+echo "=== Running ktlint on staged files ==="
+echo "$EXISTING_KT_FILES" | xargs ktlint --relative -R .tools/ktlint-compose-rules.jar 2>&1
+KTLINT_EXIT=$?
+
+echo ""
+echo "=== Running detekt on staged files ==="
+# Convert space-separated to comma-separated
+INPUT_FILES=$(echo "$EXISTING_KT_FILES" | xargs | tr ' ' ',')
+java -jar .tools/detekt-cli.jar \
+    --config config/detekt.yml \
+    --plugins .tools/detekt-compose-rules.jar \
+    --input "$INPUT_FILES" 2>&1
+DETEKT_EXIT=$?
+
+if [ $KTLINT_EXIT -ne 0 ] || [ $DETEKT_EXIT -ne 0 ]; then
+    echo ""
+    echo "❌ Lint checks failed. Fix the issues above before committing."
+    echo ""
+    echo "Quick fixes:"
+    echo "  ktlint --format <file>     # auto-fix formatting"
+    echo "  ktlint --format .          # auto-fix all files"
+    exit 1
+fi
+
+echo ""
+echo "✅ All lint checks passed."

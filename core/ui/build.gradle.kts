@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.kairos.core.ui"
+    namespace = "com.getaltair.kairos.core.ui"
 }
 
 dependencies {

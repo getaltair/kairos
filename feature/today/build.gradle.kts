@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.kairos.feature.today"
+    namespace = "com.getaltair.kairos.feature.today"
 }
 
 dependencies {

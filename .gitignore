@@ -44,3 +44,6 @@ firestore-debug.log
 
 # Project-specific
 opencode.json*
+
+# Lint tools (downloaded, not committed)
+.tools/

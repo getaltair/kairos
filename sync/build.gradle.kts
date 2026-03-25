@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.kairos.sync"
+    namespace = "com.getaltair.kairos.sync"
 }
 
 dependencies {

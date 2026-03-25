@@ -1,0 +1,102 @@
+# config/detekt.yml
+build:
+    maxIssues: 0 # fail on any issue (strict)
+
+complexity:
+    active: true
+    LongMethod:
+        threshold: 60
+    LongParameterList:
+        functionThreshold: 6
+        constructorThreshold: 8
+    TooManyFunctions:
+        thresholdInFiles: 15
+        thresholdInClasses: 15
+
+naming:
+    active: true
+    FunctionNaming:
+        active: true
+        functionPattern: "[a-z][a-zA-Z0-9]*"
+        ignoreAnnotated:
+            - "Composable"
+    TopLevelPropertyNaming:
+        active: true
+        constantPattern: "[A-Z][A-Za-z0-9]*"
+
+style:
+    active: true
+    MagicNumber:
+        active: false # too noisy for early development
+    WildcardImport:
+        active: true
+    MaxLineLength:
+        maxLineLength: 120
+
+Compose:
+    ComposableAnnotationNaming:
+        active: true
+    ComposableNaming:
+        active: true
+    ComposableParamOrder:
+        active: true
+    CompositionLocalAllowlist:
+        active: true
+    CompositionLocalNaming:
+        active: true
+    ContentEmitterReturningValues:
+        active: true
+    ContentTrailingLambda:
+        active: true
+    ContentSlotReused:
+        active: true
+    DefaultsVisibility:
+        active: true
+    LambdaParameterEventTrailing:
+        active: true
+    LambdaParameterInRestartableEffect:
+        active: true
+    Material2:
+        active: true # You're on M3 from the start — flag any accidental M2 usage
+    ModifierClickableOrder:
+        active: true
+    ModifierComposed:
+        active: true
+    ModifierMissing:
+        active: true
+    ModifierNaming:
+        active: true
+    ModifierNotUsedAtRoot:
+        active: true
+    ModifierReused:
+        active: true
+    ModifierWithoutDefault:
+        active: true
+    MultipleEmitters:
+        active: true
+    MutableParams:
+        active: true
+    MutableStateAutoboxing:
+        active: true
+    MutableStateParam:
+        active: true
+    ParameterNaming:
+        active: true
+    PreviewAnnotationNaming:
+        active: true
+    PreviewNaming:
+        active: false # Opt-in naming convention for previews — not worth the noise early on
+    PreviewPublic:
+        active: true
+    RememberContentMissing:
+        active: true
+    RememberMissing:
+        active: true
+    StateParam:
+        active: true
+    UnstableCollections:
+        active: false # Compose strong skipping is enabled by default now — this rule is for projects that disabled it
+    ViewModelForwarding:
+        active: true
+    ViewModelInjection:
+        active: true

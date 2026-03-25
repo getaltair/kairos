@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.kairos.feature.habit"
+    namespace = "com.getaltair.kairos.feature.habit"
 }
 
 dependencies {

@@ -186,12 +186,12 @@ kairos/
 
 ### Done when
 
-- [ ] Project builds and runs on emulator
-- [ ] Empty Compose screen renders with app bar
-- [ ] Hilt injection compiles (empty module provided)
-- [ ] All modules resolve dependencies correctly
-- [ ] Timber logs appear in Logcat
-- [ ] Both debug and release variants build
+- [x] Project builds and runs on emulator
+- [x] Empty Compose screen renders with app bar
+- [x] Hilt injection compiles (empty module provided)
+- [x] All modules resolve dependencies correctly
+- [x] Timber logs appear in Logcat
+- [x] Both debug and release variants build
 
 ---
 
@@ -342,6 +342,7 @@ CREATE UNIQUE INDEX idx_routine_habits_order ON routine_habits(routine_id, order
 ### Entity ↔ Domain mappers
 
 Bidirectional mappers in `data` module:
+
 - `HabitEntity.toDomain() → Habit`
 - `Habit.toEntity() → HabitEntity`
 - Same pattern for all entities
@@ -401,6 +402,7 @@ data class HabitWithStatus(
 ### Validation layer
 
 `HabitValidator` enforcing invariants from `06-invariants.md`:
+
 - H-1: `anchorBehavior.isNotBlank()`
 - H-2: `category` is valid enum
 - H-4: `allowPartialCompletion == true` (hardcoded)
@@ -408,6 +410,7 @@ data class HabitWithStatus(
 - H-6: Timestamp consistency
 
 `CompletionValidator`:
+
 - C-2: If PARTIAL, `partialPercent` in 1..99
 - C-4: `date <= today`
 - C-5: `date >= today - 7 days`
@@ -728,6 +731,7 @@ Deploy via `firestore.indexes.json`.
 ### What to build
 
 Bidirectional sync between Room (local) and Firestore (cloud). Architecture:
+
 - **All reads come from Room** — UI never queries Firestore directly
 - **All writes go to Room first** — then sync to Firestore asynchronously
 - **Firestore snapshot listener pushes remote changes to Room**
@@ -799,6 +803,7 @@ Last-write-wins based on `updatedAt` timestamp. Single-user, sequential interact
 ### 9f. Initial sync / migration
 
 When user signs in for the first time with existing local data:
+
 1. Check if Firestore has data for this user
 2. If empty: push all local data to Firestore
 3. If both have data: merge (last-write-wins by updatedAt)
@@ -905,6 +910,7 @@ firestore.collection("users/$userId/habits")
 
 - Compose Desktop fat JAR or native distribution
 - Systemd service for auto-start:
+
   ```ini
   [Unit]
   Description=Kairos Dashboard
@@ -918,6 +924,7 @@ firestore.collection("users/$userId/habits")
   [Install]
   WantedBy=graphical.target
   ```
+
 - Disable screen blanking (`xset s off`, `xset -dpms`)
 - Service account key at `/opt/kairos/service-account.json`
 
@@ -1077,6 +1084,7 @@ Routine creation, timer-led runner, completion tracking.
 ### 13d. Completion tracking (invariant E-3)
 
 Atomic Room transaction creates:
+
 - `RoutineExecution` with status COMPLETED
 - Individual `Completion` per habit (FULL or SKIPPED)
 
@@ -1134,9 +1142,13 @@ Glance widget showing today's progress and pending habits.
 **Docs:** `12-wearos-design.md` (complete spec)
 
 ### 15a. Data Layer sync (Wear Data Layer API, phone ↔ watch)
+
 ### 15b. Habit Tile (today's habits, tap to complete)
+
 ### 15c. Complication (SHORT_TEXT: "3 left", RANGED_VALUE: progress ring)
+
 ### 15d. Watch app screens (habit list, detail, routine runner)
+
 ### 15e. Offline behavior (cache + queue on watch)
 
 ### Done when
@@ -1322,6 +1334,7 @@ You'll likely never pay anything.
 ### Firestore Query Limitations
 
 No JOINs. "Get today's habits with completion status" requires two queries:
+
 1. `users/{uid}/habits` WHERE status == ACTIVE
 2. `users/{uid}/completions` WHERE date == today
 
