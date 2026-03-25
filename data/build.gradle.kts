@@ -1,39 +1,43 @@
 plugins {
     id("kairos.android.library")
     alias(libs.plugins.room)
-    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.getaltair.kairos.data"
+}
 
-    room {
-        schemaDirectory("$projectDir/schemas")
-    }
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":core"))
 
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
 
-    // DataStore
-    implementation(libs.androidx.datastore.preferences)
+    // Moshi for JSON converters
+    implementation(libs.moshi)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
-    // Koin (for Koin module definitions)
+    // Koin
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
-    implementation(libs.koin.android)
+
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+
+    // WorkManager (for sync)
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation(libs.androidx.room.testing)
     testImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(libs.androidx.room.testing)
 }

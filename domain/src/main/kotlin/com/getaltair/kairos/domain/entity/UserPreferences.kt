@@ -26,7 +26,7 @@ data class UserPreferences(
     val defaultReminderTime: LocalTime = LocalTime.of(9, 0),
     val theme: Theme = Theme.System,
     val energyTrackingEnabled: Boolean = false,
-    val notificationChannels: Map<String, Map<String, Any>>? = null, // JSON representation
+    val notificationChannels: Map<String, Any>? = null, // JSON representation
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now()
 ) {
@@ -38,7 +38,7 @@ data class UserPreferences(
         defaultReminderTime: LocalTime = this.defaultReminderTime,
         theme: Theme = this.theme,
         energyTrackingEnabled: Boolean = this.energyTrackingEnabled,
-        notificationChannels: Map<String, Map<String, Any>>? = this.notificationChannels,
+        notificationChannels: Map<String, Any>? = this.notificationChannels,
         updatedAt: Instant = Instant.now()
     ): UserPreferences = UserPreferences(
         id = this.id,

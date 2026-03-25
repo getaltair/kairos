@@ -54,7 +54,7 @@ data class Habit(
     val microVersion: String? = null,
     val allowPartialCompletion: Boolean = true,
     val subtasks: List<String>? = null,
-    val phase: HabitPhase = HabitPhase.Onboard,
+    val phase: HabitPhase = HabitPhase.ONBOARD,
     val status: HabitStatus = HabitStatus.Active,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),
