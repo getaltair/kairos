@@ -1,6 +1,7 @@
 package com.getaltair.kairos.domain.entity
 
-import com.getaltair.kairos.domain.enums.*
+import com.getaltair.kairos.domain.enums.CompletionType
+import com.getaltair.kairos.domain.enums.SkipReason
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID

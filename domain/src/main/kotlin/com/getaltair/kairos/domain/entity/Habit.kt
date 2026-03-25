@@ -1,6 +1,10 @@
 package com.getaltair.kairos.domain.entity
 
-import com.getaltair.kairos.domain.enums.*
+import com.getaltair.kairos.domain.enums.AnchorType
+import com.getaltair.kairos.domain.enums.HabitCategory
+import com.getaltair.kairos.domain.enums.HabitFrequency
+import com.getaltair.kairos.domain.enums.HabitPhase
+import com.getaltair.kairos.domain.enums.HabitStatus
 import java.time.Instant
 import java.util.UUID
 

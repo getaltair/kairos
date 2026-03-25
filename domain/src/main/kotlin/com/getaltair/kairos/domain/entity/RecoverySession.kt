@@ -1,6 +1,9 @@
 package com.getaltair.kairos.domain.entity
 
-import com.getaltair.kairos.domain.enums.*
+import com.getaltair.kairos.domain.enums.Blocker
+import com.getaltair.kairos.domain.enums.RecoveryAction
+import com.getaltair.kairos.domain.enums.RecoveryType
+import com.getaltair.kairos.domain.enums.SessionStatus
 import java.time.Instant
 import java.util.UUID
 
