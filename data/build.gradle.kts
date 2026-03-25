@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.getaltair.kairos.core.data"
+    namespace = "com.getaltair.kairos.data"
 
     room {
         schemaDirectory("$projectDir/schemas")
@@ -14,7 +14,7 @@ android {
 
 dependencies {
     implementation(project(":domain"))
-    implementation(project(":core:common"))
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

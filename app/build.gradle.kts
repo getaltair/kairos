@@ -31,8 +31,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     buildFeatures {
         compose = true
@@ -41,10 +41,10 @@ android {
 
 dependencies {
     // Modules
-    implementation(project(":core:domain"))
-    implementation(project(":core:data"))
-    implementation(project(":core:ui"))
-    implementation(project(":core:common"))
+    implementation(project(":domain"))
+    implementation(project(":data"))
+    implementation(project(":core"))
+    implementation(project(":ui"))
     implementation(project(":feature:today"))
     implementation(project(":feature:habit"))
     implementation(project(":feature:settings"))
