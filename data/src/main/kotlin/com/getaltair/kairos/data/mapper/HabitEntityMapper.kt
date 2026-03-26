@@ -70,15 +70,15 @@ object HabitEntityMapper {
      */
     fun toEntity(domain: Habit): HabitEntity {
         val anchorType = anchorTypeConverter.anchorTypeToString(domain.anchorType)
-            ?: "AfterBehavior"
+            ?: throw IllegalStateException("Failed to convert: anchorType")
         val habitCategory = habitCategoryConverter.habitCategoryToString(domain.category)
-            ?: "Morning"
+            ?: throw IllegalStateException("Failed to convert: category")
         val habitFrequency = habitFrequencyConverter.habitFrequencyToString(domain.frequency)
-            ?: "Daily"
+            ?: throw IllegalStateException("Failed to convert: frequency")
         val habitPhase = habitPhaseConverter.habitPhaseToString(domain.phase)
-            ?: "ONBOARD"
+            ?: throw IllegalStateException("Failed to convert: phase")
         val habitStatus = habitStatusConverter.habitStatusToString(domain.status)
-            ?: "Active"
+            ?: throw IllegalStateException("Failed to convert: status")
 
         return HabitEntity(
             id = domain.id,

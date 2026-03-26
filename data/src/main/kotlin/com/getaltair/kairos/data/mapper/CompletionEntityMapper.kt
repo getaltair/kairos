@@ -44,7 +44,7 @@ object CompletionEntityMapper {
      */
     fun toEntity(domain: Completion): CompletionEntity {
         val completionType = completionTypeConverter.completionTypeToString(domain.type)
-            ?: "Full"
+            ?: throw IllegalStateException("Failed to convert CompletionType")
         val skipReason = domain.skipReason?.let { skipReasonConverter.skipReasonToString(it) }
 
         return CompletionEntity(

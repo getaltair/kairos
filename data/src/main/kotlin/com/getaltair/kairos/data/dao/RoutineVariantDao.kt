@@ -80,20 +80,26 @@ interface RoutineVariantDao {
     fun update(id: UUID, name: String, estimatedMinutes: Int, isDefault: Boolean, updatedAt: Long)
 
     /**
+     * Clears all default flags for variants of a routine.
+     */
+    @Query("UPDATE routine_variants SET is_default = 0 WHERE routine_id = :routineId AND is_default = 1")
+    fun clearDefaults(routineId: UUID)
+
+    /**
+     * Marks a specific variant as default.
+     */
+    @Query("UPDATE routine_variants SET is_default = 1 WHERE id = :id")
+    fun markAsDefault(id: UUID)
+
+    /**
      * Set a variant as default for its routine.
      * Uses @Transaction to ensure both updates execute atomically.
-     * First clears all defaults for the routine, then sets the specified variant as default.
      */
     @Transaction
-    @Query(
-        """
-        UPDATE routine_variants SET is_default = 0
-        WHERE routine_id = :routineId AND is_default = 1;
-        UPDATE routine_variants SET is_default = 1
-        WHERE id = :id
-    """
-    )
-    fun setAsDefault(id: UUID, routineId: UUID)
+    fun setAsDefault(id: UUID, routineId: UUID) {
+        clearDefaults(routineId)
+        markAsDefault(id)
+    }
 
     /**
      * Delete a routine variant.

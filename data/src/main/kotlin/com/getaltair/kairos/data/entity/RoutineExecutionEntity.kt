@@ -30,20 +30,20 @@ import java.util.UUID
     tableName = "routine_executions",
     indices = [
         Index(value = ["status"]),
-        Index(value = ["routineId"]),
-        Index(value = ["variantId"])
+        Index(value = ["routine_id"]),
+        Index(value = ["variant_id"])
     ],
     foreignKeys = [
         ForeignKey(
             entity = RoutineEntity::class,
             parentColumns = ["id"],
-            childColumns = ["routineId"],
+            childColumns = ["routine_id"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
             entity = RoutineVariantEntity::class,
             parentColumns = ["id"],
-            childColumns = ["variantId"],
+            childColumns = ["variant_id"],
             onDelete = ForeignKey.SET_NULL
         )
     ]
