@@ -42,16 +42,18 @@ fun CreateHabitScreen(onBack: () -> Unit, onCreated: () -> Unit, viewModel: Crea
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(uiState.isCreated) {
-        if (uiState.isCreated) {
-            onCreated()
-        }
-    }
+    LaunchedEffect(uiState.creationStatus) {
+        when (val status = uiState.creationStatus) {
+            is CreationStatus.Created -> onCreated()
 
-    LaunchedEffect(uiState.creationError) {
-        uiState.creationError?.let { error ->
-            snackbarHostState.showSnackbar(message = error)
-            viewModel.clearCreationError()
+            is CreationStatus.Failed -> {
+                snackbarHostState.showSnackbar(message = status.message)
+                viewModel.clearCreationError()
+            }
+
+            is CreationStatus.Idle -> { /* No action needed */ }
+
+            is CreationStatus.Creating -> { /* Progress bar handled in composition */ }
         }
     }
 
@@ -87,7 +89,7 @@ fun CreateHabitScreen(onBack: () -> Unit, onCreated: () -> Unit, viewModel: Crea
                         Text(text = "$stepTitle ($stepNumber/${WizardStep.entries.size})")
                     }
                 )
-                if (uiState.isCreating) {
+                if (uiState.creationStatus is CreationStatus.Creating) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
             }
@@ -146,7 +148,7 @@ fun CreateHabitScreen(onBack: () -> Unit, onCreated: () -> Unit, viewModel: Crea
                             color = uiState.color,
                             frequency = uiState.frequency,
                             activeDays = uiState.activeDays,
-                            isCreating = uiState.isCreating,
+                            isCreating = uiState.creationStatus is CreationStatus.Creating,
                             onEstimatedSecondsChanged = viewModel::onEstimatedSecondsChanged,
                             onMicroVersionChanged = viewModel::onMicroVersionChanged,
                             onIconSelected = viewModel::onIconSelected,
