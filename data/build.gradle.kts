@@ -1,5 +1,6 @@
 plugins {
     id("kairos.android.library")
+    alias(libs.plugins.ksp)
     alias(libs.plugins.room)
 }
 
@@ -18,6 +19,7 @@ dependencies {
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     // Moshi for JSON converters
     implementation(libs.moshi)

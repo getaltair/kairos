@@ -7,9 +7,15 @@ android {
 }
 
 dependencies {
+    implementation(project(":domain"))
+
     // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // Koin
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
