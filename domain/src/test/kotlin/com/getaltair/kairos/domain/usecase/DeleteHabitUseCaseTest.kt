@@ -6,11 +6,9 @@ import com.getaltair.kairos.domain.enums.AnchorType
 import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.enums.HabitFrequency
 import com.getaltair.kairos.domain.enums.HabitStatus
-import com.getaltair.kairos.domain.repository.CompletionRepository
 import com.getaltair.kairos.domain.repository.HabitRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.coVerifyOrder
 import io.mockk.mockk
 import java.time.Instant
 import kotlinx.coroutines.test.runTest
@@ -21,7 +19,6 @@ import org.junit.Test
 class DeleteHabitUseCaseTest {
 
     private lateinit var habitRepository: HabitRepository
-    private lateinit var completionRepository: CompletionRepository
     private lateinit var useCase: DeleteHabitUseCase
 
     private fun archivedHabit() = Habit(
@@ -39,24 +36,19 @@ class DeleteHabitUseCaseTest {
     @Before
     fun setup() {
         habitRepository = mockk()
-        completionRepository = mockk()
-        useCase = DeleteHabitUseCase(habitRepository, completionRepository)
+        useCase = DeleteHabitUseCase(habitRepository)
     }
 
     @Test
-    fun `delete archived habit cascades completions then deletes habit`() = runTest {
+    fun `delete archived habit succeeds`() = runTest {
         val habit = archivedHabit()
         coEvery { habitRepository.getById(habit.id) } returns Result.Success(habit)
-        coEvery { completionRepository.deleteForHabit(habit.id) } returns Result.Success(Unit)
         coEvery { habitRepository.delete(habit.id) } returns Result.Success(Unit)
 
         val result = useCase(habit.id)
 
         assertTrue(result is Result.Success)
-        coVerifyOrder {
-            completionRepository.deleteForHabit(habit.id)
-            habitRepository.delete(habit.id)
-        }
+        coVerify(exactly = 1) { habitRepository.delete(habit.id) }
     }
 
     @Test
@@ -77,7 +69,6 @@ class DeleteHabitUseCaseTest {
 
         assertTrue(result is Result.Error)
         assertTrue((result as Result.Error).message.contains("expected Archived"))
-        coVerify(exactly = 0) { completionRepository.deleteForHabit(any()) }
         coVerify(exactly = 0) { habitRepository.delete(any()) }
     }
 
@@ -105,17 +96,5 @@ class DeleteHabitUseCaseTest {
 
         assertTrue(result is Result.Error)
         assertTrue((result as Result.Error).message.contains("Habit not found"))
-    }
-
-    @Test
-    fun `delete fails if completion deletion fails`() = runTest {
-        val habit = archivedHabit()
-        coEvery { habitRepository.getById(habit.id) } returns Result.Success(habit)
-        coEvery { completionRepository.deleteForHabit(habit.id) } returns Result.Error("DB error")
-
-        val result = useCase(habit.id)
-
-        assertTrue(result is Result.Error)
-        coVerify(exactly = 0) { habitRepository.delete(any()) }
     }
 }

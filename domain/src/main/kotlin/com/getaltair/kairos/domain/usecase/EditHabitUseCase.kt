@@ -7,11 +7,7 @@ import com.getaltair.kairos.domain.validator.HabitValidator
 import kotlinx.coroutines.CancellationException
 
 /**
- * Edits an existing habit by applying field updates and re-validating.
- *
- * Fetches the current habit, applies the caller-supplied [Habit] (which should
- * be built via `habit.copy(...)` to preserve identity), validates with
- * [HabitValidator], and persists the update.
+ * Validates and persists an updated habit. Verifies the habit exists before applying changes.
  */
 class EditHabitUseCase(private val habitRepository: HabitRepository) {
 

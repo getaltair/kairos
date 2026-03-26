@@ -2,21 +2,17 @@ package com.getaltair.kairos.domain.usecase
 
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.enums.HabitStatus
-import com.getaltair.kairos.domain.repository.CompletionRepository
 import com.getaltair.kairos.domain.repository.HabitRepository
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 
 /**
- * Permanently deletes an archived habit and all its completions.
+ * Permanently deletes an archived habit.
  *
  * State machine: ARCHIVED -> (deleted). Only archived habits can be deleted.
- * Cascade: completions are deleted first, then the habit itself.
+ * Completions are cascade-deleted by the database (Room ON DELETE CASCADE).
  */
-class DeleteHabitUseCase(
-    private val habitRepository: HabitRepository,
-    private val completionRepository: CompletionRepository
-) {
+class DeleteHabitUseCase(private val habitRepository: HabitRepository) {
 
     suspend operator fun invoke(habitId: UUID): Result<Unit> {
         return try {
@@ -31,9 +27,6 @@ class DeleteHabitUseCase(
                     "Cannot delete habit: current status is ${habit.status.displayName}, expected Archived"
                 )
             }
-
-            val deleteCompletions = completionRepository.deleteForHabit(habitId)
-            if (deleteCompletions is Result.Error) return deleteCompletions
 
             habitRepository.delete(habitId)
         } catch (e: Exception) {

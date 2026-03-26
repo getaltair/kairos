@@ -31,6 +31,7 @@ class GetHabitDetailUseCase(
             val habit = (habitResult as Result.Success).value
 
             val today = LocalDate.now()
+            // 30-day inclusive window (today minus 29 = 30 days)
             val thirtyDaysAgo = today.minusDays(29)
 
             val completionsResult = completionRepository.getForHabitInDateRange(

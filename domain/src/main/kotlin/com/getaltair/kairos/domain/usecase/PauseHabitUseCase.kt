@@ -5,6 +5,7 @@ import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.HabitStatus
 import com.getaltair.kairos.domain.repository.HabitRepository
 import java.time.Instant
+import java.util.UUID
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -15,7 +16,7 @@ import kotlinx.coroutines.CancellationException
  */
 class PauseHabitUseCase(private val habitRepository: HabitRepository) {
 
-    suspend operator fun invoke(habitId: java.util.UUID): Result<Habit> {
+    suspend operator fun invoke(habitId: UUID): Result<Habit> {
         return try {
             val result = habitRepository.getById(habitId)
             if (result is Result.Error) {
