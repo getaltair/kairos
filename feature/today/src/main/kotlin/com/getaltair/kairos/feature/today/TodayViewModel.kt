@@ -62,7 +62,9 @@ class TodayViewModel(
 
                     is Result.Error -> {
                         Timber.e(result.cause, "Failed to load habits: %s", result.message)
-                        _uiState.update { it.copy(isLoading = false, error = result.message) }
+                        _uiState.update {
+                            it.copy(isLoading = false, error = "Something went wrong. Please try again.")
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -85,22 +87,32 @@ class TodayViewModel(
 
     fun onHabitComplete(habitId: UUID, completionType: CompletionType, partialPercent: Int? = null) {
         viewModelScope.launch {
-            val result = completeHabitUseCase(habitId, completionType, partialPercent)
-            when (result) {
-                is Result.Success -> {
-                    val habitName = findHabitName(habitId)
-                    val actionType = if (completionType == CompletionType.Partial) {
-                        UndoActionType.PARTIAL
-                    } else {
-                        UndoActionType.COMPLETE
+            try {
+                val result = completeHabitUseCase(habitId, completionType, partialPercent)
+                when (result) {
+                    is Result.Success -> {
+                        val habitName = findHabitName(habitId)
+                        val actionType = if (completionType == CompletionType.Partial) {
+                            UndoActionType.PARTIAL
+                        } else {
+                            UndoActionType.COMPLETE
+                        }
+                        startUndoTimer(result.value.id, habitName, actionType)
+                        loadTodayHabits()
                     }
-                    startUndoTimer(result.value.id, habitName, actionType)
-                    loadTodayHabits()
-                }
 
-                is Result.Error -> {
-                    Timber.e(result.cause, "Failed to complete habit: %s", result.message)
-                    _uiState.update { it.copy(error = result.message) }
+                    is Result.Error -> {
+                        Timber.e(result.cause, "Failed to complete habit: %s", result.message)
+                        _uiState.update {
+                            it.copy(error = "Something went wrong. Please try again.")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "Unexpected error completing habit")
+                _uiState.update {
+                    it.copy(error = "Something went wrong. Please try again.")
                 }
             }
         }
@@ -108,17 +120,27 @@ class TodayViewModel(
 
     fun onHabitSkip(habitId: UUID, skipReason: SkipReason? = null) {
         viewModelScope.launch {
-            val result = skipHabitUseCase(habitId, skipReason)
-            when (result) {
-                is Result.Success -> {
-                    val habitName = findHabitName(habitId)
-                    startUndoTimer(result.value.id, habitName, UndoActionType.SKIP)
-                    loadTodayHabits()
-                }
+            try {
+                val result = skipHabitUseCase(habitId, skipReason)
+                when (result) {
+                    is Result.Success -> {
+                        val habitName = findHabitName(habitId)
+                        startUndoTimer(result.value.id, habitName, UndoActionType.SKIP)
+                        loadTodayHabits()
+                    }
 
-                is Result.Error -> {
-                    Timber.e(result.cause, "Failed to skip habit: %s", result.message)
-                    _uiState.update { it.copy(error = result.message) }
+                    is Result.Error -> {
+                        Timber.e(result.cause, "Failed to skip habit: %s", result.message)
+                        _uiState.update {
+                            it.copy(error = "Something went wrong. Please try again.")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "Unexpected error skipping habit")
+                _uiState.update {
+                    it.copy(error = "Something went wrong. Please try again.")
                 }
             }
         }
@@ -137,7 +159,9 @@ class TodayViewModel(
 
                 is Result.Error -> {
                     Timber.e(result.cause, "Failed to undo completion: %s", result.message)
-                    _uiState.update { it.copy(undoState = null, error = result.message) }
+                    _uiState.update {
+                        it.copy(undoState = null, error = "Something went wrong. Please try again.")
+                    }
                 }
             }
         }
@@ -146,6 +170,10 @@ class TodayViewModel(
     fun onDismissUndo() {
         undoTimerJob?.cancel()
         _uiState.update { it.copy(undoState = null) }
+    }
+
+    fun refresh() {
+        loadTodayHabits()
     }
 
     fun retryLoad() {

@@ -276,7 +276,7 @@ class TodayViewModelTest {
         viewModel.onHabitComplete(habitId, CompletionType.Full)
         advanceUntilIdle()
 
-        assertEquals("Duplicate completion", viewModel.uiState.value.error)
+        assertEquals("Something went wrong. Please try again.", viewModel.uiState.value.error)
     }
 
     // --- Test 9: onHabitSkip success triggers undo timer and reload ---
@@ -377,7 +377,7 @@ class TodayViewModelTest {
 
         // Undo state cleared even on error, and error message is set
         assertNull(viewModel.uiState.value.undoState)
-        assertEquals("Database error", viewModel.uiState.value.error)
+        assertEquals("Something went wrong. Please try again.", viewModel.uiState.value.error)
     }
 
     // --- Test 12: onDismissUndo clears state without calling use case ---
@@ -421,6 +421,6 @@ class TodayViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
-        assertEquals("Network error", state.error)
+        assertEquals("Something went wrong. Please try again.", state.error)
     }
 }

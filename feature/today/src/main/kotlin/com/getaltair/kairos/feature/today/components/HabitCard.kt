@@ -2,6 +2,7 @@ package com.getaltair.kairos.feature.today.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,7 +27,12 @@ import com.getaltair.kairos.domain.enums.CompletionType
 import com.getaltair.kairos.domain.model.HabitWithStatus
 
 @Composable
-fun HabitCard(habitWithStatus: HabitWithStatus, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun HabitCard(
+    habitWithStatus: HabitWithStatus,
+    onClick: () -> Unit,
+    onNavigateToDetail: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val completion = habitWithStatus.todayCompletion
     val isDone = completion != null && completion.type is CompletionType.Full
     val isSkipped = completion != null && completion.type is CompletionType.Skipped
@@ -38,7 +44,7 @@ fun HabitCard(habitWithStatus: HabitWithStatus, onClick: () -> Unit, modifier: M
             .fillMaxWidth()
             .sizeIn(minHeight = 48.dp)
             .alpha(cardAlpha)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onNavigateToDetail),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -48,31 +54,38 @@ fun HabitCard(habitWithStatus: HabitWithStatus, onClick: () -> Unit, modifier: M
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Status icon
-            when {
-                isDone -> Icon(
-                    Icons.Filled.CheckCircle,
-                    contentDescription = "Completed",
-                    tint = MaterialTheme.colorScheme.primary
-                )
+            // Status icon -- tapping opens completion sheet
+            Box(
+                modifier = Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    isDone -> Icon(
+                        Icons.Filled.CheckCircle,
+                        contentDescription = "Completed",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
 
-                isPartial -> Icon(
-                    Icons.Filled.Adjust,
-                    contentDescription = "Partial",
-                    tint = MaterialTheme.colorScheme.secondary
-                )
+                    isPartial -> Icon(
+                        Icons.Filled.Adjust,
+                        contentDescription = "Partial",
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
 
-                isSkipped -> Icon(
-                    Icons.Filled.SkipNext,
-                    contentDescription = "Skipped",
-                    tint = MaterialTheme.colorScheme.outline
-                )
+                    isSkipped -> Icon(
+                        Icons.Filled.SkipNext,
+                        contentDescription = "Skipped",
+                        tint = MaterialTheme.colorScheme.outline
+                    )
 
-                else -> Icon(
-                    Icons.Outlined.Circle,
-                    contentDescription = "Pending",
-                    tint = MaterialTheme.colorScheme.outline
-                )
+                    else -> Icon(
+                        Icons.Outlined.Circle,
+                        contentDescription = "Pending",
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                }
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(

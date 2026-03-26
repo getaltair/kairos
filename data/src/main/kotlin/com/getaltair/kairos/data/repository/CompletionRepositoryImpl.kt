@@ -124,4 +124,13 @@ class CompletionRepositoryImpl(private val completionDao: CompletionDao) :
         Timber.e(e, "Failed to get latest completion for habitId=%s", habitId)
         Result.Error("Failed to get latest completion for habit: ${e.message}", cause = e)
     }
+
+    override suspend fun deleteForHabit(habitId: UUID): Result<Unit> = try {
+        withContext(Dispatchers.IO) { completionDao.deleteForHabit(habitId) }
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Timber.e(e, "Failed to delete completions for habitId=%s", habitId)
+        Result.Error("Failed to delete completions for habit: ${e.message}", cause = e)
+    }
 }

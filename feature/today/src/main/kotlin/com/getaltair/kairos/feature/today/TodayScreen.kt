@@ -38,6 +38,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.getaltair.kairos.domain.enums.CompletionType
 import com.getaltair.kairos.domain.model.HabitWithStatus
@@ -50,9 +52,17 @@ import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodayScreen(onAddHabit: () -> Unit = {}, viewModel: TodayViewModel = koinViewModel()) {
+fun TodayScreen(
+    onAddHabit: () -> Unit = {},
+    onHabitClick: (java.util.UUID) -> Unit = {},
+    viewModel: TodayViewModel = koinViewModel()
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val haptic = LocalHapticFeedback.current
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refresh()
+    }
     var selectedHabit by remember { mutableStateOf<HabitWithStatus?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -142,7 +152,7 @@ fun TodayScreen(onAddHabit: () -> Unit = {}, viewModel: TodayViewModel = koinVie
             }
 
             uiState.isEmpty -> {
-                EmptyState(modifier = Modifier.padding(paddingValues))
+                EmptyState(onAddHabit = onAddHabit, modifier = Modifier.padding(paddingValues))
             }
 
             else -> {
@@ -192,7 +202,8 @@ fun TodayScreen(onAddHabit: () -> Unit = {}, viewModel: TodayViewModel = koinVie
                         items(habits, key = { it.habit.id }) { habitWithStatus ->
                             HabitCard(
                                 habitWithStatus = habitWithStatus,
-                                onClick = { selectedHabit = habitWithStatus }
+                                onClick = { selectedHabit = habitWithStatus },
+                                onNavigateToDetail = { onHabitClick(habitWithStatus.habit.id) }
                             )
                         }
                     }

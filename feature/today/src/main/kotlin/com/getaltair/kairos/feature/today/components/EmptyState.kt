@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun EmptyState(modifier: Modifier = Modifier) {
+fun EmptyState(onAddHabit: () -> Unit = {}, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -47,7 +47,7 @@ fun EmptyState(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(horizontal = 32.dp)
         )
         Spacer(modifier = Modifier.height(24.dp))
-        OutlinedButton(onClick = { /* TODO: Step 6 */ }) {
+        OutlinedButton(onClick = onAddHabit) {
             Text("Add Habit")
         }
     }
