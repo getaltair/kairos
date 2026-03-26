@@ -36,8 +36,13 @@ dependencies {
     // WorkManager (for sync)
     implementation(libs.androidx.work.runtime.ktx)
 
+    // Timber logging
+    implementation(libs.timber)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.junit)
+    testImplementation(libs.androidx.test.runner)
 }

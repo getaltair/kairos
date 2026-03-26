@@ -5,6 +5,7 @@ import com.getaltair.kairos.domain.entity.UserPreferences
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
+import timber.log.Timber
 
 /**
  * Type converter for [Map<String, Any>] to/from [String] using Moshi.
@@ -40,6 +41,7 @@ class JsonMapConverter {
         return try {
             mapAdapter.fromJson(json)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to parse map from JSON: $json")
             null
         }
     }

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.getaltair.kairos.data.entity.RoutineVariantEntity
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
@@ -80,7 +81,10 @@ interface RoutineVariantDao {
 
     /**
      * Set a variant as default for its routine.
+     * Uses @Transaction to ensure both updates execute atomically.
+     * First clears all defaults for the routine, then sets the specified variant as default.
      */
+    @Transaction
     @Query(
         """
         UPDATE routine_variants SET is_default = 0

@@ -29,5 +29,5 @@ fun provideDatabase(context: Context): KairosDatabase = Room.databaseBuilder(
     KairosDatabase::class.java,
     "kairos.db"
 )
-    .fallbackToDestructiveMigration()
+    // TODO: Implement proper Room migrations for schema changes
     .build()

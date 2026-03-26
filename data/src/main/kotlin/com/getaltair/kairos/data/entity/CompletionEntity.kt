@@ -73,14 +73,17 @@ data class CompletionEntity(
     val updatedAt: Long
 ) {
     init {
-        require(type != "Partial" || partialPercent == null) {
+        require(type != "Partial" || partialPercent != null) {
             "partialPercent must only be set for PARTIAL type"
         }
-        require(type != "Full" || partialPercent == null) {
-            "partialPercent must not be set for FULL type"
+        require(type == "Partial" || partialPercent == null) {
+            "partialPercent must not be set for non-PARTIAL type"
         }
-        require(type != "Skipped" || skipReason == null) {
+        require(type != "Skipped" || skipReason != null) {
             "skipReason must only be set for SKIPPED type"
+        }
+        require(type == "Skipped" || skipReason == null) {
+            "skipReason must not be set for non-SKIPPED type"
         }
     }
 }

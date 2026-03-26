@@ -145,6 +145,18 @@ interface HabitDao {
     /**
      * Get lapsed habits based on missed days threshold.
      * Used for lapse detection.
+     *
+     * Lapse detection algorithm:
+     * - Finds active, unpaused, unarchived habits
+     * - Joins with completions to find the most recent completion date
+     * - Habits with no completions (NULL MAX(c.date)) are NOT included
+     *   because NULL < comparison always returns false
+     * - Returns habits whose last completion was before the threshold date
+     * - Results ordered by oldest completion first (highest lapse priority)
+     *
+     * @param thresholdDays Number of days back to check for lapse.
+     *   Habits with no completions in the last `thresholdDays` days
+     *   are considered lapsed.
      */
     @Query(
         """

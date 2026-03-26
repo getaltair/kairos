@@ -2,6 +2,7 @@ package com.getaltair.kairos.data.converter
 
 import androidx.room.TypeConverter
 import java.time.DayOfWeek
+import timber.log.Timber
 
 /**
  * Type converter for [Set<DayOfWeek>] to/from [String].
@@ -29,6 +30,7 @@ class DayOfWeekListConverter {
                 try {
                     DayOfWeek.valueOf(dayName)
                 } catch (e: IllegalArgumentException) {
+                    Timber.w("Invalid day name: $dayName, skipping")
                     null
                 }
             }

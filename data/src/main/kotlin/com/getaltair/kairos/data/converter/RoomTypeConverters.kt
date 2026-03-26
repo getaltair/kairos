@@ -22,6 +22,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
+import timber.log.Timber
 
 /**
  * Room type converters collection.
@@ -98,6 +99,7 @@ object RoomTypeConverters {
                 try {
                     java.time.DayOfWeek.valueOf(dayName)
                 } catch (e: IllegalArgumentException) {
+                    Timber.w("Invalid day name: $dayName, skipping")
                     null
                 }
             }
@@ -115,6 +117,7 @@ object RoomTypeConverters {
         return try {
             uuidListAdapter.fromJson(json)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to parse UUID list from JSON: $json")
             null
         }
     }
@@ -130,6 +133,7 @@ object RoomTypeConverters {
         return try {
             stringListAdapter.fromJson(json)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to parse string list from JSON: $json")
             null
         }
     }
@@ -145,6 +149,7 @@ object RoomTypeConverters {
         return try {
             mapAdapter.fromJson(json)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to parse map from JSON: $json")
             null
         }
     }
@@ -160,6 +165,7 @@ object RoomTypeConverters {
         return try {
             blockerListAdapter.fromJson(json)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to parse blocker list from JSON: $json")
             null
         }
     }

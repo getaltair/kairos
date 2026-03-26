@@ -6,6 +6,7 @@ import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import java.util.UUID
+import timber.log.Timber
 
 /**
  * Type converter for [List<UUID>] to/from [String] using Moshi.
@@ -41,6 +42,7 @@ class JsonListConverter {
         return try {
             uuidListAdapter.fromJson(json)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to parse UUID list from JSON: $json")
             null
         }
     }
@@ -61,6 +63,7 @@ class JsonListConverter {
         return try {
             stringListAdapter.fromJson(json)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to parse string list from JSON: $json")
             null
         }
     }
