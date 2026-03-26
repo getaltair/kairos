@@ -9,7 +9,6 @@ android {
 
 dependencies {
     implementation(project(":domain"))
-    implementation(project(":data"))
     implementation(project(":ui"))
     implementation(project(":core"))
 
@@ -32,6 +31,11 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // Logging
+    implementation(libs.timber)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -12,6 +12,7 @@ import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.enums.SkipReason
 import com.getaltair.kairos.domain.model.HabitWithStatus
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class TodayViewModel(
     private val getTodayHabitsUseCase: GetTodayHabitsUseCase,
@@ -45,40 +47,28 @@ class TodayViewModel(
 
     private fun loadTodayHabits() {
         viewModelScope.launch {
-            getTodayHabitsUseCase().collect { result ->
+            try {
+                val result = getTodayHabitsUseCase()
                 when (result) {
                     is Result.Success -> {
-                        val habits = result.value
-                        val grouped = groupByCategory(habits)
-                        val totalCount = habits.size
-                        val completedCount = habits.count { it.todayCompletion != null }
-                        val progress = if (totalCount > 0) {
-                            completedCount.toFloat() / totalCount.toFloat()
-                        } else {
-                            0f
-                        }
-
                         _uiState.update {
                             it.copy(
-                                habitsByCategory = grouped,
-                                progress = progress,
+                                habitsByCategory = groupByCategory(result.value),
                                 isLoading = false,
-                                isEmpty = totalCount == 0,
-                                isAllDone = totalCount > 0 && completedCount == totalCount,
                                 error = null
                             )
                         }
                     }
 
                     is Result.Error -> {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                error = result.message
-                            )
-                        }
+                        Timber.e(result.cause, "Failed to load habits: %s", result.message)
+                        _uiState.update { it.copy(isLoading = false, error = result.message) }
                     }
                 }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "Unexpected error loading habits")
+                _uiState.update { it.copy(isLoading = false, error = "An unexpected error occurred") }
             }
         }
     }
@@ -87,19 +77,31 @@ class TodayViewModel(
         .filter { it.habit.category !is HabitCategory.Departure }
         .groupBy { it.habit.category }
         .entries
-        .sortedBy { categoryDisplayOrder.indexOf(it.key) }
+        .sortedBy { entry ->
+            val index = categoryDisplayOrder.indexOf(entry.key)
+            if (index == -1) categoryDisplayOrder.size else index
+        }
         .associate { it.key to it.value }
 
     fun onHabitComplete(habitId: UUID, completionType: CompletionType, partialPercent: Int? = null) {
         viewModelScope.launch {
             val result = completeHabitUseCase(habitId, completionType, partialPercent)
-            if (result is Result.Success) {
-                val completion = result.value
-                val habitName = _uiState.value.habitsByCategory.values
-                    .flatten()
-                    .find { it.habit.id == habitId }
-                    ?.habit?.name ?: "Habit"
-                startUndoTimer(completion.id, habitName)
+            when (result) {
+                is Result.Success -> {
+                    val habitName = findHabitName(habitId)
+                    val actionType = if (completionType == CompletionType.Partial) {
+                        UndoActionType.PARTIAL
+                    } else {
+                        UndoActionType.COMPLETE
+                    }
+                    startUndoTimer(result.value.id, habitName, actionType)
+                    loadTodayHabits()
+                }
+
+                is Result.Error -> {
+                    Timber.e(result.cause, "Failed to complete habit: %s", result.message)
+                    _uiState.update { it.copy(error = result.message) }
+                }
             }
         }
     }
@@ -107,13 +109,17 @@ class TodayViewModel(
     fun onHabitSkip(habitId: UUID, skipReason: SkipReason? = null) {
         viewModelScope.launch {
             val result = skipHabitUseCase(habitId, skipReason)
-            if (result is Result.Success) {
-                val completion = result.value
-                val habitName = _uiState.value.habitsByCategory.values
-                    .flatten()
-                    .find { it.habit.id == habitId }
-                    ?.habit?.name ?: "Habit"
-                startUndoTimer(completion.id, habitName)
+            when (result) {
+                is Result.Success -> {
+                    val habitName = findHabitName(habitId)
+                    startUndoTimer(result.value.id, habitName, UndoActionType.SKIP)
+                    loadTodayHabits()
+                }
+
+                is Result.Error -> {
+                    Timber.e(result.cause, "Failed to skip habit: %s", result.message)
+                    _uiState.update { it.copy(error = result.message) }
+                }
             }
         }
     }
@@ -122,8 +128,18 @@ class TodayViewModel(
         val currentUndo = _uiState.value.undoState ?: return
         undoTimerJob?.cancel()
         viewModelScope.launch {
-            undoCompletionUseCase(currentUndo.completionId)
-            _uiState.update { it.copy(undoState = null) }
+            val result = undoCompletionUseCase(currentUndo.completionId)
+            when (result) {
+                is Result.Success -> {
+                    _uiState.update { it.copy(undoState = null) }
+                    loadTodayHabits()
+                }
+
+                is Result.Error -> {
+                    Timber.e(result.cause, "Failed to undo completion: %s", result.message)
+                    _uiState.update { it.copy(undoState = null, error = result.message) }
+                }
+            }
         }
     }
 
@@ -132,13 +148,27 @@ class TodayViewModel(
         _uiState.update { it.copy(undoState = null) }
     }
 
-    private fun startUndoTimer(completionId: UUID, habitName: String) {
+    fun retryLoad() {
+        _uiState.update { it.copy(isLoading = true) }
+        loadTodayHabits()
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
+    }
+
+    private fun findHabitName(habitId: UUID): String = _uiState.value.habitsByCategory.values
+        .flatten()
+        .find { it.habit.id == habitId }
+        ?.habit?.name ?: "Habit"
+
+    private fun startUndoTimer(completionId: UUID, habitName: String, actionType: UndoActionType) {
         undoTimerJob?.cancel()
         undoTimerJob = viewModelScope.launch {
-            for (remaining in 30 downTo 0) {
+            for (remaining in UndoState.UNDO_WINDOW_SECONDS downTo 0) {
                 _uiState.update {
                     it.copy(
-                        undoState = UndoState(completionId, habitName, remaining)
+                        undoState = UndoState(completionId, habitName, remaining, actionType)
                     )
                 }
                 if (remaining > 0) delay(1000)
