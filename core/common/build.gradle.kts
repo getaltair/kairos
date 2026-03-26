@@ -12,4 +12,3 @@ dependencies {
     implementation(platform("libs.kotlinx.coroutines.core"))
     implementation(libs.junit)
 }
-}
