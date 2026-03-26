@@ -13,9 +13,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:domain"))
+    implementation(project(":domain"))
     implementation(project(":core:common"))
-
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

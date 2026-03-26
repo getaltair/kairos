@@ -2,8 +2,13 @@ plugins {
     id("kairos.jvm.library")
 }
 
-dependencies {
-    implementation(libs.kotlinx.coroutines.core)
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
 
-    testImplementation(libs.junit)
+dependencies {
+    implementation(project(":domain"))
+    implementation(platform("libs.kotlinx.coroutines.core"))
+    implementation(libs.junit)
 }

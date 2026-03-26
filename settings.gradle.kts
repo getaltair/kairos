@@ -26,10 +26,10 @@ dependencyResolutionManagement {
 rootProject.name = "Kairos"
 
 include(":app")
-include(":core:domain")
-include(":core:data")
-include(":core:ui")
-include(":core:common")
+include(":domain")
+include(":data")
+include(":core")
+include(":ui")
 include(":feature:today")
 include(":feature:habit")
 include(":feature:settings")
