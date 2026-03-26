@@ -57,4 +57,10 @@ interface CompletionRepository {
      * Gets the most recent completion for a habit.
      */
     suspend fun getLatestForHabit(habitId: UUID): Result<Completion?>
+
+    /**
+     * Deletes all completions for a habit.
+     * Used for cascade deletion when a habit is permanently removed.
+     */
+    suspend fun deleteForHabit(habitId: UUID): Result<Unit>
 }
