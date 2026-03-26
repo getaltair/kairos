@@ -37,7 +37,7 @@ interface CompletionRepository {
 
     /**
      * Inserts a new completion.
-     * Enforces one-per-day invariant in data layer.
+     * Uses REPLACE conflict strategy; duplicate prevention is enforced at the use case layer.
      */
     suspend fun insert(completion: Completion): Result<Completion>
 

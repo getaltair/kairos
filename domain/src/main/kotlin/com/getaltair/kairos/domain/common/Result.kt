@@ -6,16 +6,16 @@ package com.getaltair.kairos.domain.common
  *
  * @param T The type of the success value
  */
-sealed class Result<T> {
+sealed class Result<out T> {
     /**
      * Represents a successful operation with a value.
      */
     data class Success<T>(val value: T) : Result<T>()
 
     /**
-     * Represents a failed operation with an error message.
+     * Represents a failed operation with an error message and optional cause.
      */
-    data class Error(val message: String) : Result<Nothing>()
+    data class Error(val message: String, val cause: Throwable? = null) : Result<Nothing>()
 
     /**
      * Checks if the result is successful.
@@ -34,7 +34,7 @@ sealed class Result<T> {
      */
     fun getOrThrow(): T = when (this) {
         is Success<T> -> value
-        is Error -> throw IllegalStateException(message)
+        is Error -> throw IllegalStateException(message, cause)
     }
 
     /**
@@ -49,9 +49,9 @@ sealed class Result<T> {
     /**
      * Performs an action on error, or does nothing on success.
      */
-    inline fun onError(action: (String) -> Unit) {
+    inline fun onError(action: (String, Throwable?) -> Unit) {
         if (this is Error) {
-            action(message)
+            action(message, cause)
         }
     }
 }

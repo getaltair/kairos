@@ -26,7 +26,7 @@ interface HabitRepository {
 
     /**
      * Gets habits due for a specific date.
-     * Filters by frequency and checks habit phase.
+     * Filters by frequency.
      */
     suspend fun getHabitsForDate(date: LocalDate): Result<List<Habit>>
 
