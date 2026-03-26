@@ -80,19 +80,21 @@ sealed class HabitPhase {
         /**
          * All available habit phases for iteration and validation.
          */
-        val ALL: List<HabitPhase> = listOf(ONBOARD, FORMING, MAINTAINING, LAPSED, RELAPSED)
+        val ALL: List<HabitPhase> by lazy { listOf(ONBOARD, FORMING, MAINTAINING, LAPSED, RELAPSED) }
 
         /**
          * Map of all valid transitions for quick reference.
          * Key is the source phase, value is the list of valid target phases.
          */
-        val VALID_TRANSITIONS: Map<HabitPhase, List<HabitPhase>> = mapOf(
-            ONBOARD to listOf(FORMING),
-            FORMING to listOf(MAINTAINING, LAPSED),
-            MAINTAINING to listOf(LAPSED),
-            LAPSED to listOf(FORMING, RELAPSED),
-            RELAPSED to listOf(FORMING)
-        )
+        val VALID_TRANSITIONS: Map<HabitPhase, List<HabitPhase>> by lazy {
+            mapOf(
+                ONBOARD to listOf(FORMING),
+                FORMING to listOf(MAINTAINING, LAPSED),
+                MAINTAINING to listOf(LAPSED),
+                LAPSED to listOf(FORMING, RELAPSED),
+                RELAPSED to listOf(FORMING),
+            )
+        }
 
         /**
          * Finds a HabitPhase by its display name.
