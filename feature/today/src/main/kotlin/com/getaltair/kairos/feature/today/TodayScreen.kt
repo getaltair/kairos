@@ -40,7 +40,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.getaltair.kairos.domain.enums.CompletionType
-import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.model.HabitWithStatus
 import com.getaltair.kairos.feature.today.components.CompletionBottomSheet
 import com.getaltair.kairos.feature.today.components.EmptyState
@@ -51,7 +50,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodayScreen(viewModel: TodayViewModel = koinViewModel()) {
+fun TodayScreen(onAddHabit: () -> Unit = {}, viewModel: TodayViewModel = koinViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val haptic = LocalHapticFeedback.current
     var selectedHabit by remember { mutableStateOf<HabitWithStatus?>(null) }
@@ -102,7 +101,7 @@ fun TodayScreen(viewModel: TodayViewModel = koinViewModel()) {
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { /* TODO: Step 6 */ }) {
+            FloatingActionButton(onClick = onAddHabit) {
                 Icon(Icons.Filled.Add, contentDescription = "Add habit")
             }
         }
@@ -184,7 +183,7 @@ fun TodayScreen(viewModel: TodayViewModel = koinViewModel()) {
                     uiState.habitsByCategory.forEach { (category, habits) ->
                         item {
                             Text(
-                                text = "${categoryEmoji(category)} ${categoryName(category)}",
+                                text = "${category.emoji} ${category.displayName}",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
@@ -226,20 +225,4 @@ fun TodayScreen(viewModel: TodayViewModel = koinViewModel()) {
             onDismiss = { selectedHabit = null }
         )
     }
-}
-
-private fun categoryEmoji(category: HabitCategory): String = when (category) {
-    is HabitCategory.Morning -> category.emoji
-    is HabitCategory.Afternoon -> category.emoji
-    is HabitCategory.Evening -> category.emoji
-    is HabitCategory.Anytime -> category.emoji
-    is HabitCategory.Departure -> category.emoji
-}
-
-private fun categoryName(category: HabitCategory): String = when (category) {
-    is HabitCategory.Morning -> category.displayName
-    is HabitCategory.Afternoon -> category.displayName
-    is HabitCategory.Evening -> category.displayName
-    is HabitCategory.Anytime -> category.displayName
-    is HabitCategory.Departure -> category.displayName
 }
