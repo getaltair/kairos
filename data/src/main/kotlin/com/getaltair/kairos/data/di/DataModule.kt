@@ -3,19 +3,40 @@ package com.getaltair.kairos.data.di
 import android.content.Context
 import androidx.room.Room
 import com.getaltair.kairos.data.database.KairosDatabase
+import com.getaltair.kairos.data.repository.CompletionRepositoryImpl
+import com.getaltair.kairos.data.repository.HabitRepositoryImpl
+import com.getaltair.kairos.data.repository.PreferencesRepositoryImpl
+import com.getaltair.kairos.domain.repository.CompletionRepository
+import com.getaltair.kairos.domain.repository.HabitRepository
+import com.getaltair.kairos.domain.repository.PreferencesRepository
 import org.koin.dsl.module
 
 /**
  * Koin dependency injection module for data layer.
- * Provides Room database, all DAOs, and type converters.
+ * Provides Room database, all DAOs, and repository bindings.
  */
 val dataModule = module {
-    // Temporarily simplified to test compilation
 
     // Provide Room database instance
     single<KairosDatabase> {
         provideDatabase(it.get())
     }
+
+    // DAOs
+    single { get<KairosDatabase>().habitDao() }
+    single { get<KairosDatabase>().completionDao() }
+    single { get<KairosDatabase>().userPreferencesDao() }
+    single { get<KairosDatabase>().routineDao() }
+    single { get<KairosDatabase>().routineVariantDao() }
+    single { get<KairosDatabase>().routineHabitDao() }
+    single { get<KairosDatabase>().routineExecutionDao() }
+    single { get<KairosDatabase>().habitNotificationDao() }
+    single { get<KairosDatabase>().recoverySessionDao() }
+
+    // Repository bindings
+    single<HabitRepository> { HabitRepositoryImpl(get()) }
+    single<CompletionRepository> { CompletionRepositoryImpl(get()) }
+    single<PreferencesRepository> { PreferencesRepositoryImpl(get()) }
 }
 
 /**
