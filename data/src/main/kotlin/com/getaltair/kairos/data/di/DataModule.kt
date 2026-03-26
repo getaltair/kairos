@@ -9,6 +9,7 @@ import com.getaltair.kairos.data.repository.PreferencesRepositoryImpl
 import com.getaltair.kairos.domain.repository.CompletionRepository
 import com.getaltair.kairos.domain.repository.HabitRepository
 import com.getaltair.kairos.domain.repository.PreferencesRepository
+import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 /**
@@ -19,7 +20,7 @@ val dataModule = module {
 
     // Provide Room database instance
     single<KairosDatabase> {
-        provideDatabase(it.get())
+        provideDatabase(androidContext())
     }
 
     // DAOs
