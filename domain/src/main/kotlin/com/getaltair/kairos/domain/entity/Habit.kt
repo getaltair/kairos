@@ -5,7 +5,15 @@ import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.enums.HabitFrequency
 import com.getaltair.kairos.domain.enums.HabitPhase
 import com.getaltair.kairos.domain.enums.HabitStatus
+import java.time.DayOfWeek.FRIDAY
+import java.time.DayOfWeek.MONDAY
+import java.time.DayOfWeek.SATURDAY
+import java.time.DayOfWeek.SUNDAY
+import java.time.DayOfWeek.THURSDAY
+import java.time.DayOfWeek.TUESDAY
+import java.time.DayOfWeek.WEDNESDAY
 import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -64,8 +72,9 @@ data class Habit(
     val relapseThresholdDays: Int = 7
 ) {
     /**
-     * Creates a copy of this habit with the specified changes.
-     * Use for updating habits immutably.
+     * Creates an updated copy preserving the original [id] and [createdAt].
+     * The [updatedAt] timestamp defaults to now.
+     * Excludes [id] and [createdAt] from parameters to prevent accidental identity changes.
      */
     fun copy(
         name: String = this.name,
@@ -132,26 +141,24 @@ data class Habit(
         get() = category == HabitCategory.Departure
 
     /**
-     * Checks if this habit is due today based on its frequency.
-     * This is a simplified check — actual frequency filtering should consider
+     * Checks if this habit is due on the given date based on its frequency.
+     * This is a simplified check -- actual frequency filtering should consider
      * the habit's phase and missed streaks as well.
+     *
+     * Weekdays and Weekends use fixed day sets; only Custom frequency consults [activeDays].
+     *
+     * @param today the date to check against; defaults to the current date
      */
-    fun isDueToday(): Boolean = when (frequency) {
+    fun isDueToday(today: LocalDate = LocalDate.now()): Boolean = when (frequency) {
         is HabitFrequency.Daily -> true
 
-        is HabitFrequency.Weekdays -> {
-            val today = java.time.LocalDate.now().dayOfWeek
-            activeDays?.contains(today) ?: false
-        }
+        is HabitFrequency.Weekdays ->
+            today.dayOfWeek in setOf(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY)
 
-        is HabitFrequency.Weekends -> {
-            val today = java.time.LocalDate.now().dayOfWeek
-            activeDays?.contains(today) ?: false
-        }
+        is HabitFrequency.Weekends ->
+            today.dayOfWeek in setOf(SATURDAY, SUNDAY)
 
-        is HabitFrequency.Custom -> {
-            val today = java.time.LocalDate.now().dayOfWeek
-            activeDays?.contains(today) ?: false
-        }
+        is HabitFrequency.Custom ->
+            activeDays?.contains(today.dayOfWeek) ?: false
     }
 }

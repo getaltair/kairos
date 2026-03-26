@@ -10,6 +10,7 @@ import com.getaltair.kairos.domain.enums.HabitFrequency
 import com.getaltair.kairos.domain.enums.HabitPhase
 import com.getaltair.kairos.domain.enums.HabitStatus
 import com.getaltair.kairos.domain.usecase.CreateHabitUseCase
+import com.getaltair.kairos.feature.habit.ErrorMapper
 import java.time.DayOfWeek
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -147,21 +148,26 @@ class CreateHabitViewModel(private val createHabitUseCase: CreateHabitUseCase) :
     }
 
     fun createHabit() {
-        if (_uiState.value.isCreating) return
+        if (_uiState.value.creationStatus is CreationStatus.Creating) return
 
         val state = _uiState.value
 
         val category = state.category
         if (category == null) {
             Timber.e("createHabit called with null category")
-            _uiState.update { it.copy(creationError = "Please select a category before creating your habit.") }
+            _uiState.update {
+                it.copy(creationStatus = CreationStatus.Failed("Please select a category before creating your habit."))
+            }
             return
         }
 
         val activeDays = if (state.frequency is HabitFrequency.Custom) state.activeDays else null
 
         if (state.frequency is HabitFrequency.Custom && activeDays.isNullOrEmpty()) {
-            _uiState.update { it.copy(creationError = "Please select at least one day for custom frequency") }
+            Timber.w("createHabit called with Custom frequency but no active days selected")
+            _uiState.update {
+                it.copy(creationStatus = CreationStatus.Failed("Please select at least one day for custom frequency"))
+            }
             return
         }
 
@@ -184,18 +190,24 @@ class CreateHabitViewModel(private val createHabitUseCase: CreateHabitUseCase) :
             relapseThresholdDays = 7
         )
 
-        _uiState.update { it.copy(isCreating = true, creationError = null) }
+        _uiState.update { it.copy(creationStatus = CreationStatus.Creating) }
 
         viewModelScope.launch {
             try {
                 when (val result = createHabitUseCase(habit)) {
                     is Result.Success -> {
-                        _uiState.update { it.copy(isCreating = false, isCreated = true) }
+                        _uiState.update { it.copy(creationStatus = CreationStatus.Created) }
                     }
 
                     is Result.Error -> {
-                        Timber.e(result.cause, "Failed to create habit: %s", result.message)
-                        _uiState.update { it.copy(isCreating = false, creationError = result.message) }
+                        Timber.e(result.cause, "createHabit failed: %s", result.message)
+                        _uiState.update {
+                            it.copy(
+                                creationStatus = CreationStatus.Failed(
+                                    ErrorMapper.toUserMessage(result.message)
+                                )
+                            )
+                        }
                     }
                 }
             } catch (e: CancellationException) {
@@ -203,13 +215,19 @@ class CreateHabitViewModel(private val createHabitUseCase: CreateHabitUseCase) :
             } catch (e: Exception) {
                 Timber.e(e, "Unexpected error creating habit")
                 _uiState.update {
-                    it.copy(isCreating = false, creationError = "Something went wrong. Please try again.")
+                    it.copy(creationStatus = CreationStatus.Failed("Something went wrong. Please try again."))
                 }
             }
         }
     }
 
     fun clearCreationError() {
-        _uiState.update { it.copy(creationError = null) }
+        _uiState.update {
+            if (it.creationStatus is CreationStatus.Failed) {
+                it.copy(creationStatus = CreationStatus.Idle)
+            } else {
+                it
+            }
+        }
     }
 }

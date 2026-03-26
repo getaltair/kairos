@@ -68,8 +68,8 @@ class CreateHabitViewModelTest {
     }
 
     @Test
-    fun `initial state - isCreating is false`() {
-        assertFalse(viewModel.uiState.value.isCreating)
+    fun `initial state - creationStatus is Idle`() {
+        assertEquals(CreationStatus.Idle, viewModel.uiState.value.creationStatus)
     }
 
     @Test
@@ -88,8 +88,8 @@ class CreateHabitViewModelTest {
     }
 
     @Test
-    fun `initial state - isCreated is false`() {
-        assertFalse(viewModel.uiState.value.isCreated)
+    fun `initial state - creationStatus is not Created`() {
+        assertTrue(viewModel.uiState.value.creationStatus is CreationStatus.Idle)
     }
 
     // -------------------------------------------------------------------------
@@ -348,25 +348,25 @@ class CreateHabitViewModelTest {
     }
 
     @Test
-    fun `createHabit success sets isCreated to true`() = runTest {
+    fun `createHabit success sets creationStatus to Created`() = runTest {
         setupForCreate()
         coEvery { createHabitUseCase(any()) } returns Result.Success(mockk(relaxed = true))
 
         viewModel.createHabit()
         advanceUntilIdle()
 
-        assertTrue(viewModel.uiState.value.isCreated)
+        assertEquals(CreationStatus.Created, viewModel.uiState.value.creationStatus)
     }
 
     @Test
-    fun `createHabit success sets isCreating to false after completion`() = runTest {
+    fun `createHabit success sets creationStatus to Created not Creating`() = runTest {
         setupForCreate()
         coEvery { createHabitUseCase(any()) } returns Result.Success(mockk(relaxed = true))
 
         viewModel.createHabit()
         advanceUntilIdle()
 
-        assertFalse(viewModel.uiState.value.isCreating)
+        assertFalse(viewModel.uiState.value.creationStatus is CreationStatus.Creating)
     }
 
     @Test
@@ -493,36 +493,80 @@ class CreateHabitViewModelTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `createHabit failure sets creationError to error message`() = runTest {
+    fun `createHabit failure maps technical error to user-friendly message`() = runTest {
         setupForCreate()
         coEvery { createHabitUseCase(any()) } returns Result.Error("Database write failed")
 
         viewModel.createHabit()
         advanceUntilIdle()
 
-        assertEquals("Database write failed", viewModel.uiState.value.creationError)
+        val status = viewModel.uiState.value.creationStatus
+        assertTrue(status is CreationStatus.Failed)
+        assertEquals("Something went wrong. Please try again.", (status as CreationStatus.Failed).message)
     }
 
     @Test
-    fun `createHabit failure leaves isCreated false`() = runTest {
+    fun `createHabit failure does not set creationStatus to Created`() = runTest {
         setupForCreate()
         coEvery { createHabitUseCase(any()) } returns Result.Error("Save failed")
 
         viewModel.createHabit()
         advanceUntilIdle()
 
-        assertFalse(viewModel.uiState.value.isCreated)
+        assertFalse(viewModel.uiState.value.creationStatus is CreationStatus.Created)
     }
 
     @Test
-    fun `createHabit failure resets isCreating to false`() = runTest {
+    fun `createHabit failure does not leave creationStatus as Creating`() = runTest {
         setupForCreate()
         coEvery { createHabitUseCase(any()) } returns Result.Error("Save failed")
 
         viewModel.createHabit()
         advanceUntilIdle()
 
-        assertFalse(viewModel.uiState.value.isCreating)
+        assertFalse(viewModel.uiState.value.creationStatus is CreationStatus.Creating)
+    }
+
+    @Test
+    fun `createHabit failure with known error maps through ErrorMapper`() = runTest {
+        setupForCreate()
+        coEvery { createHabitUseCase(any()) } returns Result.Error("anchorBehavior must not be blank")
+
+        viewModel.createHabit()
+        advanceUntilIdle()
+
+        val status = viewModel.uiState.value.creationStatus
+        assertTrue(status is CreationStatus.Failed)
+        assertEquals("Please describe when you'll do this habit.", (status as CreationStatus.Failed).message)
+    }
+
+    // -------------------------------------------------------------------------
+    // 8b. createHabit unexpected exception
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `createHabit unexpected exception sets Failed with generic message`() = runTest {
+        setupForCreate()
+        coEvery { createHabitUseCase(any()) } throws RuntimeException("Unexpected DB error")
+
+        viewModel.createHabit()
+        advanceUntilIdle()
+
+        val status = viewModel.uiState.value.creationStatus
+        assertTrue(status is CreationStatus.Failed)
+        assertEquals("Something went wrong. Please try again.", (status as CreationStatus.Failed).message)
+    }
+
+    @Test
+    fun `createHabit rethrows CancellationException without setting Failed`() = runTest {
+        setupForCreate()
+        coEvery { createHabitUseCase(any()) } throws kotlin.coroutines.cancellation.CancellationException("Cancelled")
+
+        viewModel.createHabit()
+        advanceUntilIdle()
+
+        // CancellationException is rethrown, status should not be Failed
+        assertFalse(viewModel.uiState.value.creationStatus is CreationStatus.Failed)
     }
 
     // -------------------------------------------------------------------------
@@ -634,11 +678,11 @@ class CreateHabitViewModelTest {
     }
 
     // -------------------------------------------------------------------------
-    // 11. createHabit with null category sets creationError
+    // 11. createHabit with null category sets Failed status
     // -------------------------------------------------------------------------
 
     @Test
-    fun `createHabit with null category sets creationError`() = runTest {
+    fun `createHabit with null category sets Failed status`() = runTest {
         // Set up state with all fields except category
         viewModel.onNameChanged("Morning Meditation")
         viewModel.goToNextStep()
@@ -657,7 +701,9 @@ class CreateHabitViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) { createHabitUseCase(any()) }
-        assertNotNull(freshViewModel.uiState.value.creationError)
+        assertTrue(freshViewModel.uiState.value.creationStatus is CreationStatus.Failed)
+        val status = freshViewModel.uiState.value.creationStatus as CreationStatus.Failed
+        assertEquals("Please select a category before creating your habit.", status.message)
     }
 
     // -------------------------------------------------------------------------
@@ -689,21 +735,21 @@ class CreateHabitViewModelTest {
     }
 
     // -------------------------------------------------------------------------
-    // 14. clearCreationError clears creationError
+    // 14. clearCreationError resets Failed status to Idle
     // -------------------------------------------------------------------------
 
     @Test
-    fun `clearCreationError clears creationError`() = runTest {
-        // Trigger a creationError by calling createHabit with null category
+    fun `clearCreationError resets creationStatus to Idle`() = runTest {
+        // Trigger a Failed status by calling createHabit with null category
         val freshViewModel = CreateHabitViewModel(createHabitUseCase)
         freshViewModel.onNameChanged("Some Habit")
         freshViewModel.createHabit()
         advanceUntilIdle()
-        assertNotNull(freshViewModel.uiState.value.creationError)
+        assertTrue(freshViewModel.uiState.value.creationStatus is CreationStatus.Failed)
 
         freshViewModel.clearCreationError()
 
-        assertNull(freshViewModel.uiState.value.creationError)
+        assertEquals(CreationStatus.Idle, freshViewModel.uiState.value.creationStatus)
     }
 
     // -------------------------------------------------------------------------
@@ -717,7 +763,7 @@ class CreateHabitViewModelTest {
         coEvery { createHabitUseCase(any()) } coAnswers { deferred.await() }
 
         viewModel.createHabit()
-        // isCreating is now true because the coroutine is suspended
+        // creationStatus is now Creating because the coroutine is suspended
         viewModel.createHabit()
         // Complete the deferred so the first call finishes
         deferred.complete(Result.Success(mockk(relaxed = true)))
@@ -727,11 +773,11 @@ class CreateHabitViewModelTest {
     }
 
     // -------------------------------------------------------------------------
-    // 16. Custom frequency with empty activeDays sets creationError
+    // 16. Custom frequency with empty activeDays sets Failed status
     // -------------------------------------------------------------------------
 
     @Test
-    fun `createHabit with Custom frequency and empty activeDays sets creationError`() = runTest {
+    fun `createHabit with Custom frequency and empty activeDays sets Failed status`() = runTest {
         setupForCreate()
         viewModel.onFrequencySelected(HabitFrequency.Custom)
         // Do NOT select any active days
@@ -740,6 +786,8 @@ class CreateHabitViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) { createHabitUseCase(any()) }
-        assertNotNull(viewModel.uiState.value.creationError)
+        assertTrue(viewModel.uiState.value.creationStatus is CreationStatus.Failed)
+        val status = viewModel.uiState.value.creationStatus as CreationStatus.Failed
+        assertEquals("Please select at least one day for custom frequency", status.message)
     }
 }
