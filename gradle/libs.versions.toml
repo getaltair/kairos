@@ -17,6 +17,7 @@ workmanager = "2.11.1"
 timber = "5.0.1"
 firebaseBom = "34.11.0"
 coroutines = "1.10.2"
+mockk = "1.13.13"
 moshi = "1.15.0"
 
 # Convention plugin dependencies
@@ -82,6 +83,7 @@ moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-code
 
 # === Testing ===
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

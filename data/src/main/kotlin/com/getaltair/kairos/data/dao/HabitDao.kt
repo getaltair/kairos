@@ -1,5 +1,6 @@
 package com.getaltair.kairos.data.dao
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -113,6 +114,12 @@ interface HabitDao {
      */
     @Query("DELETE FROM habits")
     fun deleteAll()
+
+    /**
+     * Get habits by status.
+     */
+    @Query("SELECT * FROM habits WHERE status = :status ORDER BY created_at DESC")
+    fun getByStatus(status: String): List<HabitEntity>
 
     /**
      * Get active habits (status = Active and not paused/archived).
@@ -261,26 +268,26 @@ data class TodayHabitWithCompletion(
     val description: String?,
     val icon: String?,
     val color: String?,
-    val anchorBehavior: String,
-    val anchorType: String,
-    val timeWindowStart: String?,
-    val timeWindowEnd: String?,
+    @ColumnInfo(name = "anchor_behavior") val anchorBehavior: String,
+    @ColumnInfo(name = "anchor_type") val anchorType: String,
+    @ColumnInfo(name = "time_window_start") val timeWindowStart: String?,
+    @ColumnInfo(name = "time_window_end") val timeWindowEnd: String?,
     val category: String,
     val frequency: String,
-    val activeDays: String?,
-    val estimatedSeconds: Int,
-    val microVersion: String?,
-    val allowPartialCompletion: Boolean,
+    @ColumnInfo(name = "active_days") val activeDays: String?,
+    @ColumnInfo(name = "estimated_seconds") val estimatedSeconds: Int,
+    @ColumnInfo(name = "micro_version") val microVersion: String?,
+    @ColumnInfo(name = "allow_partial_completion") val allowPartialCompletion: Boolean,
     val subtasks: String?,
     val phase: String,
     val status: String,
-    val userId: String?,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val pausedAt: Long?,
-    val archivedAt: Long?,
-    val lapseThresholdDays: Int,
-    val relapseThresholdDays: Int,
+    @ColumnInfo(name = "user_id") val userId: String?,
+    @ColumnInfo(name = "created_at") val createdAt: Long,
+    @ColumnInfo(name = "updated_at") val updatedAt: Long,
+    @ColumnInfo(name = "paused_at") val pausedAt: Long?,
+    @ColumnInfo(name = "archived_at") val archivedAt: Long?,
+    @ColumnInfo(name = "lapse_threshold_days") val lapseThresholdDays: Int,
+    @ColumnInfo(name = "relapse_threshold_days") val relapseThresholdDays: Int,
     // Completion fields (nullable)
     val completion_id: UUID?,
     val completion_date: String?,

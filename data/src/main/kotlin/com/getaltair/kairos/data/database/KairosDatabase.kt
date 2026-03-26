@@ -2,6 +2,8 @@ package com.getaltair.kairos.data.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.getaltair.kairos.data.converter.RoomTypeConverters
 import com.getaltair.kairos.data.dao.CompletionDao
 import com.getaltair.kairos.data.dao.HabitDao
 import com.getaltair.kairos.data.dao.HabitNotificationDao
@@ -31,6 +33,7 @@ import com.getaltair.kairos.data.dao.UserPreferencesDao
     ],
     exportSchema = true
 )
+@TypeConverters(RoomTypeConverters::class)
 abstract class KairosDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun completionDao(): CompletionDao

@@ -5,6 +5,7 @@ import com.getaltair.kairos.data.entity.UserPreferencesEntity
 import com.getaltair.kairos.domain.entity.UserPreferences
 import java.time.Instant
 import java.util.UUID
+import timber.log.Timber
 
 /**
  * Bidirectional mapper between [UserPreferencesEntity] and [UserPreferences].
@@ -21,6 +22,7 @@ object UserPreferencesEntityMapper {
             try {
                 jsonMapConverter.stringToMap(it)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to parse notificationChannels JSON in toDomain for entity id=%s", entity.id)
                 emptyMap()
             }
         }
@@ -46,6 +48,7 @@ object UserPreferencesEntityMapper {
             try {
                 jsonMapConverter.mapToString(it)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to serialize notificationChannels JSON in toEntity for domain id=%s", domain.id)
                 null
             }
         }

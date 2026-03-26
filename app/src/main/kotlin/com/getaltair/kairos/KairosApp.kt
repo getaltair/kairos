@@ -1,6 +1,7 @@
 package com.getaltair.kairos
 
 import android.app.Application
+import com.getaltair.kairos.core.di.useCaseModule
 import com.getaltair.kairos.data.di.dataModule
 import com.getaltair.kairos.feature.today.di.todayModule
 import org.koin.android.ext.koin.androidContext
@@ -21,8 +22,8 @@ class KairosApp : Application() {
             androidContext(this@KairosApp)
             modules(
                 dataModule,
+                useCaseModule,
                 todayModule
-                // Add more modules here as we build features
             )
         }
     }

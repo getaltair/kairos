@@ -36,14 +36,17 @@ data class Completion(
     val updatedAt: Instant = Instant.now()
 ) {
     init {
-        require(type == CompletionType.Partial || partialPercent == null) {
+        require(type is CompletionType.Partial || partialPercent == null) {
             "partialPercent must only be set for PARTIAL type"
         }
-        require(type == CompletionType.Full || partialPercent == null) {
-            "partialPercent must not be set for FULL type"
-        }
-        require(type == CompletionType.Skipped || skipReason == null) {
+        require(type is CompletionType.Skipped || skipReason == null) {
             "skipReason must only be set for SKIPPED type"
+        }
+        if (partialPercent != null) {
+            require(partialPercent in 1..99) { "partialPercent must be in 1..99" }
+        }
+        if (energyLevel != null) {
+            require(energyLevel in 1..5) { "energyLevel must be in 1..5" }
         }
     }
 
