@@ -10,6 +10,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 /**
@@ -27,7 +29,7 @@ class CompletionRepositoryImpl(private val completionDao: CompletionDao) :
     private val skipReasonConverter = SkipReasonConverter()
 
     override suspend fun getForHabitOnDate(habitId: UUID, date: LocalDate): Result<Completion?> = try {
-        val entity = completionDao.getForHabitOnDate(habitId, date.toString())
+        val entity = withContext(Dispatchers.IO) { completionDao.getForHabitOnDate(habitId, date.toString()) }
         Result.Success(entity?.let { CompletionEntityMapper.toDomain(it) })
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -36,7 +38,7 @@ class CompletionRepositoryImpl(private val completionDao: CompletionDao) :
     }
 
     override suspend fun getForDate(date: LocalDate): Result<List<Completion>> = try {
-        val entities = completionDao.getForDate(date.toString())
+        val entities = withContext(Dispatchers.IO) { completionDao.getForDate(date.toString()) }
         Result.Success(CompletionEntityMapper.toDomainList(entities))
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -45,7 +47,8 @@ class CompletionRepositoryImpl(private val completionDao: CompletionDao) :
     }
 
     override suspend fun getForDateRange(startDate: LocalDate, endDate: LocalDate): Result<List<Completion>> = try {
-        val entities = completionDao.getForDateRange(startDate.toString(), endDate.toString())
+        val entities =
+            withContext(Dispatchers.IO) { completionDao.getForDateRange(startDate.toString(), endDate.toString()) }
         Result.Success(CompletionEntityMapper.toDomainList(entities))
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -58,7 +61,10 @@ class CompletionRepositoryImpl(private val completionDao: CompletionDao) :
         startDate: LocalDate,
         endDate: LocalDate
     ): Result<List<Completion>> = try {
-        val entities = completionDao.getForHabitInRange(habitId, startDate.toString(), endDate.toString())
+        val entities =
+            withContext(Dispatchers.IO) {
+                completionDao.getForHabitInRange(habitId, startDate.toString(), endDate.toString())
+            }
         Result.Success(CompletionEntityMapper.toDomainList(entities))
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -68,7 +74,7 @@ class CompletionRepositoryImpl(private val completionDao: CompletionDao) :
 
     override suspend fun insert(completion: Completion): Result<Completion> = try {
         val entity = CompletionEntityMapper.toEntity(completion)
-        completionDao.insert(entity)
+        withContext(Dispatchers.IO) { completionDao.insert(entity) }
         Result.Success(completion)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -81,16 +87,18 @@ class CompletionRepositoryImpl(private val completionDao: CompletionDao) :
             ?: throw IllegalStateException("Failed to convert: completionType")
         val skipReason = completion.skipReason?.let { skipReasonConverter.skipReasonToString(it) }
 
-        completionDao.update(
-            id = completion.id,
-            completedAt = completion.completedAt.toEpochMilli(),
-            type = type,
-            partialPercent = completion.partialPercent,
-            skipReason = skipReason,
-            energyLevel = completion.energyLevel,
-            note = completion.note,
-            updatedAt = Instant.now().toEpochMilli()
-        )
+        withContext(Dispatchers.IO) {
+            completionDao.update(
+                id = completion.id,
+                completedAt = completion.completedAt.toEpochMilli(),
+                type = type,
+                partialPercent = completion.partialPercent,
+                skipReason = skipReason,
+                energyLevel = completion.energyLevel,
+                note = completion.note,
+                updatedAt = Instant.now().toEpochMilli()
+            )
+        }
         Result.Success(completion)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -99,7 +107,7 @@ class CompletionRepositoryImpl(private val completionDao: CompletionDao) :
     }
 
     override suspend fun delete(id: UUID): Result<Unit> = try {
-        completionDao.delete(id)
+        withContext(Dispatchers.IO) { completionDao.delete(id) }
         Result.Success(Unit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -108,7 +116,7 @@ class CompletionRepositoryImpl(private val completionDao: CompletionDao) :
     }
 
     override suspend fun getLatestForHabit(habitId: UUID): Result<Completion?> = try {
-        val entities = completionDao.getForHabit(habitId)
+        val entities = withContext(Dispatchers.IO) { completionDao.getForHabit(habitId) }
         val latest = entities.firstOrNull()
         Result.Success(latest?.let { CompletionEntityMapper.toDomain(it) })
     } catch (e: Exception) {
