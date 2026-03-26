@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.getaltair.kairos.feature.habit.CreateHabitScreen
 import com.getaltair.kairos.feature.today.TodayScreen
 
 @Composable
@@ -14,10 +15,13 @@ fun KairosNavGraph() {
         startDestination = "today"
     ) {
         composable("today") {
-            TodayScreen()
+            TodayScreen(onAddHabit = { navController.navigate("createHabit") })
         }
-        composable("habit") {
-            // TODO: Step 6 - Habit creation screen
+        composable("createHabit") {
+            CreateHabitScreen(
+                onBack = { navController.popBackStack() },
+                onCreated = { navController.popBackStack() }
+            )
         }
         composable("settings") {
             // TODO: Settings screen
