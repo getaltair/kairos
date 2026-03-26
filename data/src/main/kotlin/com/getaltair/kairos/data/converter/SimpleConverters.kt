@@ -4,7 +4,6 @@ import androidx.room.TypeConverter
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.UUID
 
 /**
  * Simple type converters for Room (without Moshi).

@@ -1,7 +1,6 @@
 package com.getaltair.kairos.data.converter
 
 import androidx.room.TypeConverter
-import com.getaltair.kairos.domain.entity.Habit
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
@@ -50,7 +49,8 @@ class JsonListConverter {
      * Used for habit subtasks.
      */
     @TypeConverter
-    fun stringListToString(list: List<String>?): String? = list?.let { stringListAdapter.toJson(it) }
+    fun stringListToString(list: List<String>?): String? =
+        list?.let { stringListAdapter.toJson(it) }
 
     /**
      * Converts JSON [String] to [List<String>].

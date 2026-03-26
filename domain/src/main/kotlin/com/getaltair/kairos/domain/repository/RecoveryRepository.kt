@@ -2,7 +2,6 @@ package com.getaltair.kairos.domain.repository
 
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.entity.RecoverySession
-import com.getaltair.kairos.domain.enums.SessionStatus
 import java.util.UUID
 
 /**

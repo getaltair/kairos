@@ -4,10 +4,7 @@ import com.getaltair.kairos.data.converter.BlockerConverter
 import com.getaltair.kairos.data.converter.RecoveryActionConverter
 import com.getaltair.kairos.data.entity.RecoverySessionEntity
 import com.getaltair.kairos.domain.entity.RecoverySession
-import com.getaltair.kairos.domain.enums.Blocker
-import com.getaltair.kairos.domain.enums.RecoveryAction
 import java.time.Instant
-import java.util.UUID
 
 /**
  * Bidirectional mapper between [RecoverySessionEntity] and [RecoverySession].
@@ -50,7 +47,9 @@ object RecoverySessionEntityMapper {
      * Converts domain [RecoverySession] to [RecoverySessionEntity].
      */
     fun toEntity(domain: RecoverySession): RecoverySessionEntity {
-        val recoveryAction = domain.action?.let { recoveryActionConverter.recoveryActionToString(it) }
+        val recoveryAction = domain.action?.let {
+            recoveryActionConverter.recoveryActionToString(it)
+        }
         val blockers = blockerConverter.blockerListToString(domain.blockers) ?: "[]"
 
         return RecoverySessionEntity(
@@ -71,10 +70,12 @@ object RecoverySessionEntityMapper {
     /**
      * Converts a list of [RecoverySessionEntity] to domain [List<RecoverySession>].
      */
-    fun toDomainList(entities: List<RecoverySessionEntity>): List<RecoverySession> = entities.map { toDomain(it) }
+    fun toDomainList(entities: List<RecoverySessionEntity>): List<RecoverySession> =
+        entities.map { toDomain(it) }
 
     /**
      * Converts a list of domain [RecoverySession] to [List<RecoverySessionEntity>].
      */
-    fun toEntityList(domains: List<RecoverySession>): List<RecoverySessionEntity> = domains.map { toEntity(it) }
+    fun toEntityList(domains: List<RecoverySession>): List<RecoverySessionEntity> =
+        domains.map { toEntity(it) }
 }

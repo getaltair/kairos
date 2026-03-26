@@ -3,7 +3,6 @@ package com.getaltair.kairos.data.mapper
 import com.getaltair.kairos.data.entity.RoutineVariantEntity
 import com.getaltair.kairos.domain.entity.RoutineVariant
 import java.time.Instant
-import java.util.UUID
 
 /**
  * Bidirectional mapper between [RoutineVariantEntity] and [RoutineVariant].
@@ -39,10 +38,12 @@ object RoutineVariantEntityMapper {
     /**
      * Converts a list of [RoutineVariantEntity] to domain [List<RoutineVariant>].
      */
-    fun toDomainList(entities: List<RoutineVariantEntity>): List<RoutineVariant> = entities.map { toDomain(it) }
+    fun toDomainList(entities: List<RoutineVariantEntity>): List<RoutineVariant> =
+        entities.map { toDomain(it) }
 
     /**
      * Converts a list of domain [RoutineVariant] to [List<RoutineVariantEntity>].
      */
-    fun toEntityList(domains: List<RoutineVariant>): List<RoutineVariantEntity> = domains.map { toEntity(it) }
+    fun toEntityList(domains: List<RoutineVariant>): List<RoutineVariantEntity> =
+        domains.map { toEntity(it) }
 }

@@ -14,7 +14,8 @@ class HabitFrequencyConverter {
      * Converts [HabitFrequency] to its simple class name [String].
      */
     @TypeConverter
-    fun habitFrequencyToString(frequency: HabitFrequency?): String? = frequency?.javaClass?.simpleName
+    fun habitFrequencyToString(frequency: HabitFrequency?): String? =
+        frequency?.javaClass?.simpleName
 
     /**
      * Converts simple class name [String] to [HabitFrequency].

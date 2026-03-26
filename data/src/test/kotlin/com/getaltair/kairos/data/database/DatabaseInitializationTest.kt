@@ -2,21 +2,7 @@ package com.getaltair.kairos.data.database
 
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.getaltair.kairos.data.dao.CompletionDao
-import com.getaltair.kairos.data.dao.HabitDao
-import com.getaltair.kairos.data.dao.HabitNotificationDao
-import com.getaltair.kairos.data.dao.RecoverySessionDao
-import com.getaltair.kairos.data.dao.RoutineDao
-import com.getaltair.kairos.data.dao.RoutineExecutionDao
-import com.getaltair.kairos.data.dao.RoutineHabitDao
-import com.getaltair.kairos.data.dao.RoutineVariantDao
-import com.getaltair.kairos.data.dao.UserPreferencesDao
 import com.getaltair.kairos.data.entity.HabitEntity
-import com.getaltair.kairos.domain.enums.HabitCategory
-import com.getaltair.kairos.domain.enums.HabitFrequency
-import com.getaltair.kairos.domain.enums.HabitPhase
-import com.getaltair.kairos.domain.enums.HabitStatus
-import java.io.File
 import java.util.UUID
 import org.junit.After
 import org.junit.Assert.assertEquals

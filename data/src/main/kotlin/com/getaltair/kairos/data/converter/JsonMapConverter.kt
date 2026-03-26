@@ -1,7 +1,6 @@
 package com.getaltair.kairos.data.converter
 
 import androidx.room.TypeConverter
-import com.getaltair.kairos.domain.entity.UserPreferences
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types

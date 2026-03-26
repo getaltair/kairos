@@ -2,10 +2,8 @@ package com.getaltair.kairos.domain.repository
 
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.entity.Routine
-import com.getaltair.kairos.domain.entity.RoutineExecution
 import com.getaltair.kairos.domain.entity.RoutineHabit
 import com.getaltair.kairos.domain.entity.RoutineVariant
-import com.getaltair.kairos.domain.enums.RoutineStatus
 import java.util.UUID
 
 /**

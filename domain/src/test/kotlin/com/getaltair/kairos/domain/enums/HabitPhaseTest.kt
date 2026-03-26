@@ -234,8 +234,14 @@ class HabitPhaseTest {
             listOf(HabitPhase.MAINTAINING, HabitPhase.LAPSED),
             HabitPhase.VALID_TRANSITIONS[HabitPhase.FORMING]
         )
-        assertEquals(listOf(HabitPhase.LAPSED), HabitPhase.VALID_TRANSITIONS[HabitPhase.MAINTAINING])
-        assertEquals(listOf(HabitPhase.FORMING, HabitPhase.RELAPSED), HabitPhase.VALID_TRANSITIONS[HabitPhase.LAPSED])
+        assertEquals(
+            listOf(HabitPhase.LAPSED),
+            HabitPhase.VALID_TRANSITIONS[HabitPhase.MAINTAINING]
+        )
+        assertEquals(
+            listOf(HabitPhase.FORMING, HabitPhase.RELAPSED),
+            HabitPhase.VALID_TRANSITIONS[HabitPhase.LAPSED]
+        )
         assertEquals(listOf(HabitPhase.FORMING), HabitPhase.VALID_TRANSITIONS[HabitPhase.RELAPSED])
     }
 

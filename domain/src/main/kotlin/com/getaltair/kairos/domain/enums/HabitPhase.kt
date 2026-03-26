@@ -46,7 +46,8 @@ sealed class HabitPhase {
      */
     object FORMING : HabitPhase() {
         override val displayName = "Forming"
-        override fun canTransitionTo(target: HabitPhase): Boolean = target is MAINTAINING || target is LAPSED
+        override fun canTransitionTo(target: HabitPhase): Boolean =
+            target is MAINTAINING || target is LAPSED
     }
 
     /**
@@ -64,7 +65,8 @@ sealed class HabitPhase {
      */
     object LAPSED : HabitPhase() {
         override val displayName = "Lapsed"
-        override fun canTransitionTo(target: HabitPhase): Boolean = target is FORMING || target is RELAPSED
+        override fun canTransitionTo(target: HabitPhase): Boolean =
+            target is FORMING || target is RELAPSED
     }
 
     /**

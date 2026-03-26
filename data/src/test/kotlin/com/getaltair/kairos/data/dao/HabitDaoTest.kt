@@ -1,17 +1,12 @@
 package com.getaltair.kairos.data.dao
 
 import androidx.room.Room
-import androidx.room.Transaction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.getaltair.kairos.data.converter.LocalDateConverter
-import com.getaltair.kairos.data.entity.CompletionEntity
 import com.getaltair.kairos.data.entity.HabitEntity
 import com.getaltair.kairos.domain.enums.HabitCategory
-import com.getaltair.kairos.domain.enums.HabitFrequency
 import com.getaltair.kairos.domain.enums.HabitPhase
-import com.getaltair.kairos.domain.enums.HabitStatus
 import java.time.Instant
-import java.time.LocalDate
 import java.util.UUID
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -103,7 +98,8 @@ class HabitDaoTest {
     fun getActiveHabits_onlyReturnsActiveHabits() {
         val activeHabit = createTestHabitEntity(status = "Active")
         val pausedHabit = createTestHabitEntity(name = "Paused Habit", status = "Paused")
-        val archivedHabit = createTestHabitEntity(name = "Archived Habit", pausedAt = Instant.now().toEpochMilli())
+        val archivedHabit =
+            createTestHabitEntity(name = "Archived Habit", pausedAt = Instant.now().toEpochMilli())
 
         habitDao.insert(activeHabit)
         habitDao.insert(pausedHabit)
@@ -134,7 +130,8 @@ class HabitDaoTest {
     @Test
     fun getHabitsByPhase_filtersByPhase() {
         val formingHabit = createTestHabitEntity(name = "Forming Habit", phase = "FORMING")
-        val maintainingHabit = createTestHabitEntity(name = "Maintaining Habit", phase = "MAINTAINING")
+        val maintainingHabit =
+            createTestHabitEntity(name = "Maintaining Habit", phase = "MAINTAINING")
 
         habitDao.insert(formingHabit)
         habitDao.insert(maintainingHabit)

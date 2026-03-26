@@ -2,7 +2,6 @@ package com.getaltair.kairos.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.getaltair.kairos.data.entity.HabitNotificationEntity
 import java.util.UUID
@@ -68,7 +67,9 @@ interface HabitNotificationDao {
     /**
      * Enable or disable a notification.
      */
-    @Query("UPDATE habit_notifications SET is_enabled = :isEnabled, updated_at = :updatedAt WHERE id = :id")
+    @Query(
+        "UPDATE habit_notifications SET is_enabled = :isEnabled, updated_at = :updatedAt WHERE id = :id"
+    )
     fun setEnabled(id: UUID, isEnabled: Boolean, updatedAt: Long)
 
     /**

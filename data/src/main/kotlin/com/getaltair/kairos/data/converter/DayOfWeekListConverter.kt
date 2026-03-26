@@ -14,7 +14,8 @@ class DayOfWeekListConverter {
      * Converts [Set<DayOfWeek>] to comma-separated [String].
      */
     @TypeConverter
-    fun dayOfWeekSetToString(days: Set<DayOfWeek>?): String? = days?.map { it.name }?.joinToString(",")
+    fun dayOfWeekSetToString(days: Set<DayOfWeek>?): String? =
+        days?.map { it.name }?.joinToString(",")
 
     /**
      * Converts comma-separated [String] to [Set<DayOfWeek>].

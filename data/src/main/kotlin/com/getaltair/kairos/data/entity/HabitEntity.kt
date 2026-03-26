@@ -4,14 +4,6 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.getaltair.kairos.data.converter.HabitCategoryConverter
-import com.getaltair.kairos.data.converter.HabitFrequencyConverter
-import com.getaltair.kairos.data.converter.HabitPhaseConverter
-import com.getaltair.kairos.data.converter.HabitStatusConverter
-import com.getaltair.kairos.domain.enums.HabitCategory
-import com.getaltair.kairos.domain.enums.HabitFrequency
-import com.getaltair.kairos.domain.enums.HabitPhase
-import com.getaltair.kairos.domain.enums.HabitStatus
 import java.util.UUID
 
 /**

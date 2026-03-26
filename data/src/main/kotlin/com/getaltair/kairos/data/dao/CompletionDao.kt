@@ -64,12 +64,18 @@ interface CompletionDao {
         ORDER BY date DESC
     """
     )
-    fun getForHabitInRange(habitId: UUID, startDate: String, endDate: String): List<CompletionEntity>
+    fun getForHabitInRange(
+        habitId: UUID,
+        startDate: String,
+        endDate: String
+    ): List<CompletionEntity>
 
     /**
      * Get completions by habit ID.
      */
-    @Query("SELECT * FROM completions WHERE habit_id = :habitId ORDER BY date DESC, completed_at DESC")
+    @Query(
+        "SELECT * FROM completions WHERE habit_id = :habitId ORDER BY date DESC, completed_at DESC"
+    )
     fun getForHabit(habitId: UUID): List<CompletionEntity>
 
     /**

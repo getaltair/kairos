@@ -23,10 +23,11 @@ data class GeoPoint(val lat: Double, val lon: Double, val radiusMeters: Int) {
          * @param radiusMeters Radius in meters
          * @return a new GeoPoint instance
          */
-        fun fromDecimalDegrees(latitude: Double, longitude: Double, radiusMeters: Int): GeoPoint = GeoPoint(
-            lat = latitude,
-            lon = longitude,
-            radiusMeters = radiusMeters
-        )
+        fun fromDecimalDegrees(latitude: Double, longitude: Double, radiusMeters: Int): GeoPoint =
+            GeoPoint(
+                lat = latitude,
+                lon = longitude,
+                radiusMeters = radiusMeters
+            )
     }
 }

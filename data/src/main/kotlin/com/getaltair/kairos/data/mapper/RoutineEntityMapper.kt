@@ -3,7 +3,6 @@ package com.getaltair.kairos.data.mapper
 import com.getaltair.kairos.data.entity.RoutineEntity
 import com.getaltair.kairos.domain.entity.Routine
 import java.time.Instant
-import java.util.UUID
 
 /**
  * Bidirectional mapper between [RoutineEntity] and [Routine].

@@ -176,7 +176,11 @@ class CompletionDaoTest {
         completionDao.insert(completion2)
         completionDao.insert(completion3)
 
-        val results = completionDao.getForHabitInRange(habit.id, startDate.toString(), endDate.toString())
+        val results = completionDao.getForHabitInRange(
+            habit.id,
+            startDate.toString(),
+            endDate.toString()
+        )
         assertEquals(2, results.size)
     }
 

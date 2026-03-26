@@ -4,11 +4,8 @@ import com.getaltair.kairos.data.converter.CompletionTypeConverter
 import com.getaltair.kairos.data.converter.SkipReasonConverter
 import com.getaltair.kairos.data.entity.CompletionEntity
 import com.getaltair.kairos.domain.entity.Completion
-import com.getaltair.kairos.domain.enums.CompletionType
-import com.getaltair.kairos.domain.enums.SkipReason
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 /**
  * Bidirectional mapper between [CompletionEntity] and [Completion].
@@ -65,10 +62,12 @@ object CompletionEntityMapper {
     /**
      * Converts a list of [CompletionEntity] to domain [List<Completion>].
      */
-    fun toDomainList(entities: List<CompletionEntity>): List<Completion> = entities.map { toDomain(it) }
+    fun toDomainList(entities: List<CompletionEntity>): List<Completion> =
+        entities.map { toDomain(it) }
 
     /**
      * Converts a list of domain [Completion] to [List<CompletionEntity>].
      */
-    fun toEntityList(domains: List<Completion>): List<CompletionEntity> = domains.map { toEntity(it) }
+    fun toEntityList(domains: List<Completion>): List<CompletionEntity> =
+        domains.map { toEntity(it) }
 }

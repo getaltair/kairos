@@ -2,7 +2,6 @@ package com.getaltair.kairos.domain.repository
 
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.entity.Completion
-import com.getaltair.kairos.domain.enums.CompletionType
 import java.time.LocalDate
 import java.util.UUID
 

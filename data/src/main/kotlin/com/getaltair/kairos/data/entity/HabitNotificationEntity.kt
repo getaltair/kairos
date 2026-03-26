@@ -5,7 +5,6 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.getaltair.kairos.data.converter.LocalTimeConverter
 import java.time.LocalTime
 import java.util.UUID
 

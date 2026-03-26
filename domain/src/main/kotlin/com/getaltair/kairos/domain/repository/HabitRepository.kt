@@ -3,7 +3,6 @@ package com.getaltair.kairos.domain.repository
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.HabitCategory
-import com.getaltair.kairos.domain.enums.HabitPhase
 import com.getaltair.kairos.domain.enums.HabitStatus
 import java.time.LocalDate
 import java.util.UUID

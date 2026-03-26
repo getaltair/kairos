@@ -4,7 +4,6 @@ import com.getaltair.kairos.data.converter.JsonListConverter
 import com.getaltair.kairos.data.entity.RoutineHabitEntity
 import com.getaltair.kairos.domain.entity.RoutineHabit
 import java.time.Instant
-import java.util.UUID
 
 /**
  * Bidirectional mapper between [RoutineHabitEntity] and [RoutineHabit].
@@ -56,10 +55,12 @@ object RoutineHabitEntityMapper {
     /**
      * Converts a list of [RoutineHabitEntity] to domain [List<RoutineHabit>].
      */
-    fun toDomainList(entities: List<RoutineHabitEntity>): List<RoutineHabit> = entities.map { toDomain(it) }
+    fun toDomainList(entities: List<RoutineHabitEntity>): List<RoutineHabit> =
+        entities.map { toDomain(it) }
 
     /**
      * Converts a list of domain [RoutineHabit] to [List<RoutineHabitEntity>].
      */
-    fun toEntityList(domains: List<RoutineHabit>): List<RoutineHabitEntity> = domains.map { toEntity(it) }
+    fun toEntityList(domains: List<RoutineHabit>): List<RoutineHabitEntity> =
+        domains.map { toEntity(it) }
 }

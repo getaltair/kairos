@@ -18,10 +18,8 @@ import com.getaltair.kairos.domain.enums.Theme
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.UUID
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
@@ -185,8 +183,14 @@ class ConvertersTest {
 
     @Test
     fun anchorTypeConverter_allTypes() {
-        assertEquals(AnchorType.AfterBehavior, anchorTypeConverter.stringToAnchorType("AfterBehavior"))
-        assertEquals(AnchorType.BeforeBehavior, anchorTypeConverter.stringToAnchorType("BeforeBehavior"))
+        assertEquals(
+            AnchorType.AfterBehavior,
+            anchorTypeConverter.stringToAnchorType("AfterBehavior")
+        )
+        assertEquals(
+            AnchorType.BeforeBehavior,
+            anchorTypeConverter.stringToAnchorType("BeforeBehavior")
+        )
         assertEquals(AnchorType.AtLocation, anchorTypeConverter.stringToAnchorType("AtLocation"))
         assertEquals(AnchorType.AtTime, anchorTypeConverter.stringToAnchorType("AtTime"))
     }
@@ -217,10 +221,16 @@ class ConvertersTest {
     @Test
     fun habitCategoryConverter_allTypes() {
         assertEquals(HabitCategory.Morning, habitCategoryConverter.stringToHabitCategory("Morning"))
-        assertEquals(HabitCategory.Afternoon, habitCategoryConverter.stringToHabitCategory("Afternoon"))
+        assertEquals(
+            HabitCategory.Afternoon,
+            habitCategoryConverter.stringToHabitCategory("Afternoon")
+        )
         assertEquals(HabitCategory.Evening, habitCategoryConverter.stringToHabitCategory("Evening"))
         assertEquals(HabitCategory.Anytime, habitCategoryConverter.stringToHabitCategory("Anytime"))
-        assertEquals(HabitCategory.Departure, habitCategoryConverter.stringToHabitCategory("Departure"))
+        assertEquals(
+            HabitCategory.Departure,
+            habitCategoryConverter.stringToHabitCategory("Departure")
+        )
     }
 
     @Test
@@ -249,9 +259,18 @@ class ConvertersTest {
     @Test
     fun habitFrequencyConverter_allTypes() {
         assertEquals(HabitFrequency.Daily, habitFrequencyConverter.stringToHabitFrequency("Daily"))
-        assertEquals(HabitFrequency.Weekdays, habitFrequencyConverter.stringToHabitFrequency("Weekdays"))
-        assertEquals(HabitFrequency.Weekends, habitFrequencyConverter.stringToHabitFrequency("Weekends"))
-        assertEquals(HabitFrequency.Custom, habitFrequencyConverter.stringToHabitFrequency("Custom"))
+        assertEquals(
+            HabitFrequency.Weekdays,
+            habitFrequencyConverter.stringToHabitFrequency("Weekdays")
+        )
+        assertEquals(
+            HabitFrequency.Weekends,
+            habitFrequencyConverter.stringToHabitFrequency("Weekends")
+        )
+        assertEquals(
+            HabitFrequency.Custom,
+            habitFrequencyConverter.stringToHabitFrequency("Custom")
+        )
     }
 
     @Test
@@ -342,9 +361,18 @@ class ConvertersTest {
     @Test
     fun completionTypeConverter_allTypes() {
         assertEquals(CompletionType.Full, completionTypeConverter.stringToCompletionType("Full"))
-        assertEquals(CompletionType.Partial, completionTypeConverter.stringToCompletionType("Partial"))
-        assertEquals(CompletionType.Skipped, completionTypeConverter.stringToCompletionType("Skipped"))
-        assertEquals(CompletionType.Missed, completionTypeConverter.stringToCompletionType("Missed"))
+        assertEquals(
+            CompletionType.Partial,
+            completionTypeConverter.stringToCompletionType("Partial")
+        )
+        assertEquals(
+            CompletionType.Skipped,
+            completionTypeConverter.stringToCompletionType("Skipped")
+        )
+        assertEquals(
+            CompletionType.Missed,
+            completionTypeConverter.stringToCompletionType("Missed")
+        )
     }
 
     @Test
@@ -374,7 +402,10 @@ class ConvertersTest {
     fun skipReasonConverter_allTypes() {
         assertEquals(SkipReason.TooTired, skipReasonConverter.stringToSkipReason("TooTired"))
         assertEquals(SkipReason.NoTime, skipReasonConverter.stringToSkipReason("NoTime"))
-        assertEquals(SkipReason.NotFeelingWell, skipReasonConverter.stringToSkipReason("NotFeelingWell"))
+        assertEquals(
+            SkipReason.NotFeelingWell,
+            skipReasonConverter.stringToSkipReason("NotFeelingWell")
+        )
         assertEquals(SkipReason.Traveling, skipReasonConverter.stringToSkipReason("Traveling"))
         assertEquals(SkipReason.TookDayOff, skipReasonConverter.stringToSkipReason("TookDayOff"))
         assertEquals(SkipReason.Other, skipReasonConverter.stringToSkipReason("Other"))
@@ -407,7 +438,10 @@ class ConvertersTest {
     fun routineStatusConverter_allTypes() {
         assertEquals(RoutineStatus.Active, routineStatusConverter.stringToRoutineStatus("Active"))
         assertEquals(RoutineStatus.Paused, routineStatusConverter.stringToRoutineStatus("Paused"))
-        assertEquals(RoutineStatus.Archived, routineStatusConverter.stringToRoutineStatus("Archived"))
+        assertEquals(
+            RoutineStatus.Archived,
+            routineStatusConverter.stringToRoutineStatus("Archived")
+        )
     }
 
     @Test
@@ -435,11 +469,26 @@ class ConvertersTest {
 
     @Test
     fun executionStatusConverter_allTypes() {
-        assertEquals(ExecutionStatus.NotStarted, executionStatusConverter.stringToExecutionStatus("NotStarted"))
-        assertEquals(ExecutionStatus.InProgress, executionStatusConverter.stringToExecutionStatus("InProgress"))
-        assertEquals(ExecutionStatus.Paused, executionStatusConverter.stringToExecutionStatus("Paused"))
-        assertEquals(ExecutionStatus.Completed, executionStatusConverter.stringToExecutionStatus("Completed"))
-        assertEquals(ExecutionStatus.Abandoned, executionStatusConverter.stringToExecutionStatus("Abandoned"))
+        assertEquals(
+            ExecutionStatus.NotStarted,
+            executionStatusConverter.stringToExecutionStatus("NotStarted")
+        )
+        assertEquals(
+            ExecutionStatus.InProgress,
+            executionStatusConverter.stringToExecutionStatus("InProgress")
+        )
+        assertEquals(
+            ExecutionStatus.Paused,
+            executionStatusConverter.stringToExecutionStatus("Paused")
+        )
+        assertEquals(
+            ExecutionStatus.Completed,
+            executionStatusConverter.stringToExecutionStatus("Completed")
+        )
+        assertEquals(
+            ExecutionStatus.Abandoned,
+            executionStatusConverter.stringToExecutionStatus("Abandoned")
+        )
     }
 
     @Test
@@ -497,8 +546,14 @@ class ConvertersTest {
     @Test
     fun sessionStatusConverter_allTypes() {
         assertEquals(SessionStatus.Pending, sessionStatusConverter.stringToSessionStatus("Pending"))
-        assertEquals(SessionStatus.Completed, sessionStatusConverter.stringToSessionStatus("Completed"))
-        assertEquals(SessionStatus.Abandoned, sessionStatusConverter.stringToSessionStatus("Abandoned"))
+        assertEquals(
+            SessionStatus.Completed,
+            sessionStatusConverter.stringToSessionStatus("Completed")
+        )
+        assertEquals(
+            SessionStatus.Abandoned,
+            sessionStatusConverter.stringToSessionStatus("Abandoned")
+        )
     }
 
     @Test
@@ -526,11 +581,23 @@ class ConvertersTest {
 
     @Test
     fun recoveryActionConverter_allTypes() {
-        assertEquals(RecoveryAction.Resume, recoveryActionConverter.stringToRecoveryAction("Resume"))
-        assertEquals(RecoveryAction.Simplify, recoveryActionConverter.stringToRecoveryAction("Simplify"))
+        assertEquals(
+            RecoveryAction.Resume,
+            recoveryActionConverter.stringToRecoveryAction("Resume")
+        )
+        assertEquals(
+            RecoveryAction.Simplify,
+            recoveryActionConverter.stringToRecoveryAction("Simplify")
+        )
         assertEquals(RecoveryAction.Pause, recoveryActionConverter.stringToRecoveryAction("Pause"))
-        assertEquals(RecoveryAction.Archive, recoveryActionConverter.stringToRecoveryAction("Archive"))
-        assertEquals(RecoveryAction.FreshStart, recoveryActionConverter.stringToRecoveryAction("FreshStart"))
+        assertEquals(
+            RecoveryAction.Archive,
+            recoveryActionConverter.stringToRecoveryAction("Archive")
+        )
+        assertEquals(
+            RecoveryAction.FreshStart,
+            recoveryActionConverter.stringToRecoveryAction("FreshStart")
+        )
     }
 
     @Test
@@ -589,14 +656,26 @@ class ConvertersTest {
     @Test
     fun blockerConverter_allTypes() {
         assertEquals(Blocker.NoEnergy, blockerConverter.stringToBlockerList("[\"NoEnergy\"]"))
-        assertEquals(Blocker.PainPhysical, blockerConverter.stringToBlockerList("[\"PainPhysical\"]"))
+        assertEquals(
+            Blocker.PainPhysical,
+            blockerConverter.stringToBlockerList("[\"PainPhysical\"]")
+        )
         assertEquals(Blocker.PainMental, blockerConverter.stringToBlockerList("[\"PainMental\"]"))
         assertEquals(Blocker.TooBusy, blockerConverter.stringToBlockerList("[\"TooBusy\"]"))
-        assertEquals(Blocker.FamilyEmergency, blockerConverter.stringToBlockerList("[\"FamilyEmergency\"]"))
-        assertEquals(Blocker.WorkEmergency, blockerConverter.stringToBlockerList("[\"WorkEmergency\"]"))
+        assertEquals(
+            Blocker.FamilyEmergency,
+            blockerConverter.stringToBlockerList("[\"FamilyEmergency\"]")
+        )
+        assertEquals(
+            Blocker.WorkEmergency,
+            blockerConverter.stringToBlockerList("[\"WorkEmergency\"]")
+        )
         assertEquals(Blocker.Sick, blockerConverter.stringToBlockerList("[\"Sick\"]"))
         assertEquals(Blocker.Weather, blockerConverter.stringToBlockerList("[\"Weather\"]"))
-        assertEquals(Blocker.EquipmentFailure, blockerConverter.stringToBlockerList("[\"EquipmentFailure\"]"))
+        assertEquals(
+            Blocker.EquipmentFailure,
+            blockerConverter.stringToBlockerList("[\"EquipmentFailure\"]")
+        )
         assertEquals(Blocker.Other, blockerConverter.stringToBlockerList("[\"Other\"]"))
     }
 

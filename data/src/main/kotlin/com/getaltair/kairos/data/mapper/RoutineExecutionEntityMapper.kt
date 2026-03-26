@@ -2,9 +2,7 @@ package com.getaltair.kairos.data.mapper
 
 import com.getaltair.kairos.data.entity.RoutineExecutionEntity
 import com.getaltair.kairos.domain.entity.RoutineExecution
-import com.getaltair.kairos.domain.enums.ExecutionStatus
 import java.time.Instant
-import java.util.UUID
 
 /**
  * Bidirectional mapper between [RoutineExecutionEntity] and [RoutineExecution].
@@ -48,10 +46,12 @@ object RoutineExecutionEntityMapper {
     /**
      * Converts a list of [RoutineExecutionEntity] to domain [List<RoutineExecution>].
      */
-    fun toDomainList(entities: List<RoutineExecutionEntity>): List<RoutineExecution> = entities.map { toDomain(it) }
+    fun toDomainList(entities: List<RoutineExecutionEntity>): List<RoutineExecution> =
+        entities.map { toDomain(it) }
 
     /**
      * Converts a list of domain [RoutineExecution] to [List<RoutineExecutionEntity>].
      */
-    fun toEntityList(domains: List<RoutineExecution>): List<RoutineExecutionEntity> = domains.map { toEntity(it) }
+    fun toEntityList(domains: List<RoutineExecution>): List<RoutineExecutionEntity> =
+        domains.map { toEntity(it) }
 }

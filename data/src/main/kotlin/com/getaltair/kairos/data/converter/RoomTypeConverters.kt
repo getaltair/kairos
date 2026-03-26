@@ -87,7 +87,8 @@ object RoomTypeConverters {
     // ==================== DayOfWeek Set Converter ====================
 
     @TypeConverter
-    fun dayOfWeekSetToString(days: Set<java.time.DayOfWeek>?): String? = days?.map { it.name }?.joinToString(",")
+    fun dayOfWeekSetToString(days: Set<java.time.DayOfWeek>?): String? =
+        days?.map { it.name }?.joinToString(",")
 
     @TypeConverter
     fun stringToDayOfWeekSet(daysString: String?): Set<java.time.DayOfWeek>? {
@@ -122,7 +123,8 @@ object RoomTypeConverters {
     // ==================== String List Converter ====================
 
     @TypeConverter
-    fun stringListToString(list: List<String>?): String? = list?.let { stringListAdapter.toJson(it) }
+    fun stringListToString(list: List<String>?): String? =
+        list?.let { stringListAdapter.toJson(it) }
 
     @TypeConverter
     fun stringToStringList(json: String?): List<String>? {
@@ -152,7 +154,8 @@ object RoomTypeConverters {
     // ==================== Blocker List Converter ====================
 
     @TypeConverter
-    fun blockerListToString(blockers: List<Blocker>?): String? = blockers?.let { blockerListAdapter.toJson(it) }
+    fun blockerListToString(blockers: List<Blocker>?): String? =
+        blockers?.let { blockerListAdapter.toJson(it) }
 
     @TypeConverter
     fun stringToBlockerList(json: String?): List<Blocker>? {
@@ -201,7 +204,8 @@ object RoomTypeConverters {
 
     // HabitFrequency
     @TypeConverter
-    fun habitFrequencyToString(frequency: HabitFrequency?): String? = frequency?.javaClass?.simpleName
+    fun habitFrequencyToString(frequency: HabitFrequency?): String? =
+        frequency?.javaClass?.simpleName
 
     @TypeConverter
     fun stringToHabitFrequency(name: String?): HabitFrequency? {

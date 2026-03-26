@@ -2,10 +2,8 @@ package com.getaltair.kairos.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import com.getaltair.kairos.data.entity.CompletionEntity
 import com.getaltair.kairos.data.entity.HabitEntity
 import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.enums.HabitPhase
@@ -140,7 +138,10 @@ interface HabitDao {
         ORDER BY created_at DESC
     """
     )
-    fun getHabitsByStatusAndCategory(status: HabitStatus, category: HabitCategory): List<HabitEntity>
+    fun getHabitsByStatusAndCategory(
+        status: HabitStatus,
+        category: HabitCategory
+    ): List<HabitEntity>
 
     /**
      * Get lapsed habits based on missed days threshold.

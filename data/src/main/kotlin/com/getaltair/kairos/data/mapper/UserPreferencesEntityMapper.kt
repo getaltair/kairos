@@ -4,7 +4,6 @@ import com.getaltair.kairos.data.converter.JsonMapConverter
 import com.getaltair.kairos.data.entity.UserPreferencesEntity
 import com.getaltair.kairos.domain.entity.UserPreferences
 import java.time.Instant
-import java.util.UUID
 
 /**
  * Bidirectional mapper between [UserPreferencesEntity] and [UserPreferences].

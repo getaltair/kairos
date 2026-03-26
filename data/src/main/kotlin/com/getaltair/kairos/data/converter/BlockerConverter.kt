@@ -25,7 +25,8 @@ class BlockerConverter {
      * Converts [List<Blocker>] to JSON [String].
      */
     @TypeConverter
-    fun blockerListToString(blockers: List<Blocker>?): String? = blockers?.let { blockerListAdapter.toJson(it) }
+    fun blockerListToString(blockers: List<Blocker>?): String? =
+        blockers?.let { blockerListAdapter.toJson(it) }
 
     /**
      * Converts JSON [String] to [List<Blocker>].

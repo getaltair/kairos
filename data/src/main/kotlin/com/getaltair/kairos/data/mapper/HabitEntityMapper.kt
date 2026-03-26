@@ -9,13 +9,7 @@ import com.getaltair.kairos.data.converter.HabitStatusConverter
 import com.getaltair.kairos.data.converter.JsonListConverter
 import com.getaltair.kairos.data.entity.HabitEntity
 import com.getaltair.kairos.domain.entity.Habit
-import com.getaltair.kairos.domain.enums.AnchorType
-import com.getaltair.kairos.domain.enums.HabitCategory
-import com.getaltair.kairos.domain.enums.HabitFrequency
-import com.getaltair.kairos.domain.enums.HabitPhase
-import com.getaltair.kairos.domain.enums.HabitStatus
 import java.time.Instant
-import java.util.UUID
 
 /**
  * Bidirectional mapper between [HabitEntity] and [Habit].

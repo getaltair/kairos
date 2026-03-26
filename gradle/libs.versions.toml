@@ -17,6 +17,7 @@ timber = "5.0.1"
 firebaseBom = "34.11.0"
 coroutines = "1.10.2"
 moshi = "1.15.0"
+ktlintGradlePlugin = "12.1.1"
 
 # Convention plugin dependencies
 androidTools = "32.1.0"
@@ -97,3 +98,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 google-services = { id = "com.google.gms.google-services", version = "4.5.0" }
 room = { id = "androidx.room", version.ref = "room" }
 ksp = { id = "com.google.devtools.ksp", version = "2.3.6" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradlePlugin" }
