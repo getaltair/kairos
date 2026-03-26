@@ -17,6 +17,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 /**
@@ -38,7 +40,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
     private val jsonListConverter = JsonListConverter()
 
     override suspend fun getById(id: UUID): Result<Habit> = try {
-        val entity = habitDao.getById(id)
+        val entity = withContext(Dispatchers.IO) { habitDao.getById(id) }
         if (entity != null) {
             Result.Success(HabitEntityMapper.toDomain(entity))
         } else {
@@ -51,7 +53,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
     }
 
     override suspend fun getActiveHabits(): Result<List<Habit>> = try {
-        val entities = habitDao.getActiveHabits()
+        val entities = withContext(Dispatchers.IO) { habitDao.getActiveHabits() }
         Result.Success(HabitEntityMapper.toDomainList(entities))
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -60,7 +62,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
     }
 
     override suspend fun getHabitsForDate(date: LocalDate): Result<List<Habit>> = try {
-        val entities = habitDao.getActiveHabits()
+        val entities = withContext(Dispatchers.IO) { habitDao.getActiveHabits() }
         val habits = HabitEntityMapper.toDomainList(entities)
         val dayOfWeek = date.dayOfWeek
         val filtered = habits.filter { habit -> HabitScheduleUtil.isDueOnDate(habit, dayOfWeek) }
@@ -74,7 +76,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
     override suspend fun getByStatus(status: HabitStatus): Result<List<Habit>> = try {
         val statusString = statusConverter.habitStatusToString(status)
             ?: throw IllegalStateException("Failed to convert: status")
-        val entities = habitDao.getByStatus(statusString)
+        val entities = withContext(Dispatchers.IO) { habitDao.getByStatus(statusString) }
         Result.Success(HabitEntityMapper.toDomainList(entities))
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -83,7 +85,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
     }
 
     override suspend fun getByCategory(category: HabitCategory): Result<List<Habit>> = try {
-        val entities = habitDao.getByCategory(category)
+        val entities = withContext(Dispatchers.IO) { habitDao.getByCategory(category) }
         Result.Success(HabitEntityMapper.toDomainList(entities))
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -93,7 +95,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
 
     // TODO: Use per-habit lapse_threshold_days instead of hardcoded default
     override suspend fun getLapsedHabits(): Result<List<Habit>> = try {
-        val entities = habitDao.getLapsedHabits(DEFAULT_LAPSE_THRESHOLD_DAYS)
+        val entities = withContext(Dispatchers.IO) { habitDao.getLapsedHabits(DEFAULT_LAPSE_THRESHOLD_DAYS) }
         Result.Success(HabitEntityMapper.toDomainList(entities))
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -103,7 +105,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
 
     override suspend fun insert(habit: Habit): Result<Habit> = try {
         val entity = HabitEntityMapper.toEntity(habit)
-        habitDao.insert(entity)
+        withContext(Dispatchers.IO) { habitDao.insert(entity) }
         Result.Success(habit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -121,31 +123,33 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
         val activeDays = dayOfWeekListConverter.dayOfWeekSetToString(habit.activeDays)
         val subtasks = jsonListConverter.stringListToString(habit.subtasks)
 
-        habitDao.update(
-            id = habit.id,
-            name = habit.name,
-            description = habit.description,
-            icon = habit.icon,
-            color = habit.color,
-            anchorBehavior = habit.anchorBehavior,
-            anchorType = anchorType,
-            timeWindowStart = habit.timeWindowStart,
-            timeWindowEnd = habit.timeWindowEnd,
-            category = habit.category,
-            frequency = frequency,
-            activeDays = activeDays,
-            estimatedSeconds = habit.estimatedSeconds,
-            microVersion = habit.microVersion,
-            allowPartialCompletion = habit.allowPartialCompletion,
-            subtasks = subtasks,
-            phase = phase,
-            status = habit.status,
-            pausedAt = habit.pausedAt?.toEpochMilli(),
-            archivedAt = habit.archivedAt?.toEpochMilli(),
-            lapseThresholdDays = habit.lapseThresholdDays,
-            relapseThresholdDays = habit.relapseThresholdDays,
-            updatedAt = Instant.now().toEpochMilli()
-        )
+        withContext(Dispatchers.IO) {
+            habitDao.update(
+                id = habit.id,
+                name = habit.name,
+                description = habit.description,
+                icon = habit.icon,
+                color = habit.color,
+                anchorBehavior = habit.anchorBehavior,
+                anchorType = anchorType,
+                timeWindowStart = habit.timeWindowStart,
+                timeWindowEnd = habit.timeWindowEnd,
+                category = habit.category,
+                frequency = frequency,
+                activeDays = activeDays,
+                estimatedSeconds = habit.estimatedSeconds,
+                microVersion = habit.microVersion,
+                allowPartialCompletion = habit.allowPartialCompletion,
+                subtasks = subtasks,
+                phase = phase,
+                status = habit.status,
+                pausedAt = habit.pausedAt?.toEpochMilli(),
+                archivedAt = habit.archivedAt?.toEpochMilli(),
+                lapseThresholdDays = habit.lapseThresholdDays,
+                relapseThresholdDays = habit.relapseThresholdDays,
+                updatedAt = Instant.now().toEpochMilli()
+            )
+        }
         Result.Success(habit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -154,7 +158,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
     }
 
     override suspend fun delete(id: UUID): Result<Unit> = try {
-        habitDao.delete(id)
+        withContext(Dispatchers.IO) { habitDao.delete(id) }
         Result.Success(Unit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e

@@ -1,9 +1,9 @@
 package com.getaltair.kairos.feature.today.di
 
+import com.getaltair.kairos.feature.today.TodayViewModel
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val todayModule = module {
-    // ViewModels and use cases for the Today screen will go here in Step 5.
-    // Example:
-    // viewModelOf(::TodayViewModel)
+    viewModelOf(::TodayViewModel)
 }
