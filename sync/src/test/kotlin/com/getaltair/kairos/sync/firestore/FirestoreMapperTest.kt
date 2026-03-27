@@ -717,7 +717,7 @@ class FirestoreMapperTest {
             status = SessionStatus.Completed,
             triggeredAt = now,
             completedAt = later,
-            blockers = listOf(Blocker.NoEnergy, Blocker.TooBusy),
+            blockers = setOf(Blocker.NoEnergy, Blocker.TooBusy),
             action = RecoveryAction.Resume,
             notes = "Getting back on track",
             createdAt = now,
@@ -749,7 +749,7 @@ class FirestoreMapperTest {
             status = SessionStatus.Pending,
             triggeredAt = now,
             completedAt = null,
-            blockers = listOf(Blocker.Sick),
+            blockers = setOf(Blocker.Sick),
             action = null,
             notes = null,
         )
@@ -889,7 +889,7 @@ class FirestoreMapperTest {
             type = RecoveryType.Lapse,
             status = SessionStatus.Pending,
             triggeredAt = now,
-            blockers = listOf(Blocker.NoEnergy),
+            blockers = setOf(Blocker.NoEnergy),
         ).toFirestoreMap()
 
         val prefsMap = UserPreferences(

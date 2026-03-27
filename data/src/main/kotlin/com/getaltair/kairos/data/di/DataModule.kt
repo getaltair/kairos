@@ -8,10 +8,12 @@ import com.getaltair.kairos.data.repository.AuthRepositoryImpl
 import com.getaltair.kairos.data.repository.CompletionRepositoryImpl
 import com.getaltair.kairos.data.repository.HabitRepositoryImpl
 import com.getaltair.kairos.data.repository.PreferencesRepositoryImpl
+import com.getaltair.kairos.data.repository.RecoveryRepositoryImpl
 import com.getaltair.kairos.domain.repository.AuthRepository
 import com.getaltair.kairos.domain.repository.CompletionRepository
 import com.getaltair.kairos.domain.repository.HabitRepository
 import com.getaltair.kairos.domain.repository.PreferencesRepository
+import com.getaltair.kairos.domain.repository.RecoveryRepository
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.CoroutineScope
@@ -68,6 +70,14 @@ val dataModule = module {
     single<PreferencesRepository> {
         PreferencesRepositoryImpl(
             userPreferencesDao = get(),
+            syncTrigger = get(),
+            authRepository = get(),
+            syncScope = get(named("syncScope")),
+        )
+    }
+    single<RecoveryRepository> {
+        RecoveryRepositoryImpl(
+            dao = get(),
             syncTrigger = get(),
             authRepository = get(),
             syncScope = get(named("syncScope")),

@@ -110,10 +110,12 @@ interface RecoverySessionDao {
 
     /**
      * Update a recovery session.
+     * Includes type for REC-4 one-way escalation (Lapse -> Relapse).
      */
     @Query(
         """
         UPDATE recovery_sessions SET
+            type = :type,
             status = :status,
             completed_at = :completedAt,
             action = :action,
@@ -122,7 +124,15 @@ interface RecoverySessionDao {
         WHERE id = :id
     """
     )
-    fun update(id: UUID, status: SessionStatus, completedAt: Long?, action: String?, notes: String?, updatedAt: Long)
+    fun update(
+        id: UUID,
+        type: String,
+        status: SessionStatus,
+        completedAt: Long?,
+        action: String?,
+        notes: String?,
+        updatedAt: Long
+    )
 
     /**
      * Delete a recovery session.

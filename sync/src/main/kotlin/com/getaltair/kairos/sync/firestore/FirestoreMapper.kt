@@ -588,7 +588,7 @@ object FirestoreMapper {
             status = sessionStatusFromTag(map.requireField("RecoverySession", "status")),
             triggeredAt = map.requireField<Timestamp>("RecoverySession", "triggeredAt").toInstant(),
             completedAt = (map["completedAt"] as? Timestamp)?.toInstant(),
-            blockers = blockerTags.map { blockerFromTag(it) },
+            blockers = blockerTags.map { blockerFromTag(it) }.toSet(),
             action = (map["action"] as? String)
                 ?.let { recoveryActionFromTag(it) },
             notes = map["notes"] as? String,

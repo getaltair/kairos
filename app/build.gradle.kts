@@ -50,6 +50,7 @@ dependencies {
     implementation(project(":feature:habit"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:auth"))
+    implementation(project(":feature:recovery"))
     implementation(project(":sync"))
     implementation(project(":notification"))
 
@@ -78,6 +79,9 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Logging
     implementation(libs.timber)

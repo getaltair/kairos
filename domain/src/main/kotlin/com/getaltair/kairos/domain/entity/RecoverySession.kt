@@ -30,7 +30,7 @@ data class RecoverySession(
     val status: SessionStatus = SessionStatus.Pending,
     val triggeredAt: Instant = Instant.now(),
     val completedAt: Instant? = null,
-    val blockers: List<Blocker>,
+    val blockers: Set<Blocker>,
     val action: RecoveryAction? = null,
     val notes: String? = null,
     val createdAt: Instant = Instant.now(),
@@ -47,30 +47,42 @@ data class RecoverySession(
         ) {
             "Invalid status/action combination"
         }
+        require(status != SessionStatus.Completed || completedAt != null) {
+            "Completed sessions must have completedAt"
+        }
     }
 
     /**
      * Creates a copy of this session with the specified changes.
+     *
+     * Type is mutable to support REC-4 one-way escalation (Lapse -> Relapse).
+     * De-escalation from Relapse to Lapse is enforced as invalid.
      */
     fun copy(
+        type: RecoveryType = this.type,
         status: SessionStatus = this.status,
         completedAt: Instant? = this.completedAt,
         action: RecoveryAction? = this.action,
         notes: String? = this.notes,
         updatedAt: Instant = Instant.now()
-    ): RecoverySession = RecoverySession(
-        id = this.id,
-        habitId = this.habitId,
-        type = this.type,
-        status = status,
-        triggeredAt = this.triggeredAt,
-        completedAt = completedAt,
-        blockers = this.blockers,
-        action = action,
-        notes = notes,
-        createdAt = this.createdAt,
-        updatedAt = updatedAt
-    )
+    ): RecoverySession {
+        require(type !is RecoveryType.Lapse || this.type !is RecoveryType.Relapse) {
+            "Cannot de-escalate from Relapse to Lapse (REC-4)"
+        }
+        return RecoverySession(
+            id = this.id,
+            habitId = this.habitId,
+            type = type,
+            status = status,
+            triggeredAt = this.triggeredAt,
+            completedAt = completedAt,
+            blockers = this.blockers,
+            action = action,
+            notes = notes,
+            createdAt = this.createdAt,
+            updatedAt = updatedAt
+        )
+    }
 
     /**
      * Checks if the session is still pending user action.

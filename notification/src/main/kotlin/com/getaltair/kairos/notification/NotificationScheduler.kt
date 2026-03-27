@@ -1,5 +1,6 @@
 package com.getaltair.kairos.notification
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
@@ -18,7 +19,11 @@ import timber.log.Timber
  * Requires [android.Manifest.permission.SCHEDULE_EXACT_ALARM] permission.
  * All scheduling methods check [AlarmManager.canScheduleExactAlarms] before
  * setting alarms and return [ScheduleResult] to indicate success or denial.
+ *
+ * The app-level minSdk is 31, so all API-31 calls are safe at runtime even
+ * though the library convention plugin sets minSdk = 28.
  */
+@SuppressLint("NewApi")
 class NotificationScheduler(private val context: Context, private val dao: HabitNotificationDao) {
 
     private val alarmManager: AlarmManager =
