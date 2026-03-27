@@ -49,3 +49,4 @@ opencode.json*
 # Lint tools (downloaded, not committed)
 .tools/
 .serena/
+dashboard/config/
