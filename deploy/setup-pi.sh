@@ -3,21 +3,27 @@ set -euo pipefail
 
 # Kairos Dashboard - Raspberry Pi 5 Setup Script
 # Run as root or with sudo
+# Set KAIROS_USER env var if your Pi uses a different username
+
+KAIROS_USER="${KAIROS_USER:-pi}"
 
 echo "=== Kairos Dashboard Pi Setup ==="
+echo "Using system user: ${KAIROS_USER}"
 
 # Install OpenJDK 21 + JavaFX runtime
 apt-get update
 apt-get install -y openjdk-21-jdk libopenjfx-java
 
 # Disable screen blanking and power management
+# NOTE: xset only works from the user's X session (not from sudo/root shell).
+# The xorg.conf approach below is the reliable fallback for persistent config.
 if command -v xset &>/dev/null; then
     xset s off
     xset -dpms
     xset s noblank
 fi
 
-# Prevent screen saver via xorg config
+# Prevent screen saver via xorg config (reliable method that persists across reboots)
 mkdir -p /etc/X11/xorg.conf.d
 cat > /etc/X11/xorg.conf.d/10-blanking.conf << 'EOF'
 Section "ServerFlags"
@@ -33,10 +39,10 @@ mkdir -p /opt/kairos/config
 
 # Deploy JAR (assumes it's in the current directory)
 if [ -f "kairos-dashboard.jar" ]; then
-    cp kairos-dashboard.jar /opt/kairos/
-    echo "JAR deployed to /opt/kairos/"
+    cp kairos-dashboard.jar /opt/kairos/dashboard.jar
+    echo "JAR deployed to /opt/kairos/dashboard.jar"
 else
-    echo "WARNING: kairos-dashboard.jar not found -- copy it manually to /opt/kairos/"
+    echo "WARNING: kairos-dashboard.jar not found -- copy it manually to /opt/kairos/dashboard.jar"
 fi
 
 # Deploy config
@@ -56,10 +62,23 @@ EOF
 fi
 
 # Set permissions
-chown -R pi:pi /opt/kairos
-chmod 600 /opt/kairos/config/service-account.json 2>/dev/null || true
+chown -R "${KAIROS_USER}:${KAIROS_USER}" /opt/kairos
+
+if [ -f "/opt/kairos/config/service-account.json" ]; then
+    chmod 600 /opt/kairos/config/service-account.json
+    echo "Service account permissions secured"
+else
+    echo "NOTE: /opt/kairos/config/service-account.json not found yet."
+    echo "      After deploying it, run: chmod 600 /opt/kairos/config/service-account.json"
+fi
 
 # Install and enable systemd service
+if [ ! -f "kairos-dashboard.service" ]; then
+    echo "ERROR: kairos-dashboard.service not found in the current directory."
+    echo "       Run this script from the deploy/ directory or copy the service file here."
+    exit 1
+fi
+
 cp kairos-dashboard.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable kairos-dashboard.service

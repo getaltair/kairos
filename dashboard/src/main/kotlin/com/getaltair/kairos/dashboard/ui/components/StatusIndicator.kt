@@ -34,9 +34,9 @@ fun StatusIndicator(lastUpdated: Instant?, isStale: Boolean, modifier: Modifier 
         }
     }
 
-    // Suppress the unused-variable warning; tick is read to trigger recomposition
-    @Suppress("UNUSED_EXPRESSION")
-    tick
+    // Read tick to trigger recomposition on each interval
+    @Suppress("UNUSED_VARIABLE")
+    val unused = tick
 
     if (isStale) {
         Row(

@@ -10,7 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 // ---------------------------------------------------------------------------
-// DESIGN.md color palette
+// Dashboard kiosk color palette (dark theme only, not the mobile DESIGN.md)
 // ---------------------------------------------------------------------------
 
 /** Base background -- Deep Muted Teal-Navy */
@@ -70,7 +70,7 @@ val DashboardColorScheme = darkColorScheme(
 )
 
 // ---------------------------------------------------------------------------
-// Typography -- scaled for kiosk readability at 3-4 feet
+// Typography -- sized for a 1080p display viewed at 3-4 feet on the Raspberry Pi kiosk
 // ---------------------------------------------------------------------------
 
 val DashboardTypography = Typography(

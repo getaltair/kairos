@@ -3,6 +3,7 @@ package com.getaltair.kairos.dashboard.state
 import com.getaltair.kairos.dashboard.data.FirebaseAdminClient
 import java.time.Instant
 import java.time.LocalDate
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,10 +30,16 @@ import org.slf4j.LoggerFactory
 class DashboardStateHolder(private val client: FirebaseAdminClient, private val userId: String,) {
     private val log = LoggerFactory.getLogger(DashboardStateHolder::class.java)
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        log.error("Uncaught coroutine exception", throwable)
+        _state.update { it.copy(connectionStatus = ConnectionStatus.Offline) }
+    }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + exceptionHandler)
     private val _state = MutableStateFlow(DashboardState())
     val state: StateFlow<DashboardState> = _state.asStateFlow()
 
+    private var started = false
     private var currentDate: LocalDate = LocalDate.now()
     private var completionsJob: Job? = null
 
@@ -41,6 +48,8 @@ class DashboardStateHolder(private val client: FirebaseAdminClient, private val 
      * Call once after [FirebaseAdminClient.initialize].
      */
     fun start() {
+        check(!started) { "DashboardStateHolder.start() must be called exactly once" }
+        started = true
         log.info("Starting dashboard state collection for user {}", userId)
         collectHabits()
         collectCompletions(currentDate)
@@ -51,30 +60,39 @@ class DashboardStateHolder(private val client: FirebaseAdminClient, private val 
 
     private fun collectHabits() {
         scope.launch {
-            client.habitsFlow(userId).collect { habits ->
-                _state.update {
-                    it.copy(
-                        habits = habits,
-                        connectionStatus = ConnectionStatus.Connected,
-                        lastUpdated = Instant.now(),
-                    )
+            try {
+                client.habitsFlow(userId).collect { habits ->
+                    _state.update {
+                        it.copy(
+                            habits = habits,
+                            connectionStatus = ConnectionStatus.Connected,
+                            lastUpdated = Instant.now(),
+                        )
+                    }
                 }
+            } catch (e: Exception) {
+                log.error("Habits collection failed", e)
+                _state.update { it.copy(connectionStatus = ConnectionStatus.Offline) }
             }
         }
     }
 
     private fun collectCompletions(date: LocalDate) {
-        // Cancel any prior completions collector before starting a new one
         completionsJob?.cancel()
         completionsJob = scope.launch {
-            client.completionsFlow(userId, date).collect { completions ->
-                _state.update {
-                    it.copy(
-                        completions = completions,
-                        connectionStatus = ConnectionStatus.Connected,
-                        lastUpdated = Instant.now(),
-                    )
+            try {
+                client.completionsFlow(userId, date).collect { completions ->
+                    _state.update {
+                        it.copy(
+                            completions = completions,
+                            connectionStatus = ConnectionStatus.Connected,
+                            lastUpdated = Instant.now(),
+                        )
+                    }
                 }
+            } catch (e: Exception) {
+                log.error("Completions collection failed", e)
+                _state.update { it.copy(connectionStatus = ConnectionStatus.Offline) }
             }
         }
     }

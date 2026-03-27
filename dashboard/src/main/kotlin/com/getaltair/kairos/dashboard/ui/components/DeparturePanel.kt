@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.getaltair.kairos.domain.entity.Habit
+import java.util.UUID
 
 /**
  * "Don't Forget" panel showing departure-category habits as a checklist.
@@ -32,7 +33,7 @@ import com.getaltair.kairos.domain.entity.Habit
  * pending habits show an empty checkbox at full brightness.
  */
 @Composable
-fun DeparturePanel(departureHabits: List<Habit>, completedHabitIds: Set<String>, modifier: Modifier = Modifier,) {
+fun DeparturePanel(departureHabits: List<Habit>, completedHabitIds: Set<UUID>, modifier: Modifier = Modifier,) {
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surface,
@@ -58,7 +59,7 @@ fun DeparturePanel(departureHabits: List<Habit>, completedHabitIds: Set<String>,
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 departureHabits.forEach { habit ->
-                    val isCompleted = habit.id.toString() in completedHabitIds
+                    val isCompleted = habit.id in completedHabitIds
                     DepartureItem(
                         name = habit.name,
                         isCompleted = isCompleted,

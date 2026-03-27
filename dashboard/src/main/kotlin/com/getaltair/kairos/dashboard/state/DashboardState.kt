@@ -5,6 +5,7 @@ import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.HabitCategory
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
 /**
  * Connection status for the Firestore listener.
@@ -18,7 +19,7 @@ enum class ConnectionStatus {
 /**
  * Immutable snapshot of dashboard state.
  *
- * Derived properties are computed lazily from the raw [habits] and [completions] lists
+ * Derived properties are computed on access from the raw [habits] and [completions] lists
  * so the data layer only needs to push two flat collections.
  */
 data class DashboardState(
@@ -38,28 +39,33 @@ data class DashboardState(
             .groupBy { it.category }
 
     /** Set of habit IDs that have a completion record for today. */
-    val completedHabitIds: Set<String>
-        get() = completions.map { it.habitId.toString() }.toSet()
+    val completedHabitIds: Set<UUID>
+        get() = completions.map { it.habitId }.toSet()
 
-    /** Next three pending (not yet completed) non-departure habits. */
+    /** Next [COMING_UP_LIMIT] pending (not yet completed) non-departure habits. */
     val comingUpHabits: List<Habit>
         get() = habits
             .filterNot { it.isDeparture }
-            .filter { it.id.toString() !in completedHabitIds }
-            .take(3)
+            .filter { it.id !in completedHabitIds }
+            .take(COMING_UP_LIMIT)
 
     /** Total number of trackable habits (all categories). */
     val totalHabits: Int
         get() = habits.size
 
-    /** Number of habits completed today. */
+    /** Number of distinct habits completed today. */
     val completedCount: Int
-        get() = completions.size
+        get() = completedHabitIds.size
 
-    /** True when the last snapshot is older than 2 minutes. */
+    /** True when the last snapshot is older than [STALE_THRESHOLD_MINUTES] or never received. */
     val isStale: Boolean
         get() {
-            val last = lastUpdated ?: return false
-            return Duration.between(last, Instant.now()).toMinutes() >= 2
+            val last = lastUpdated ?: return true
+            return Duration.between(last, Instant.now()).toMinutes() >= STALE_THRESHOLD_MINUTES
         }
+
+    private companion object {
+        const val STALE_THRESHOLD_MINUTES = 2L
+        const val COMING_UP_LIMIT = 3
+    }
 }

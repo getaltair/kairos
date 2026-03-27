@@ -43,6 +43,9 @@ secrets.properties
 *-debug.log
 firebase-export-metadata.json
 
+# Dashboard config (contains Firebase credentials)
+dashboard/src/main/resources/dashboard.properties
+
 # Project-specific
 opencode.json*
 

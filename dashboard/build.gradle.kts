@@ -19,7 +19,7 @@ dependencies {
     // Firebase Admin SDK (JVM)
     implementation(libs.firebase.admin)
 
-    // Ktor embedded server (for Home Assistant mode switching)
+    // Ktor embedded server (for Home Assistant status API)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.content.negotiation)
@@ -31,6 +31,10 @@ dependencies {
 
     // Logging
     implementation(libs.slf4j.simple)
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 compose.desktop {

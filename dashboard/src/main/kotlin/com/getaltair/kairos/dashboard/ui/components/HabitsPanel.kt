@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.HabitCategory
+import java.util.UUID
 
 /**
  * Main panel showing today's habits grouped by [HabitCategory].
@@ -35,7 +36,7 @@ import com.getaltair.kairos.domain.enums.HabitCategory
 @Composable
 fun HabitsPanel(
     habitsByCategory: Map<HabitCategory, List<Habit>>,
-    completedHabitIds: Set<String>,
+    completedHabitIds: Set<UUID>,
     completedCount: Int,
     totalHabits: Int,
     modifier: Modifier = Modifier,
@@ -84,7 +85,7 @@ fun HabitsPanel(
                     }
                 }
 
-                // Render any unexpected categories not in the ordered list
+                // Render any future categories not yet in the explicit ordering
                 habitsByCategory.forEach { (category, habits) ->
                     if (category !in categoryOrder && habits.isNotEmpty()) {
                         CategorySection(
@@ -98,7 +99,6 @@ fun HabitsPanel(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Summary line
             val percent = if (totalHabits > 0) (completedCount * 100) / totalHabits else 0
             Text(
                 text = "Completed: $completedCount of $totalHabits ($percent%)",
@@ -110,11 +110,10 @@ fun HabitsPanel(
 }
 
 @Composable
-private fun CategorySection(category: HabitCategory, habits: List<Habit>, completedHabitIds: Set<String>,) {
+private fun CategorySection(category: HabitCategory, habits: List<Habit>, completedHabitIds: Set<UUID>,) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Section header with emoji and category name
         Text(
             text = "${category.emoji}  ${category.displayName}",
             style = MaterialTheme.typography.titleSmall,
@@ -122,7 +121,7 @@ private fun CategorySection(category: HabitCategory, habits: List<Habit>, comple
         )
 
         habits.forEach { habit ->
-            val isCompleted = habit.id.toString() in completedHabitIds
+            val isCompleted = habit.id in completedHabitIds
             HabitRow(
                 name = habit.name,
                 isCompleted = isCompleted,

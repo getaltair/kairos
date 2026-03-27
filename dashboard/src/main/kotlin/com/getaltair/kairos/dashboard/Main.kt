@@ -10,11 +10,12 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import com.getaltair.kairos.dashboard.config.DashboardConfig
 import com.getaltair.kairos.dashboard.data.FirebaseAdminClient
-import com.getaltair.kairos.dashboard.server.ModeServer
+import com.getaltair.kairos.dashboard.server.StatusServer
 import com.getaltair.kairos.dashboard.state.DashboardStateHolder
 import com.getaltair.kairos.dashboard.ui.DashboardScreen
 import com.getaltair.kairos.dashboard.ui.theme.DashboardTheme
 import com.getaltair.kairos.dashboard.util.rememberScreenSaverOffset
+import kotlin.system.exitProcess
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("KairosDashboard")
@@ -22,20 +23,38 @@ private val logger = LoggerFactory.getLogger("KairosDashboard")
 fun main() {
     logger.info("Kairos Dashboard starting...")
 
-    val config = DashboardConfig.load()
+    val config = try {
+        DashboardConfig.load()
+    } catch (e: Exception) {
+        logger.error("Failed to load dashboard configuration: ${e.message}", e)
+        exitProcess(1)
+    }
     logger.info("Config loaded: userId=${config.firebaseUserId}, fullscreen=${config.fullscreen}")
 
     val firebaseClient = FirebaseAdminClient(config)
-    firebaseClient.initialize()
+    try {
+        firebaseClient.initialize()
+    } catch (e: Exception) {
+        logger.error(
+            "Failed to initialize Firebase Admin SDK with service account at '${config.firebaseServiceAccountPath}': ${e.message}",
+            e,
+        )
+        exitProcess(2)
+    }
     logger.info("Firebase Admin SDK initialized")
 
     val stateHolder = DashboardStateHolder(firebaseClient, config.firebaseUserId)
     stateHolder.start()
     logger.info("State holder started")
 
-    val modeServer = ModeServer(config.serverPort, stateHolder)
-    modeServer.start()
-    logger.info("Mode server started on port ${config.serverPort}")
+    val statusServer = StatusServer(config.serverPort, stateHolder)
+    try {
+        statusServer.start()
+    } catch (e: Exception) {
+        logger.error("Failed to start status server on port ${config.serverPort}: ${e.message}", e)
+        exitProcess(3)
+    }
+    logger.info("Status server started on port ${config.serverPort}")
 
     val windowState = if (config.fullscreen) {
         WindowState(placement = WindowPlacement.Fullscreen)
@@ -46,8 +65,10 @@ fun main() {
     application {
         Window(
             onCloseRequest = {
-                stateHolder.close()
-                modeServer.stop()
+                runCatching { stateHolder.close() }
+                    .onFailure { logger.warn("Error closing state holder", it) }
+                runCatching { statusServer.stop() }
+                    .onFailure { logger.warn("Error stopping status server", it) }
                 exitApplication()
             },
             state = windowState,

@@ -20,20 +20,39 @@ data class DashboardConfig(
     val height: Int,
     val serverPort: Int,
 ) {
+    init {
+        require(firebaseServiceAccountPath.isNotBlank()) { "firebaseServiceAccountPath must not be blank" }
+        require(firebaseUserId.isNotBlank()) { "firebaseUserId must not be blank" }
+        require(serverPort in 1..65535) { "serverPort must be in 1..65535, was $serverPort" }
+        require(width > 0) { "width must be positive, was $width" }
+        require(height > 0) { "height must be positive, was $height" }
+    }
+
     companion object {
         fun load(): DashboardConfig {
             val props = Properties()
             val stream = DashboardConfig::class.java.classLoader
                 .getResourceAsStream("dashboard.properties")
                 ?: error("dashboard.properties not found on classpath")
-            props.load(stream)
+            stream.use { props.load(it) }
             return DashboardConfig(
-                firebaseServiceAccountPath = props.getProperty("firebase.service_account_path"),
-                firebaseUserId = props.getProperty("firebase.user_id"),
+                firebaseServiceAccountPath = props.getProperty("firebase.service_account_path")
+                    ?: error("Required property 'firebase.service_account_path' missing from dashboard.properties"),
+                firebaseUserId = props.getProperty("firebase.user_id")
+                    ?: error("Required property 'firebase.user_id' missing from dashboard.properties"),
                 fullscreen = props.getProperty("dashboard.fullscreen", "true").toBoolean(),
-                width = props.getProperty("dashboard.width", "1920").toInt(),
-                height = props.getProperty("dashboard.height", "1080").toInt(),
-                serverPort = props.getProperty("server.port", "8888").toInt(),
+                width = props.getProperty("dashboard.width", "1920").let { raw ->
+                    raw.trim().toIntOrNull()
+                        ?: error("Invalid integer for 'dashboard.width': '$raw'")
+                },
+                height = props.getProperty("dashboard.height", "1080").let { raw ->
+                    raw.trim().toIntOrNull()
+                        ?: error("Invalid integer for 'dashboard.height': '$raw'")
+                },
+                serverPort = props.getProperty("server.port", "8888").let { raw ->
+                    raw.trim().toIntOrNull()
+                        ?: error("Invalid integer for 'server.port': '$raw'")
+                },
             )
         }
     }

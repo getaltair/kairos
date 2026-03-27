@@ -19,15 +19,17 @@ import org.slf4j.LoggerFactory
  * Firestore client backed by the Firebase Admin SDK (JVM).
  *
  * Provides real-time [Flow]s of [Habit] and [Completion] documents for a
- * given user.  Collection paths follow the structure defined in
- * `sync/FirestoreCollections`:  `users/{userId}/habits` and
+ * given user.  Collection paths: `users/{userId}/habits` and
  * `users/{userId}/completions`.
  */
 class FirebaseAdminClient(private val config: DashboardConfig) {
 
     private val log = LoggerFactory.getLogger(FirebaseAdminClient::class.java)
 
-    private lateinit var firestore: Firestore
+    private var firestore: Firestore? = null
+
+    private fun db(): Firestore =
+        firestore ?: error("FirebaseAdminClient has not been initialized. Call initialize() first.")
 
     /**
      * Initialises the Firebase Admin SDK and obtains a [Firestore] instance.
@@ -51,14 +53,14 @@ class FirebaseAdminClient(private val config: DashboardConfig) {
      * `users/{userId}/habits` collection changes.
      */
     fun habitsFlow(userId: String): Flow<List<Habit>> = callbackFlow {
-        val collection = firestore
+        val collection = db()
             .collection("users").document(userId)
             .collection("habits")
         val query = collection.whereEqualTo("status", "ACTIVE")
 
         val registration = query.addSnapshotListener { snapshot, error ->
             if (error != null) {
-                log.warn("Habits snapshot listener error", error)
+                log.error("Habits snapshot listener error", error)
                 return@addSnapshotListener
             }
             snapshot?.let { qs ->
@@ -69,7 +71,10 @@ class FirebaseAdminClient(private val config: DashboardConfig) {
                         log.warn("Failed to parse habit {}: {}", doc.id, e.message)
                     }.getOrNull()
                 }
-                trySend(habits)
+                val sendResult = trySend(habits)
+                if (sendResult.isFailure) {
+                    log.warn("Failed to emit habits update", sendResult.exceptionOrNull())
+                }
             }
         }
         awaitClose { registration.remove() }
@@ -80,14 +85,14 @@ class FirebaseAdminClient(private val config: DashboardConfig) {
      * the `users/{userId}/completions` collection changes.
      */
     fun completionsFlow(userId: String, date: LocalDate): Flow<List<Completion>> = callbackFlow {
-        val collection = firestore
+        val collection = db()
             .collection("users").document(userId)
             .collection("completions")
         val query = collection.whereEqualTo("date", date.toString())
 
         val registration = query.addSnapshotListener { snapshot, error ->
             if (error != null) {
-                log.warn("Completions snapshot listener error", error)
+                log.error("Completions snapshot listener error", error)
                 return@addSnapshotListener
             }
             snapshot?.let { qs ->
@@ -98,7 +103,10 @@ class FirebaseAdminClient(private val config: DashboardConfig) {
                         log.warn("Failed to parse completion {}: {}", doc.id, e.message)
                     }.getOrNull()
                 }
-                trySend(completions)
+                val sendResult = trySend(completions)
+                if (sendResult.isFailure) {
+                    log.warn("Failed to emit completions update", sendResult.exceptionOrNull())
+                }
             }
         }
         awaitClose { registration.remove() }
@@ -107,5 +115,10 @@ class FirebaseAdminClient(private val config: DashboardConfig) {
     /** Cleans up resources when the dashboard shuts down. */
     fun close() {
         log.info("Firebase Admin client closing")
+        try {
+            firestore?.close()
+        } catch (e: Exception) {
+            log.warn("Error closing Firestore client", e)
+        }
     }
 }

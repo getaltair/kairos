@@ -63,21 +63,18 @@ fun HeaderBar(connectionStatus: ConnectionStatus, modifier: Modifier = Modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        // Left: app title
         Text(
             text = "KAIROS",
             style = MaterialTheme.typography.displaySmall,
             color = MaterialTheme.colorScheme.primary,
         )
 
-        // Center: date and day of week
         Text(
             text = now.format(dateFormatter),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        // Right: time + connection dot
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),

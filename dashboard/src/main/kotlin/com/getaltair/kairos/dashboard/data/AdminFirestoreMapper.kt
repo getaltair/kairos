@@ -13,9 +13,12 @@ import com.google.cloud.Timestamp
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.UUID
+import org.slf4j.LoggerFactory
+
+private val log = LoggerFactory.getLogger(AdminFirestoreMapper::class.java)
 
 // ---------------------------------------------------------------------------
-// Sealed-class tag conversions  (mirrors sync/FirestoreMapper.kt exactly)
+// Sealed-class tag conversions  (mirrors the tag values in sync/FirestoreMapper.kt but uses Admin SDK types and permissive defaults)
 //
 // Firestore stores every sealed-class value as an UPPER_SNAKE_CASE string.
 // ---------------------------------------------------------------------------
@@ -24,73 +27,125 @@ import java.util.UUID
 
 private fun anchorTypeFromTag(tag: String): AnchorType = when (tag) {
     "AFTER_BEHAVIOR" -> AnchorType.AfterBehavior
+
     "BEFORE_BEHAVIOR" -> AnchorType.BeforeBehavior
+
     "AT_LOCATION" -> AnchorType.AtLocation
+
     "AT_TIME" -> AnchorType.AtTime
-    else -> AnchorType.AfterBehavior // graceful default for dashboard display
+
+    else -> {
+        log.warn("Unrecognized AnchorType tag '{}', defaulting to AfterBehavior", tag)
+        AnchorType.AfterBehavior
+    }
 }
 
 // --- HabitCategory ---
 
 private fun habitCategoryFromTag(tag: String): HabitCategory = when (tag) {
     "MORNING" -> HabitCategory.Morning
+
     "AFTERNOON" -> HabitCategory.Afternoon
+
     "EVENING" -> HabitCategory.Evening
+
     "ANYTIME" -> HabitCategory.Anytime
+
     "DEPARTURE" -> HabitCategory.Departure
-    else -> HabitCategory.Anytime
+
+    else -> {
+        log.warn("Unrecognized HabitCategory tag '{}', defaulting to Anytime", tag)
+        HabitCategory.Anytime
+    }
 }
 
 // --- HabitFrequency ---
 
 private fun habitFrequencyFromTag(tag: String): HabitFrequency = when (tag) {
     "DAILY" -> HabitFrequency.Daily
+
     "WEEKDAYS" -> HabitFrequency.Weekdays
+
     "WEEKENDS" -> HabitFrequency.Weekends
+
     "CUSTOM" -> HabitFrequency.Custom
-    else -> HabitFrequency.Daily
+
+    else -> {
+        log.warn("Unrecognized HabitFrequency tag '{}', defaulting to Daily", tag)
+        HabitFrequency.Daily
+    }
 }
 
 // --- HabitPhase ---
 
 private fun habitPhaseFromTag(tag: String): HabitPhase = when (tag) {
     "ONBOARD" -> HabitPhase.ONBOARD
+
     "FORMING" -> HabitPhase.FORMING
+
     "MAINTAINING" -> HabitPhase.MAINTAINING
+
     "LAPSED" -> HabitPhase.LAPSED
+
     "RELAPSED" -> HabitPhase.RELAPSED
-    else -> HabitPhase.ONBOARD
+
+    else -> {
+        log.warn("Unrecognized HabitPhase tag '{}', defaulting to ONBOARD", tag)
+        HabitPhase.ONBOARD
+    }
 }
 
 // --- HabitStatus ---
 
 private fun habitStatusFromTag(tag: String): HabitStatus = when (tag) {
     "ACTIVE" -> HabitStatus.Active
+
     "PAUSED" -> HabitStatus.Paused
+
     "ARCHIVED" -> HabitStatus.Archived
-    else -> HabitStatus.Active
+
+    else -> {
+        log.warn("Unrecognized HabitStatus tag '{}', defaulting to Active", tag)
+        HabitStatus.Active
+    }
 }
 
 // --- CompletionType ---
 
 private fun completionTypeFromTag(tag: String): CompletionType = when (tag) {
     "FULL" -> CompletionType.Full
+
     "PARTIAL" -> CompletionType.Partial
+
     "SKIPPED" -> CompletionType.Skipped
+
     "MISSED" -> CompletionType.Missed
-    else -> CompletionType.Full
+
+    else -> {
+        log.warn("Unrecognized CompletionType tag '{}', defaulting to Full", tag)
+        CompletionType.Full
+    }
 }
 
 // --- SkipReason ---
 
 private fun skipReasonFromTag(tag: String): SkipReason = when (tag) {
     "TOO_TIRED" -> SkipReason.TooTired
+
     "NO_TIME" -> SkipReason.NoTime
+
     "NOT_FEELING_WELL" -> SkipReason.NotFeelingWell
+
     "TRAVELING" -> SkipReason.Traveling
+
     "TOOK_DAY_OFF" -> SkipReason.TookDayOff
+
     "OTHER" -> SkipReason.Other
-    else -> SkipReason.Other
+
+    else -> {
+        log.warn("Unrecognized SkipReason tag '{}', defaulting to Other", tag)
+        SkipReason.Other
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -170,14 +225,21 @@ object AdminFirestoreMapper {
         val typeTag = map["type"] as? String ?: "FULL"
         val type = completionTypeFromTag(typeTag)
 
+        // updatedAt intentionally omitted -- not displayed on dashboard
         return Completion(
             id = UUID.fromString(id),
-            habitId = UUID.fromString(map["habitId"] as String),
-            date = LocalDate.parse(map["date"] as String),
+            habitId = UUID.fromString(
+                map["habitId"] as? String
+                    ?: error("Missing or non-string 'habitId' in completion doc $id"),
+            ),
+            date = LocalDate.parse(
+                map["date"] as? String
+                    ?: error("Missing or non-string 'date' in completion doc $id"),
+            ),
             completedAt = (map["completedAt"] as? Timestamp)?.toInstant() ?: java.time.Instant.now(),
             type = type,
             partialPercent = if (type is CompletionType.Partial) {
-                (map["partialPercent"] as? Number)?.toInt()
+                (map["partialPercent"] as? Number)?.toInt()?.coerceIn(1, 99)
             } else {
                 null
             },
