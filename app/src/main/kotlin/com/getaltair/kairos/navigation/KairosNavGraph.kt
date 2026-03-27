@@ -4,12 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import com.getaltair.kairos.feature.auth.ForgotPasswordScreen
 import com.getaltair.kairos.feature.auth.LoginScreen
 import com.getaltair.kairos.feature.auth.SignUpScreen
 import com.getaltair.kairos.feature.habit.CreateHabitScreen
 import com.getaltair.kairos.feature.habit.EditHabitScreen
 import com.getaltair.kairos.feature.habit.HabitDetailScreen
+import com.getaltair.kairos.feature.recovery.RecoverySessionScreen
 import com.getaltair.kairos.feature.settings.NotificationSettingsScreen
 import com.getaltair.kairos.feature.settings.SettingsScreen
 import com.getaltair.kairos.feature.today.TodayScreen
@@ -60,6 +62,25 @@ fun KairosNavGraph() {
                 habitId = habitId,
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = "recovery/{habitId}",
+            deepLinks = listOf(navDeepLink { uriPattern = "kairos://recovery/{habitId}" })
+        ) { backStackEntry ->
+            val habitId = backStackEntry.arguments?.getString("habitId")
+            if (habitId == null) {
+                navController.popBackStack()
+                return@composable
+            }
+            // Validate UUID format
+            runCatching { UUID.fromString(habitId) }.onFailure {
+                navController.popBackStack()
+                return@composable
+            }
+            RecoverySessionScreen(
+                habitId = habitId,
+                onComplete = { navController.popBackStack() }
             )
         }
         composable("settings") {

@@ -6,11 +6,15 @@ import com.getaltair.kairos.core.usecase.SkipHabitUseCase
 import com.getaltair.kairos.core.usecase.UndoCompletionUseCase
 import com.getaltair.kairos.domain.usecase.ArchiveHabitUseCase
 import com.getaltair.kairos.domain.usecase.BackdateCompletionUseCase
+import com.getaltair.kairos.domain.usecase.CompleteRecoverySessionUseCase
 import com.getaltair.kairos.domain.usecase.CreateHabitUseCase
+import com.getaltair.kairos.domain.usecase.CreateMissedCompletionsUseCase
 import com.getaltair.kairos.domain.usecase.DeleteHabitUseCase
+import com.getaltair.kairos.domain.usecase.DetectLapsesUseCase
 import com.getaltair.kairos.domain.usecase.EditHabitUseCase
 import com.getaltair.kairos.domain.usecase.GetHabitDetailUseCase
 import com.getaltair.kairos.domain.usecase.GetHabitUseCase
+import com.getaltair.kairos.domain.usecase.GetPendingRecoveriesUseCase
 import com.getaltair.kairos.domain.usecase.GetWeeklyStatsUseCase
 import com.getaltair.kairos.domain.usecase.ObserveAuthStateUseCase
 import com.getaltair.kairos.domain.usecase.PauseHabitUseCase
@@ -49,4 +53,10 @@ val useCaseModule = module {
     factory { SignOutUseCase(get()) }
     factory { ResetPasswordUseCase(get()) }
     factory { ObserveAuthStateUseCase(get()) }
+
+    // Recovery use cases
+    factory { CreateMissedCompletionsUseCase(get(), get()) }
+    factory { DetectLapsesUseCase(get(), get(), get()) }
+    factory { CompleteRecoverySessionUseCase(get(), get()) }
+    factory { GetPendingRecoveriesUseCase(get(), get()) }
 }

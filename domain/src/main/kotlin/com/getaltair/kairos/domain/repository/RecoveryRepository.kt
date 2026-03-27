@@ -17,6 +17,12 @@ interface RecoveryRepository {
     suspend fun getPendingForHabit(habitId: UUID): Result<List<RecoverySession>>
 
     /**
+     * Gets all pending recovery sessions across all habits.
+     * Used by GetPendingRecoveriesUseCase to show all sessions needing user action.
+     */
+    suspend fun getAllPending(): Result<List<RecoverySession>>
+
+    /**
      * Gets all recovery sessions for a habit.
      */
     suspend fun getAllForHabit(habitId: UUID): Result<List<RecoverySession>>

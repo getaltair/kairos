@@ -51,8 +51,12 @@ data class RecoverySession(
 
     /**
      * Creates a copy of this session with the specified changes.
+     *
+     * Type is mutable to support REC-4 one-way escalation (Lapse -> Relapse).
+     * Callers must enforce direction -- de-escalation is never valid.
      */
     fun copy(
+        type: RecoveryType = this.type,
         status: SessionStatus = this.status,
         completedAt: Instant? = this.completedAt,
         action: RecoveryAction? = this.action,
@@ -61,7 +65,7 @@ data class RecoverySession(
     ): RecoverySession = RecoverySession(
         id = this.id,
         habitId = this.habitId,
-        type = this.type,
+        type = type,
         status = status,
         triggeredAt = this.triggeredAt,
         completedAt = completedAt,
