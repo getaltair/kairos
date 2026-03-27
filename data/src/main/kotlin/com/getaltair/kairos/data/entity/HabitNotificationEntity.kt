@@ -46,6 +46,12 @@ data class HabitNotificationEntity(
     @ColumnInfo(name = "is_enabled")
     val isEnabled: Boolean = true,
 
+    @ColumnInfo(name = "is_persistent")
+    val isPersistent: Boolean = false,
+
+    @ColumnInfo(name = "max_follow_ups")
+    val maxFollowUps: Int = 3,
+
     @ColumnInfo(name = "created_at")
     val createdAt: Long,
 

@@ -65,6 +65,9 @@ class PreferencesRepositoryImpl(
             theme = theme,
             energyTrackingEnabled = preferences.energyTrackingEnabled,
             notificationChannels = entity.notificationChannels,
+            quietHoursEnabled = entity.quietHoursEnabled,
+            quietHoursStart = entity.quietHoursStart,
+            quietHoursEnd = entity.quietHoursEnd,
             updatedAt = Instant.now().toEpochMilli()
         )
         triggerSync(SyncEntityTypes.USER_PREFERENCE, preferences.id.toString(), preferences)

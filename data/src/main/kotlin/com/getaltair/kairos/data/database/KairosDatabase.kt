@@ -19,7 +19,7 @@ import com.getaltair.kairos.data.dao.UserPreferencesDao
  * Provides to main database access point and manages all DAOs.
  */
 @Database(
-    version = 1,
+    version = 2,
     entities = [
         com.getaltair.kairos.data.entity.HabitEntity::class,
         com.getaltair.kairos.data.entity.CompletionEntity::class,

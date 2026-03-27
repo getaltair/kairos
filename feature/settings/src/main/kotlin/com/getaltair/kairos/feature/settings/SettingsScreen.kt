@@ -1,5 +1,6 @@
 package com.getaltair.kairos.feature.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,9 +15,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -50,6 +53,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SettingsScreen(
     onNavigateToLogin: () -> Unit,
+    onNavigateToNotificationSettings: () -> Unit = {},
     onBack: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
@@ -96,6 +100,11 @@ fun SettingsScreen(
                 onNavigateToLogin = onNavigateToLogin,
                 onSignOutRequest = viewModel::onSignOutRequest,
                 onDeleteAccountRequest = viewModel::onDeleteAccountRequest,
+            )
+
+            // Notifications section
+            NotificationsNavSection(
+                onNavigateToNotificationSettings = onNavigateToNotificationSettings,
             )
 
             // Sync section
@@ -271,6 +280,52 @@ private fun SyncSection(uiState: SettingsUiState, onNavigateToLogin: () -> Unit,
                         Text(text = "Sign in to enable sync")
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotificationsNavSection(onNavigateToNotificationSettings: () -> Unit,) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text(
+            text = "Preferences",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onNavigateToNotificationSettings),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Notifications,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp),
+                )
+                Text(
+                    text = "Notifications",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "Navigate",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp),
+                )
             }
         }
     }

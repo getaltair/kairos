@@ -60,6 +60,9 @@ interface UserPreferencesDao {
             theme = :theme,
             energy_tracking_enabled = :energyTrackingEnabled,
             notification_channels = :notificationChannels,
+            quiet_hours_enabled = :quietHoursEnabled,
+            quiet_hours_start = :quietHoursStart,
+            quiet_hours_end = :quietHoursEnd,
             updated_at = :updatedAt
         WHERE id = :id
     """
@@ -72,8 +75,19 @@ interface UserPreferencesDao {
         theme: String,
         energyTrackingEnabled: Boolean,
         notificationChannels: String?,
+        quietHoursEnabled: Boolean,
+        quietHoursStart: String,
+        quietHoursEnd: String,
         updatedAt: Long
     )
+
+    /**
+     * Update quiet hours settings.
+     */
+    @Query(
+        "UPDATE user_preferences SET quiet_hours_enabled = :enabled, quiet_hours_start = :start, quiet_hours_end = :end WHERE id = :id"
+    )
+    suspend fun updateQuietHours(id: String, enabled: Boolean, start: String, end: String)
 
     /**
      * Update notification enabled flag.

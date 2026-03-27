@@ -3,6 +3,7 @@ package com.getaltair.kairos.data.di
 import android.content.Context
 import androidx.room.Room
 import com.getaltair.kairos.data.database.KairosDatabase
+import com.getaltair.kairos.data.database.MIGRATION_1_2
 import com.getaltair.kairos.data.repository.AuthRepositoryImpl
 import com.getaltair.kairos.data.repository.CompletionRepositoryImpl
 import com.getaltair.kairos.data.repository.HabitRepositoryImpl
@@ -86,5 +87,5 @@ fun provideDatabase(context: Context): KairosDatabase = Room.databaseBuilder(
     KairosDatabase::class.java,
     "kairos.db"
 )
-    // TODO: Implement proper Room migrations for schema changes
+    .addMigrations(MIGRATION_1_2)
     .build()
