@@ -6,6 +6,8 @@ import com.getaltair.kairos.domain.enums.CompletionType
 import com.getaltair.kairos.domain.repository.CompletionRepository
 import com.getaltair.kairos.domain.repository.HabitRepository
 import java.time.LocalDate
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -20,6 +22,8 @@ class CreateMissedCompletionsUseCase(
     private val completionRepository: CompletionRepository
 ) {
 
+    private val logger = Logger.getLogger(CreateMissedCompletionsUseCase::class.java.name)
+
     /**
      * @param date The date to back-fill missed completions for (defaults to yesterday).
      * @return The count of newly created MISSED completions.
@@ -31,12 +35,20 @@ class CreateMissedCompletionsUseCase(
             val activeHabits = (habitsResult as Result.Success).value
 
             var createdCount = 0
+            var errorCount = 0
 
             for (habit in activeHabits) {
                 if (!habit.isDueToday(date)) continue
 
                 val existingResult = completionRepository.getForHabitOnDate(habit.id, date)
-                if (existingResult is Result.Error) continue
+                if (existingResult is Result.Error) {
+                    errorCount++
+                    logger.log(
+                        Level.SEVERE,
+                        "Failed to check existing completion for habit ${habit.id} on $date: ${existingResult.message}"
+                    )
+                    continue
+                }
 
                 val existing = (existingResult as Result.Success).value
                 if (existing != null) continue
@@ -47,7 +59,19 @@ class CreateMissedCompletionsUseCase(
                     type = CompletionType.Missed
                 )
                 val insertResult = completionRepository.insert(missed)
-                if (insertResult is Result.Success) createdCount++
+                if (insertResult is Result.Success) {
+                    createdCount++
+                } else if (insertResult is Result.Error) {
+                    errorCount++
+                    logger.log(
+                        Level.SEVERE,
+                        "Failed to insert missed completion for habit ${habit.id} on $date: ${insertResult.message}"
+                    )
+                }
+            }
+
+            if (errorCount > 0) {
+                logger.log(Level.WARNING, "Created $createdCount missed completions with $errorCount errors")
             }
 
             Result.Success(createdCount)

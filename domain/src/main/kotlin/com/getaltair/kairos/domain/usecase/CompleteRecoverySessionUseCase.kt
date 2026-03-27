@@ -32,7 +32,6 @@ class CompleteRecoverySessionUseCase(
 
     suspend operator fun invoke(sessionId: UUID, action: RecoveryAction): Result<RecoverySession> {
         return try {
-            // Load session
             val sessionResult = recoveryRepository.getById(sessionId)
             if (sessionResult is Result.Error) {
                 return Result.Error("Recovery session not found: ${sessionResult.message}")
@@ -47,14 +46,12 @@ class CompleteRecoverySessionUseCase(
                 )
             }
 
-            // Load associated habit
             val habitResult = habitRepository.getById(session.habitId)
             if (habitResult is Result.Error) {
                 return Result.Error("Associated habit not found: ${habitResult.message}")
             }
             val habit = (habitResult as Result.Success).value
 
-            // Apply the action's effect on the habit
             val updatedHabit = when (action) {
                 is RecoveryAction.Resume -> habit.copy(phase = HabitPhase.FORMING)
 
@@ -82,9 +79,11 @@ class CompleteRecoverySessionUseCase(
                 is RecoveryAction.FreshStart -> habit.copy(phase = HabitPhase.FORMING)
             }
 
-            habitRepository.update(updatedHabit)
+            val habitUpdateResult = habitRepository.update(updatedHabit)
+            if (habitUpdateResult is Result.Error) {
+                return Result.Error("Failed to update habit: ${habitUpdateResult.message}")
+            }
 
-            // Update session to Completed
             val updatedSession = session.copy(
                 status = SessionStatus.Completed,
                 action = action,

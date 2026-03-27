@@ -35,7 +35,7 @@ object RecoverySessionEntityMapper {
             status = entity.status,
             triggeredAt = Instant.ofEpochMilli(entity.triggeredAt),
             completedAt = entity.completedAt?.let { Instant.ofEpochMilli(it) },
-            blockers = blockers,
+            blockers = blockers.toSet(),
             action = entity.action?.let {
                 recoveryActionConverter.stringToRecoveryAction(it)
                     ?: throw IllegalArgumentException("Invalid recovery action: $it")
@@ -51,7 +51,7 @@ object RecoverySessionEntityMapper {
      */
     fun toEntity(domain: RecoverySession): RecoverySessionEntity {
         val recoveryAction = domain.action?.let { recoveryActionConverter.recoveryActionToString(it) }
-        val blockers = blockerConverter.blockerListToString(domain.blockers) ?: "[]"
+        val blockers = blockerConverter.blockerListToString(domain.blockers.toList()) ?: "[]"
 
         return RecoverySessionEntity(
             id = domain.id,

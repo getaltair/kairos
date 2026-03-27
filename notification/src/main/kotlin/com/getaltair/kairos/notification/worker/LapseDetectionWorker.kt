@@ -7,6 +7,7 @@ import com.getaltair.kairos.domain.common.Result as DomainResult
 import com.getaltair.kairos.domain.enums.HabitPhase
 import com.getaltair.kairos.domain.repository.HabitRepository
 import com.getaltair.kairos.domain.usecase.DetectLapsesUseCase
+import com.getaltair.kairos.domain.usecase.LapseDetection
 import com.getaltair.kairos.notification.RecoveryNotificationBuilder
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -32,39 +33,39 @@ class LapseDetectionWorker(appContext: Context, workerParams: WorkerParameters) 
 
         return when (val result = detectLapses()) {
             is DomainResult.Success -> {
-                val affectedIds = result.value
-                Timber.d("LapseDetectionWorker detected %d lapse/relapse events", affectedIds.size)
+                val affected = result.value
+                Timber.d("LapseDetectionWorker detected %d lapse/relapse events", affected.size)
 
-                for (habitId in affectedIds) {
-                    val habitResult = habitRepository.getById(habitId)
+                for (detection in affected) {
+                    val habitResult = habitRepository.getById(detection.habitId)
                     if (habitResult is DomainResult.Success) {
                         val habit = habitResult.value
                         when (habit.phase) {
                             is HabitPhase.RELAPSED -> {
                                 recoveryNotificationBuilder.postRelapseNotification(
-                                    habitId = habitId.toString(),
+                                    habitId = detection.habitId.toString(),
                                     habitName = habit.name
                                 )
                             }
 
                             is HabitPhase.LAPSED -> {
                                 recoveryNotificationBuilder.postLapseNotification(
-                                    habitId = habitId.toString(),
+                                    habitId = detection.habitId.toString(),
                                     habitName = habit.name,
-                                    missedDays = habit.lapseThresholdDays
+                                    missedDays = detection.consecutiveMissedDays
                                 )
                             }
 
                             else -> {
                                 Timber.w(
                                     "Habit %s detected but phase is %s; skipping notification",
-                                    habitId,
+                                    detection.habitId,
                                     habit.phase.displayName
                                 )
                             }
                         }
                     } else {
-                        Timber.w("Could not load habit %s for notification", habitId)
+                        Timber.w("Could not load habit %s for notification", detection.habitId)
                     }
                 }
 

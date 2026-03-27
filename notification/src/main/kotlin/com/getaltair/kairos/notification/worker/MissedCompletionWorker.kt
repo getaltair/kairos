@@ -3,7 +3,7 @@ package com.getaltair.kairos.notification.worker
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.getaltair.kairos.domain.common.Result
+import com.getaltair.kairos.domain.common.Result as DomainResult
 import com.getaltair.kairos.domain.usecase.CreateMissedCompletionsUseCase
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -26,12 +26,12 @@ class MissedCompletionWorker(appContext: Context, workerParams: WorkerParameters
         Timber.d("MissedCompletionWorker starting")
 
         return when (val result = createMissedCompletions()) {
-            is com.getaltair.kairos.domain.common.Result.Success -> {
+            is DomainResult.Success -> {
                 Timber.d("MissedCompletionWorker created %d missed completions", result.value)
                 Result.success()
             }
 
-            is com.getaltair.kairos.domain.common.Result.Error -> {
+            is DomainResult.Error -> {
                 Timber.e("MissedCompletionWorker error: %s", result.message)
                 if (runAttemptCount < MAX_RETRIES) {
                     Result.retry()

@@ -36,13 +36,14 @@ class RecoveryRepositoryImpl(
     private val recoveryActionConverter = RecoveryActionConverter()
     private val recoveryTypeConverter = RecoveryTypeConverter()
 
-    override suspend fun getPendingForHabit(habitId: UUID): Result<List<RecoverySession>> = try {
+    override suspend fun getPendingForHabit(habitId: UUID): Result<RecoverySession?> = try {
         val entities = withContext(Dispatchers.IO) { dao.getPendingForHabit(habitId) }
-        Result.Success(RecoverySessionEntityMapper.toDomainList(entities))
+        val session = entities.firstOrNull()?.let { RecoverySessionEntityMapper.toDomain(it) }
+        Result.Success(session)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
-        Timber.e(e, "Failed to get pending recovery sessions for habitId=%s", habitId)
-        Result.Error("Failed to get pending recovery sessions: ${e.message}", cause = e)
+        Timber.e(e, "Failed to get pending recovery session for habitId=%s", habitId)
+        Result.Error("Failed to get pending recovery session: ${e.message}", cause = e)
     }
 
     override suspend fun getAllPending(): Result<List<RecoverySession>> = try {
@@ -85,7 +86,8 @@ class RecoveryRepositoryImpl(
 
     override suspend fun update(session: RecoverySession): Result<RecoverySession> = try {
         val action = session.action?.let { recoveryActionConverter.recoveryActionToString(it) }
-        val type = recoveryTypeConverter.recoveryTypeToString(session.type) ?: "Lapse"
+        val type = recoveryTypeConverter.recoveryTypeToString(session.type)
+            ?: throw IllegalStateException("Unknown RecoveryType: ${session.type}")
 
         withContext(Dispatchers.IO) {
             dao.update(

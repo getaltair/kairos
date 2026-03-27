@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.enums.Blocker
 import com.getaltair.kairos.domain.enums.RecoveryAction
-import com.getaltair.kairos.domain.enums.RecoveryType
 import com.getaltair.kairos.domain.usecase.CompleteRecoverySessionUseCase
 import com.getaltair.kairos.domain.usecase.GetPendingRecoveriesUseCase
 import java.util.UUID
@@ -135,19 +134,26 @@ class RecoverySessionViewModel(
      * the UI as complete on success.
      */
     fun confirmAction() {
+        _uiState.update { it.copy(error = null) }
+
         val state = _uiState.value
         val session = state.session ?: return
         val action = state.chosenAction ?: return
 
         if (state.isLoading) return
 
-        _uiState.update { it.copy(isLoading = true, error = null) }
+        _uiState.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
             try {
                 when (val result = completeRecoverySessionUseCase(session.id, action)) {
                     is Result.Success -> {
-                        _uiState.update { it.copy(isLoading = false, isComplete = true) }
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                currentStep = RecoveryStep.Complete
+                            )
+                        }
                     }
 
                     is Result.Error -> {
@@ -190,21 +196,16 @@ class RecoverySessionViewModel(
                     chosenAction = null,
                     confirmationMessage = null
                 )
+
+                RecoveryStep.Complete -> it // Terminal state, no going back
             }
         }
     }
 
-    /**
-     * Whether the FreshStart action should be available.
-     * Only shown when the session type is Relapse.
-     */
-    fun isFreshStartAvailable(): Boolean = _uiState.value.session?.type is RecoveryType.Relapse
-
-    /**
-     * Whether the Simplify action should be enabled.
-     * Disabled when the habit has no micro-version configured.
-     */
-    fun isSimplifyEnabled(): Boolean = _uiState.value.habit?.microVersion != null
+    /** Re-attempts loading the recovery session after an error. */
+    fun retry() {
+        loadRecoverySession()
+    }
 
     companion object {
         /**

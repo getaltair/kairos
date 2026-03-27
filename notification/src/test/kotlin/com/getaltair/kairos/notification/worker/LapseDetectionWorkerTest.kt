@@ -11,6 +11,7 @@ import com.getaltair.kairos.domain.enums.HabitFrequency
 import com.getaltair.kairos.domain.enums.HabitPhase
 import com.getaltair.kairos.domain.repository.HabitRepository
 import com.getaltair.kairos.domain.usecase.DetectLapsesUseCase
+import com.getaltair.kairos.domain.usecase.LapseDetection
 import com.getaltair.kairos.notification.RecoveryNotificationBuilder
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -82,7 +83,8 @@ class LapseDetectionWorkerTest : KoinTest {
     @Test
     fun `doWork posts lapse notification for LAPSED habit`() = runTest {
         setupKoin()
-        coEvery { mockDetectLapses.invoke() } returns DomainResult.Success(listOf(habitId))
+        val detection = LapseDetection(habitId, consecutiveMissedDays = 5)
+        coEvery { mockDetectLapses.invoke() } returns DomainResult.Success(listOf(detection))
         coEvery { mockHabitRepository.getById(habitId) } returns DomainResult.Success(lapsedHabit)
 
         val worker = LapseDetectionWorker(mockContext, mockParams)
@@ -92,7 +94,7 @@ class LapseDetectionWorkerTest : KoinTest {
             mockNotificationBuilder.postLapseNotification(
                 habitId = habitId.toString(),
                 habitName = "Take medication",
-                missedDays = 3
+                missedDays = 5
             )
         }
         assertEquals(ListenableWorker.Result.success(), result)
@@ -103,7 +105,8 @@ class LapseDetectionWorkerTest : KoinTest {
     fun `doWork posts relapse notification for RELAPSED habit`() = runTest {
         val relapsedHabit = lapsedHabit.copy(phase = HabitPhase.RELAPSED)
         setupKoin()
-        coEvery { mockDetectLapses.invoke() } returns DomainResult.Success(listOf(habitId))
+        val detection = LapseDetection(habitId, consecutiveMissedDays = 7)
+        coEvery { mockDetectLapses.invoke() } returns DomainResult.Success(listOf(detection))
         coEvery { mockHabitRepository.getById(habitId) } returns DomainResult.Success(relapsedHabit)
 
         val worker = LapseDetectionWorker(mockContext, mockParams)
@@ -128,6 +131,21 @@ class LapseDetectionWorkerTest : KoinTest {
         val result = worker.doWork()
 
         assertEquals(ListenableWorker.Result.retry(), result)
+        stopKoin()
+    }
+
+    @Test
+    fun `doWork returns failure when max retries exceeded`() = runTest {
+        val exhaustedParams: WorkerParameters = mockk(relaxed = true) {
+            every { runAttemptCount } returns 3
+        }
+        setupKoin()
+        coEvery { mockDetectLapses.invoke() } returns DomainResult.Error("persistent error")
+
+        val worker = LapseDetectionWorker(mockContext, exhaustedParams)
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.failure(), result)
         stopKoin()
     }
 }

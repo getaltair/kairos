@@ -5,6 +5,8 @@ import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.entity.RecoverySession
 import com.getaltair.kairos.domain.repository.HabitRepository
 import com.getaltair.kairos.domain.repository.RecoveryRepository
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -18,6 +20,8 @@ class GetPendingRecoveriesUseCase(
     private val habitRepository: HabitRepository
 ) {
 
+    private val logger = Logger.getLogger(GetPendingRecoveriesUseCase::class.java.name)
+
     suspend operator fun invoke(): Result<List<Pair<RecoverySession, Habit>>> {
         return try {
             val sessionsResult = recoveryRepository.getAllPending()
@@ -27,9 +31,20 @@ class GetPendingRecoveriesUseCase(
             val pairs = mutableListOf<Pair<RecoverySession, Habit>>()
 
             for (session in sessions) {
-                val habitResult = habitRepository.getById(session.habitId)
-                if (habitResult is Result.Success) {
-                    pairs.add(session to habitResult.value)
+                when (val habitResult = habitRepository.getById(session.habitId)) {
+                    is Result.Success -> {
+                        val habit = habitResult.value
+                        if (habit != null) {
+                            pairs.add(session to habit)
+                        }
+                    }
+
+                    is Result.Error -> {
+                        logger.log(
+                            Level.WARNING,
+                            "Failed to load habit ${session.habitId} for recovery session ${session.id}: ${habitResult.message}"
+                        )
+                    }
                 }
             }
 

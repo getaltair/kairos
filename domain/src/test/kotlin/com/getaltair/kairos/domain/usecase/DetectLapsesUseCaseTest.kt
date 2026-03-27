@@ -21,6 +21,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -91,7 +92,7 @@ class DetectLapsesUseCaseTest {
 
         val habitSlot = slot<Habit>()
         coEvery { habitRepository.update(capture(habitSlot)) } answers { Result.Success(habitSlot.captured) }
-        coEvery { recoveryRepository.getPendingForHabit(habit.id) } returns Result.Success(emptyList())
+        coEvery { recoveryRepository.getPendingForHabit(habit.id) } returns Result.Success(null)
 
         val sessionSlot = slot<RecoverySession>()
         coEvery { recoveryRepository.insert(capture(sessionSlot)) } answers { Result.Success(sessionSlot.captured) }
@@ -100,7 +101,7 @@ class DetectLapsesUseCaseTest {
 
         assertTrue(result is Result.Success)
         assertEquals(1, (result as Result.Success).value.size)
-        assertEquals(habit.id, result.value[0])
+        assertEquals(habit.id, result.value[0].habitId)
         assertTrue(habitSlot.captured.phase is HabitPhase.LAPSED)
         assertTrue(sessionSlot.captured.type is RecoveryType.Lapse)
         assertTrue(sessionSlot.captured.status is SessionStatus.Pending)
@@ -134,14 +135,15 @@ class DetectLapsesUseCaseTest {
             habitId = habit.id,
             type = RecoveryType.Lapse,
             status = SessionStatus.Pending,
-            blockers = listOf(Blocker.Other)
+            blockers = setOf(Blocker.Other)
         )
-        coEvery { recoveryRepository.getPendingForHabit(habit.id) } returns Result.Success(listOf(existingSession))
+        coEvery { recoveryRepository.getPendingForHabit(habit.id) } returns Result.Success(existingSession)
 
         val result = useCase()
 
         assertTrue(result is Result.Success)
         assertEquals(1, (result as Result.Success).value.size)
+        assertEquals(habit.id, result.value.first().habitId)
         // Phase should still be updated
         assertTrue(habitSlot.captured.phase is HabitPhase.LAPSED)
         // But no new session should be created
@@ -162,9 +164,9 @@ class DetectLapsesUseCaseTest {
             habitId = habit.id,
             type = RecoveryType.Lapse,
             status = SessionStatus.Pending,
-            blockers = listOf(Blocker.Other)
+            blockers = setOf(Blocker.Other)
         )
-        coEvery { recoveryRepository.getPendingForHabit(habit.id) } returns Result.Success(listOf(existingSession))
+        coEvery { recoveryRepository.getPendingForHabit(habit.id) } returns Result.Success(existingSession)
 
         val sessionSlot = slot<RecoverySession>()
         coEvery { recoveryRepository.update(capture(sessionSlot)) } answers { Result.Success(sessionSlot.captured) }
@@ -173,6 +175,7 @@ class DetectLapsesUseCaseTest {
 
         assertTrue(result is Result.Success)
         assertEquals(1, (result as Result.Success).value.size)
+        assertEquals(habit.id, result.value.first().habitId)
         assertTrue(habitSlot.captured.phase is HabitPhase.RELAPSED)
         assertTrue(sessionSlot.captured.type is RecoveryType.Relapse)
     }
@@ -217,5 +220,62 @@ class DetectLapsesUseCaseTest {
 
         assertTrue(result is Result.Error)
         assertTrue((result as Result.Error).message.contains("DB error"))
+    }
+
+    @Test
+    fun `countConsecutiveMissed stops at habit creation date`() = runTest {
+        // Habit created 2 days ago -- even with threshold 3, only 2 days can be counted
+        val twoDaysAgo = Instant.now().minusSeconds(2 * 24 * 3600)
+        val habit = formingHabit(lapseThreshold = 3).copy(
+            createdAt = twoDaysAgo,
+            updatedAt = twoDaysAgo
+        )
+        coEvery { habitRepository.getActiveHabits() } returns Result.Success(listOf(habit))
+
+        // Stub all dates from yesterday back as missed (no completion)
+        val earliestDate = twoDaysAgo.atZone(ZoneId.systemDefault()).toLocalDate()
+        var date = LocalDate.now().minusDays(1)
+        while (date >= earliestDate) {
+            coEvery { completionRepository.getForHabitOnDate(habit.id, date) } returns Result.Success(null)
+            date = date.minusDays(1)
+        }
+
+        val result = useCase()
+
+        // Only 2 missed days possible, threshold is 3, so no lapse detected
+        assertTrue(result is Result.Success)
+        assertTrue((result as Result.Success).value.isEmpty())
+        coVerify(exactly = 0) { habitRepository.update(any()) }
+    }
+
+    @Test
+    fun `does not add to affected list when habit update fails`() = runTest {
+        val habit = formingHabit(lapseThreshold = 3)
+        coEvery { habitRepository.getActiveHabits() } returns Result.Success(listOf(habit))
+        stubConsecutiveMissed(habit, 3)
+
+        coEvery { habitRepository.update(any()) } returns Result.Error("DB error")
+
+        val result = useCase()
+
+        assertTrue(result is Result.Success)
+        assertTrue((result as Result.Success).value.isEmpty())
+    }
+
+    @Test
+    fun `does not add to affected list when session insert fails`() = runTest {
+        val habit = formingHabit(lapseThreshold = 3)
+        coEvery { habitRepository.getActiveHabits() } returns Result.Success(listOf(habit))
+        stubConsecutiveMissed(habit, 3)
+
+        val habitSlot = slot<Habit>()
+        coEvery { habitRepository.update(capture(habitSlot)) } answers { Result.Success(habitSlot.captured) }
+        coEvery { recoveryRepository.getPendingForHabit(habit.id) } returns Result.Success(null)
+        coEvery { recoveryRepository.insert(any()) } returns Result.Error("Insert failed")
+
+        val result = useCase()
+
+        assertTrue(result is Result.Success)
+        assertTrue((result as Result.Success).value.isEmpty())
     }
 }

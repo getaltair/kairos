@@ -16,6 +16,7 @@ import com.getaltair.kairos.feature.settings.NotificationSettingsScreen
 import com.getaltair.kairos.feature.settings.SettingsScreen
 import com.getaltair.kairos.feature.today.TodayScreen
 import java.util.UUID
+import timber.log.Timber
 
 @Composable
 fun KairosNavGraph() {
@@ -70,11 +71,13 @@ fun KairosNavGraph() {
         ) { backStackEntry ->
             val habitId = backStackEntry.arguments?.getString("habitId")
             if (habitId == null) {
+                Timber.w("Recovery route: habitId argument is null")
                 navController.popBackStack()
                 return@composable
             }
             // Validate UUID format
             runCatching { UUID.fromString(habitId) }.onFailure {
+                Timber.w("Recovery route: invalid UUID format for habitId=%s", habitId)
                 navController.popBackStack()
                 return@composable
             }

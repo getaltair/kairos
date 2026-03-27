@@ -55,7 +55,7 @@ class RecoveryNotificationBuilder(private val context: Context) {
      */
     fun postLapseNotification(habitId: String, habitName: String, missedDays: Int) {
         val notification = buildLapseNotification(habitName, missedDays)
-        val notificationId = habitId.hashCode() or LAPSE_TAG
+        val notificationId = (habitId.hashCode() and 0x0FFF_FFFF) or LAPSE_TAG
         postSafely(notificationId, notification)
     }
 
@@ -64,7 +64,7 @@ class RecoveryNotificationBuilder(private val context: Context) {
      */
     fun postRelapseNotification(habitId: String, habitName: String) {
         val notification = buildRelapseNotification(habitName)
-        val notificationId = habitId.hashCode() or RELAPSE_TAG
+        val notificationId = (habitId.hashCode() and 0x0FFF_FFFF) or RELAPSE_TAG
         postSafely(notificationId, notification)
     }
 
@@ -145,7 +145,7 @@ class RecoveryNotificationBuilder(private val context: Context) {
         /** Fresh start body when exactly one habit is eligible. */
         const val FRESH_START_BODY_SINGLE = "One habit is ready for a comeback whenever you are."
 
-        // Notification ID tags (OR-ed with habitId.hashCode)
+        // Notification ID tags -- clear upper nibble before applying tag to prevent collision
         private const val LAPSE_TAG = 0x1000_0000
         private const val RELAPSE_TAG = 0x2000_0000
         private const val FRESH_START_NOTIFICATION_ID = 0x3000_0001

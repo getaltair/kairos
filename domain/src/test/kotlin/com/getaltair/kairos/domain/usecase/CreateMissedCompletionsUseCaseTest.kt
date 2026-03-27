@@ -125,4 +125,50 @@ class CreateMissedCompletionsUseCaseTest {
         assertTrue(result is Result.Success)
         assertEquals(0, (result as Result.Success).value)
     }
+
+    @Test
+    fun `logs error and continues when completion check fails for one habit`() = runTest {
+        val habit1 = dailyHabit("Meditate")
+        val habit2 = dailyHabit("Exercise")
+        coEvery { habitRepository.getActiveHabits() } returns Result.Success(listOf(habit1, habit2))
+
+        // habit1 check fails, habit2 succeeds with no existing completion
+        coEvery { completionRepository.getForHabitOnDate(habit1.id, yesterday) } returns Result.Error("DB error")
+        coEvery { completionRepository.getForHabitOnDate(habit2.id, yesterday) } returns Result.Success(null)
+
+        val completionSlot = slot<Completion>()
+        coEvery { completionRepository.insert(capture(completionSlot)) } answers {
+            Result.Success(completionSlot.captured)
+        }
+
+        val result = useCase(yesterday)
+
+        assertTrue(result is Result.Success)
+        // Only habit2 should be counted -- habit1 errored during check
+        assertEquals(1, (result as Result.Success).value)
+        coVerify(exactly = 1) { completionRepository.insert(any()) }
+    }
+
+    @Test
+    fun `logs error and continues when insert fails for one habit`() = runTest {
+        val habit1 = dailyHabit("Meditate")
+        val habit2 = dailyHabit("Exercise")
+        coEvery { habitRepository.getActiveHabits() } returns Result.Success(listOf(habit1, habit2))
+        coEvery { completionRepository.getForHabitOnDate(habit1.id, yesterday) } returns Result.Success(null)
+        coEvery { completionRepository.getForHabitOnDate(habit2.id, yesterday) } returns Result.Success(null)
+
+        // Insert fails for habit1, succeeds for habit2
+        coEvery { completionRepository.insert(match { it.habitId == habit1.id }) } returns Result.Error("Insert failed")
+        val completionSlot = slot<Completion>()
+        coEvery { completionRepository.insert(match { it.habitId == habit2.id }) } answers {
+            completionSlot.captured = it.invocation.args[0] as Completion
+            Result.Success(completionSlot.captured)
+        }
+
+        val result = useCase(yesterday)
+
+        assertTrue(result is Result.Success)
+        // Only habit2 should be counted -- habit1 insert failed
+        assertEquals(1, (result as Result.Success).value)
+    }
 }

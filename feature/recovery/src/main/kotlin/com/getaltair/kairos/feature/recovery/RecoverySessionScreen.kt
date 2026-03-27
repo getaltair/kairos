@@ -71,8 +71,8 @@ fun RecoverySessionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiState.isComplete) {
-        if (uiState.isComplete) onComplete()
+    LaunchedEffect(uiState.currentStep) {
+        if (uiState.currentStep == RecoveryStep.Complete) onComplete()
     }
 
     Scaffold(
@@ -95,6 +95,7 @@ fun RecoverySessionScreen(
                             RecoveryStep.BlockerSelection -> "Reflection"
                             RecoveryStep.ActionSelection -> "Your Path Forward"
                             RecoveryStep.Confirmation -> "All Set"
+                            RecoveryStep.Complete -> ""
                         }
                     )
                 }
@@ -131,6 +132,10 @@ fun RecoverySessionScreen(
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
                         )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(onClick = { viewModel.retry() }) {
+                            Text(text = "Try Again")
+                        }
                     }
                 }
 
@@ -163,8 +168,8 @@ fun RecoverySessionScreen(
                                 )
 
                                 RecoveryStep.ActionSelection -> ActionSelectionStep(
-                                    isSimplifyEnabled = viewModel.isSimplifyEnabled(),
-                                    isFreshStartAvailable = viewModel.isFreshStartAvailable(),
+                                    isSimplifyEnabled = uiState.isSimplifyEnabled,
+                                    isFreshStartAvailable = uiState.isFreshStartAvailable,
                                     onChooseAction = viewModel::chooseAction
                                 )
 
@@ -172,8 +177,13 @@ fun RecoverySessionScreen(
                                     chosenAction = uiState.chosenAction,
                                     confirmationMessage = uiState.confirmationMessage.orEmpty(),
                                     isLoading = uiState.isLoading,
+                                    error = uiState.error,
                                     onDone = viewModel::confirmAction
                                 )
+
+                                RecoveryStep.Complete -> {
+                                    // Terminal state -- LaunchedEffect triggers onComplete()
+                                }
                             }
                         }
                     }
@@ -429,6 +439,7 @@ private fun ConfirmationStep(
     chosenAction: RecoveryAction?,
     confirmationMessage: String,
     isLoading: Boolean,
+    error: String? = null,
     onDone: () -> Unit
 ) {
     Spacer(modifier = Modifier.height(48.dp))
@@ -482,6 +493,17 @@ private fun ConfirmationStep(
         } else {
             Text(text = "Done")
         }
+    }
+
+    if (error != null) {
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = error,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
     }
 }
 

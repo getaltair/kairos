@@ -15,6 +15,7 @@ import com.getaltair.kairos.domain.usecase.GetPendingRecoveriesUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import java.time.Instant
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -58,7 +59,7 @@ class RecoverySessionViewModelTest {
         habitId = habitId,
         type = RecoveryType.Lapse,
         status = SessionStatus.Pending,
-        blockers = listOf(Blocker.NoEnergy)
+        blockers = setOf(Blocker.NoEnergy)
     )
 
     @Before
@@ -271,9 +272,15 @@ class RecoverySessionViewModelTest {
     // -----------------------------------------------------------------------
 
     @Test
-    fun `confirmAction calls use case and sets isComplete`() = runTest {
+    fun `confirmAction calls use case and advances to Complete step`() = runTest {
         coEvery { completeRecovery(sessionId, RecoveryAction.Resume) } returns
-            Result.Success(testSession.copy(status = SessionStatus.Completed, action = RecoveryAction.Resume))
+            Result.Success(
+                testSession.copy(
+                    status = SessionStatus.Completed,
+                    action = RecoveryAction.Resume,
+                    completedAt = Instant.now()
+                )
+            )
 
         val vm = createViewModel()
         advanceUntilIdle()
@@ -282,7 +289,7 @@ class RecoverySessionViewModelTest {
         vm.confirmAction()
         advanceUntilIdle()
 
-        assertTrue(vm.uiState.value.isComplete)
+        assertEquals(RecoveryStep.Complete, vm.uiState.value.currentStep)
         coVerify(exactly = 1) { completeRecovery(sessionId, RecoveryAction.Resume) }
     }
 
@@ -298,7 +305,7 @@ class RecoverySessionViewModelTest {
         vm.confirmAction()
         advanceUntilIdle()
 
-        assertFalse(vm.uiState.value.isComplete)
+        assertTrue(vm.uiState.value.currentStep != RecoveryStep.Complete)
         assertNotNull(vm.uiState.value.error)
     }
 
@@ -317,7 +324,7 @@ class RecoverySessionViewModelTest {
         )
         advanceUntilIdle()
 
-        assertTrue(vm.isFreshStartAvailable())
+        assertTrue(vm.uiState.value.isFreshStartAvailable)
     }
 
     @Test
@@ -325,7 +332,7 @@ class RecoverySessionViewModelTest {
         val vm = createViewModel()
         advanceUntilIdle()
 
-        assertFalse(vm.isFreshStartAvailable())
+        assertFalse(vm.uiState.value.isFreshStartAvailable)
     }
 
     @Test
@@ -333,7 +340,7 @@ class RecoverySessionViewModelTest {
         val vm = createViewModel()
         advanceUntilIdle()
 
-        assertTrue(vm.isSimplifyEnabled())
+        assertTrue(vm.uiState.value.isSimplifyEnabled)
     }
 
     @Test
@@ -344,7 +351,31 @@ class RecoverySessionViewModelTest {
         )
         advanceUntilIdle()
 
-        assertFalse(vm.isSimplifyEnabled())
+        assertFalse(vm.uiState.value.isSimplifyEnabled)
+    }
+
+    // -----------------------------------------------------------------------
+    // Retry
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `retry reloads recovery session`() = runTest {
+        // Initial load fails
+        val vm = createViewModel(pendingResult = Result.Error("network error"))
+        advanceUntilIdle()
+
+        assertNotNull(vm.uiState.value.error)
+
+        // Stub success for retry
+        coEvery { getPendingRecoveries() } returns Result.Success(listOf(testSession to testHabit))
+        vm.retry()
+        advanceUntilIdle()
+
+        assertNull(vm.uiState.value.error)
+        assertEquals(testHabit, vm.uiState.value.habit)
+        assertEquals(testSession, vm.uiState.value.session)
+        // getPendingRecoveries called twice: once at init, once on retry
+        coVerify(exactly = 2) { getPendingRecoveries() }
     }
 
     // -----------------------------------------------------------------------

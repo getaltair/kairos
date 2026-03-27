@@ -11,10 +11,11 @@ import java.util.UUID
  */
 interface RecoveryRepository {
     /**
-     * Gets pending recovery sessions for a specific habit.
+     * Gets the pending recovery session for a specific habit, if any.
+     * At most one pending session per habit (REC-2).
      * Pending sessions are those with status = Pending.
      */
-    suspend fun getPendingForHabit(habitId: UUID): Result<List<RecoverySession>>
+    suspend fun getPendingForHabit(habitId: UUID): Result<RecoverySession?>
 
     /**
      * Gets all pending recovery sessions across all habits.

@@ -49,7 +49,7 @@ class CompleteRecoverySessionUseCaseTest {
         habitId = habitId,
         type = RecoveryType.Lapse,
         status = SessionStatus.Pending,
-        blockers = listOf(Blocker.NoEnergy)
+        blockers = setOf(Blocker.NoEnergy)
     )
 
     @Before
@@ -152,7 +152,7 @@ class CompleteRecoverySessionUseCaseTest {
             habitId = habit.id,
             type = RecoveryType.Relapse,
             status = SessionStatus.Pending,
-            blockers = listOf(Blocker.NoEnergy)
+            blockers = setOf(Blocker.NoEnergy)
         )
         val (habitSlot, sessionSlot) = stubSessionAndHabit(session, habit)
 
@@ -171,7 +171,7 @@ class CompleteRecoverySessionUseCaseTest {
             type = RecoveryType.Lapse,
             status = SessionStatus.Completed,
             action = RecoveryAction.Resume,
-            blockers = listOf(Blocker.NoEnergy),
+            blockers = setOf(Blocker.NoEnergy),
             completedAt = Instant.now()
         )
         coEvery { recoveryRepository.getById(completedSession.id) } returns Result.Success(completedSession)
@@ -191,7 +191,7 @@ class CompleteRecoverySessionUseCaseTest {
             habitId = habit.id,
             type = RecoveryType.Lapse,
             status = SessionStatus.Abandoned,
-            blockers = listOf(Blocker.Other)
+            blockers = setOf(Blocker.Other)
         )
         coEvery { recoveryRepository.getById(abandonedSession.id) } returns Result.Success(abandonedSession)
 
@@ -224,5 +224,20 @@ class CompleteRecoverySessionUseCaseTest {
 
         assertTrue(result is Result.Error)
         assertTrue((result as Result.Error).message.contains("habit not found"))
+    }
+
+    @Test
+    fun `returns error when habit update fails`() = runTest {
+        val habit = lapsedHabit()
+        val session = pendingSession(habit.id)
+        coEvery { recoveryRepository.getById(session.id) } returns Result.Success(session)
+        coEvery { habitRepository.getById(habit.id) } returns Result.Success(habit)
+        coEvery { habitRepository.update(any()) } returns Result.Error("DB error")
+
+        val result = useCase(session.id, RecoveryAction.Resume)
+
+        assertTrue(result is Result.Error)
+        assertTrue((result as Result.Error).message.contains("Failed to update habit"))
+        coVerify(exactly = 0) { recoveryRepository.update(any()) }
     }
 }
