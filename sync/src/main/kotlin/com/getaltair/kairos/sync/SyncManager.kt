@@ -92,7 +92,6 @@ class SyncManager(
         listenerRegistrations.forEach { it.remove() }
         listenerRegistrations.clear()
         activeRoutineListeners.clear()
-        _syncState.value = SyncState.Syncing
 
         attachHabitListener(userId)
         attachCompletionListener(userId)
