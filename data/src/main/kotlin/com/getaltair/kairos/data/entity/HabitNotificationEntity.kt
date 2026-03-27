@@ -16,6 +16,8 @@ import java.util.UUID
  * @property habitId ID of the associated habit
  * @property time Time for the notification
  * @property isEnabled Whether this notification is enabled
+ * @property isPersistent Whether persistent follow-up reminders are enabled
+ * @property maxFollowUps Maximum number of follow-up reminders (default 3)
  * @property createdAt When this notification was created
  * @property updatedAt When this notification was last updated
  */

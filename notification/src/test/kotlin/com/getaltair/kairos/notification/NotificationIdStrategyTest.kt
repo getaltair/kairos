@@ -8,27 +8,27 @@ import org.junit.Test
 class NotificationIdStrategyTest {
 
     @Test
-    fun `reminderId returns habitId hashCode`() {
+    fun `reminderId returns non-negative masked hashCode`() {
         val habitId = UUID.randomUUID()
-        assertEquals(habitId.hashCode(), NotificationIdStrategy.reminderId(habitId))
+        assertEquals(habitId.hashCode() and 0x7FFFFFFF, NotificationIdStrategy.reminderId(habitId))
     }
 
     @Test
-    fun `followUpId for followUp 1 equals hashCode plus 1001`() {
+    fun `followUpId for followUp 1 equals masked hashCode plus 1001`() {
         val habitId = UUID.randomUUID()
-        assertEquals(habitId.hashCode() + 1001, NotificationIdStrategy.followUpId(habitId, 1))
+        assertEquals((habitId.hashCode() and 0x7FFFFFFF) + 1001, NotificationIdStrategy.followUpId(habitId, 1))
     }
 
     @Test
-    fun `followUpId for followUp 2 equals hashCode plus 1002`() {
+    fun `followUpId for followUp 2 equals masked hashCode plus 1002`() {
         val habitId = UUID.randomUUID()
-        assertEquals(habitId.hashCode() + 1002, NotificationIdStrategy.followUpId(habitId, 2))
+        assertEquals((habitId.hashCode() and 0x7FFFFFFF) + 1002, NotificationIdStrategy.followUpId(habitId, 2))
     }
 
     @Test
-    fun `followUpId for followUp 3 equals hashCode plus 1003`() {
+    fun `followUpId for followUp 3 equals masked hashCode plus 1003`() {
         val habitId = UUID.randomUUID()
-        assertEquals(habitId.hashCode() + 1003, NotificationIdStrategy.followUpId(habitId, 3))
+        assertEquals((habitId.hashCode() and 0x7FFFFFFF) + 1003, NotificationIdStrategy.followUpId(habitId, 3))
     }
 
     @Test
@@ -52,8 +52,8 @@ class NotificationIdStrategyTest {
     }
 
     @Test
-    fun `snoozedId equals hashCode plus 500`() {
+    fun `snoozedId equals masked hashCode plus 500`() {
         val habitId = UUID.randomUUID()
-        assertEquals(habitId.hashCode() + 500, NotificationIdStrategy.snoozedId(habitId))
+        assertEquals((habitId.hashCode() and 0x7FFFFFFF) + 500, NotificationIdStrategy.snoozedId(habitId))
     }
 }

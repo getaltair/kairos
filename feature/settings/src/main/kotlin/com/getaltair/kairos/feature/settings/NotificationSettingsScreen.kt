@@ -1,5 +1,10 @@
 package com.getaltair.kairos.feature.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,7 +44,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -54,9 +61,30 @@ fun NotificationSettingsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val context = LocalContext.current
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            // Notifications won't work without this permission
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     LaunchedEffect(uiState.error) {
         uiState.error?.let { error ->
             snackbarHostState.showSnackbar(message = error)
+            viewModel.onErrorConsumed()
         }
     }
 
@@ -99,13 +127,11 @@ fun NotificationSettingsScreen(
                 ) {
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Global notifications toggle
                     NotificationsToggleSection(
                         enabled = uiState.notificationsEnabled,
                         onToggle = viewModel::toggleNotifications,
                     )
 
-                    // Quiet hours section (only visible when notifications are enabled)
                     if (uiState.notificationsEnabled) {
                         QuietHoursSection(
                             quietHoursEnabled = uiState.quietHoursEnabled,
@@ -189,7 +215,6 @@ private fun QuietHoursSection(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                // Quiet hours toggle
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -213,16 +238,13 @@ private fun QuietHoursSection(
                     )
                 }
 
-                // Time pickers (only when quiet hours are enabled)
                 if (quietHoursEnabled) {
-                    // Start time row
                     TimeSettingRow(
                         label = "Start",
                         time = quietHoursStart.format(timeFormatter),
                         onClick = { showStartTimePicker = true },
                     )
 
-                    // End time row
                     TimeSettingRow(
                         label = "End",
                         time = quietHoursEnd.format(timeFormatter),
@@ -233,7 +255,6 @@ private fun QuietHoursSection(
         }
     }
 
-    // Start time picker dialog
     if (showStartTimePicker) {
         TimePickerDialog(
             initialHour = quietHoursStart.hour,
@@ -247,7 +268,6 @@ private fun QuietHoursSection(
         )
     }
 
-    // End time picker dialog
     if (showEndTimePicker) {
         TimePickerDialog(
             initialHour = quietHoursEnd.hour,

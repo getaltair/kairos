@@ -58,10 +58,10 @@ data class UserPreferencesEntity(
     val quietHoursEnabled: Boolean = true,
 
     @ColumnInfo(name = "quiet_hours_start")
-    val quietHoursStart: String = "22:00",
+    val quietHoursStart: LocalTime = LocalTime.of(22, 0),
 
     @ColumnInfo(name = "quiet_hours_end")
-    val quietHoursEnd: String = "07:00",
+    val quietHoursEnd: LocalTime = LocalTime.of(7, 0),
 
     @ColumnInfo(name = "created_at")
     val createdAt: Long,

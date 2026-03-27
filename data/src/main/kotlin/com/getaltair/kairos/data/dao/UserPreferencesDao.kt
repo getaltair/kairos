@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Upsert
 import com.getaltair.kairos.data.entity.UserPreferencesEntity
+import java.time.LocalTime
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 
@@ -76,8 +77,8 @@ interface UserPreferencesDao {
         energyTrackingEnabled: Boolean,
         notificationChannels: String?,
         quietHoursEnabled: Boolean,
-        quietHoursStart: String,
-        quietHoursEnd: String,
+        quietHoursStart: LocalTime,
+        quietHoursEnd: LocalTime,
         updatedAt: Long
     )
 
@@ -87,7 +88,7 @@ interface UserPreferencesDao {
     @Query(
         "UPDATE user_preferences SET quiet_hours_enabled = :enabled, quiet_hours_start = :start, quiet_hours_end = :end WHERE id = :id"
     )
-    suspend fun updateQuietHours(id: String, enabled: Boolean, start: String, end: String)
+    suspend fun updateQuietHours(id: UUID, enabled: Boolean, start: LocalTime, end: LocalTime)
 
     /**
      * Update notification enabled flag.

@@ -54,4 +54,9 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.androidx.test.runner)
+
+    // Instrumented Testing
+    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.junit)
 }

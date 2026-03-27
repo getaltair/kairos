@@ -4,8 +4,6 @@ import com.getaltair.kairos.data.converter.JsonMapConverter
 import com.getaltair.kairos.data.entity.UserPreferencesEntity
 import com.getaltair.kairos.domain.entity.UserPreferences
 import java.time.Instant
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 import timber.log.Timber
 
@@ -15,7 +13,6 @@ import timber.log.Timber
 object UserPreferencesEntityMapper {
 
     private val jsonMapConverter = JsonMapConverter()
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     /**
      * Converts [UserPreferencesEntity] to domain [UserPreferences].
@@ -39,8 +36,8 @@ object UserPreferencesEntityMapper {
             energyTrackingEnabled = entity.energyTrackingEnabled,
             notificationChannels = notificationChannels,
             quietHoursEnabled = entity.quietHoursEnabled,
-            quietHoursStart = LocalTime.parse(entity.quietHoursStart, timeFormatter),
-            quietHoursEnd = LocalTime.parse(entity.quietHoursEnd, timeFormatter),
+            quietHoursStart = entity.quietHoursStart,
+            quietHoursEnd = entity.quietHoursEnd,
             createdAt = Instant.ofEpochMilli(entity.createdAt),
             updatedAt = Instant.ofEpochMilli(entity.updatedAt)
         )
@@ -68,8 +65,8 @@ object UserPreferencesEntityMapper {
             energyTrackingEnabled = domain.energyTrackingEnabled,
             notificationChannels = notificationChannels,
             quietHoursEnabled = domain.quietHoursEnabled,
-            quietHoursStart = domain.quietHoursStart.format(timeFormatter),
-            quietHoursEnd = domain.quietHoursEnd.format(timeFormatter),
+            quietHoursStart = domain.quietHoursStart,
+            quietHoursEnd = domain.quietHoursEnd,
             createdAt = domain.createdAt.toEpochMilli(),
             updatedAt = domain.updatedAt.toEpochMilli()
         )

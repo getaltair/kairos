@@ -20,7 +20,8 @@ class HabitReminderBuilder(private val context: Context) {
      * Builds the initial habit reminder notification.
      *
      * @param habit the habit to remind about
-     * @param notificationId used for PendingIntent request codes
+     * @param notificationId used as the base for PendingIntent request codes;
+     *   action buttons use offsets from this value (snooze +100, skip +200)
      */
     fun buildReminder(habit: Habit, notificationId: Int): Notification = baseBuilder(habit, notificationId)
         .setContentText(habit.anchorBehavior)
@@ -38,10 +39,14 @@ class HabitReminderBuilder(private val context: Context) {
      * @param followUpNumber 1-based follow-up index
      * @param notificationId used for PendingIntent request codes
      */
-    fun buildFollowUp(habit: Habit, followUpNumber: Int, notificationId: Int): Notification =
-        baseBuilder(habit, notificationId)
+    fun buildFollowUp(habit: Habit, followUpNumber: Int, notificationId: Int): Notification {
+        require(followUpNumber in 1..NotificationConstants.MAX_FOLLOW_UPS) {
+            "followUpNumber must be in 1..${NotificationConstants.MAX_FOLLOW_UPS}, was $followUpNumber"
+        }
+        return baseBuilder(habit, notificationId)
             .setContentText(followUpBody(habit, followUpNumber))
             .build()
+    }
 
     /**
      * Returns the appropriate follow-up body text.
@@ -51,7 +56,7 @@ class HabitReminderBuilder(private val context: Context) {
         1 -> habit.anchorBehavior
         2 -> FOLLOW_UP_2_BODY
         3 -> FOLLOW_UP_3_BODY
-        else -> habit.anchorBehavior
+        else -> throw IllegalArgumentException("Invalid followUpNumber: $followUpNumber")
     }
 
     /**
@@ -134,7 +139,7 @@ class HabitReminderBuilder(private val context: Context) {
         const val ACTION_COMPLETE_HABIT = "com.getaltair.kairos.ACTION_COMPLETE_HABIT"
         const val ACTION_SNOOZE_HABIT = "com.getaltair.kairos.ACTION_SNOOZE_HABIT"
         const val ACTION_SKIP_HABIT = "com.getaltair.kairos.ACTION_SKIP_HABIT"
-        const val EXTRA_HABIT_ID = "habit_id"
+        const val EXTRA_HABIT_ID = NotificationConstants.EXTRA_HABIT_ID
 
         /** Body text for follow-up 2 (D-2 compliant). */
         const val FOLLOW_UP_2_BODY = "Still waiting when you're ready."

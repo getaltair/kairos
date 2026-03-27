@@ -15,7 +15,9 @@ import timber.log.Timber
  * AlarmManager-based scheduler for habit reminder notifications.
  *
  * Uses exact alarms ([AlarmManager.setExactAndAllowWhileIdle]) for precise timing.
- * Min SDK 31 guarantees API availability without version checks.
+ * Requires [android.Manifest.permission.SCHEDULE_EXACT_ALARM] permission.
+ * All scheduling methods check [AlarmManager.canScheduleExactAlarms] before
+ * setting alarms and return [ScheduleResult] to indicate success or denial.
  */
 class NotificationScheduler(private val context: Context, private val dao: HabitNotificationDao) {
 
@@ -25,7 +27,11 @@ class NotificationScheduler(private val context: Context, private val dao: Habit
     /**
      * Schedules an exact alarm for a habit at [time] today (or tomorrow if [time] has passed).
      */
-    fun scheduleReminder(habitId: UUID, time: LocalTime) {
+    fun scheduleReminder(habitId: UUID, time: LocalTime): ScheduleResult {
+        if (!alarmManager.canScheduleExactAlarms()) {
+            Timber.w("Cannot schedule exact alarms; permission revoked for habit %s", habitId)
+            return ScheduleResult.ExactAlarmDenied
+        }
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, time.hour)
             set(Calendar.MINUTE, time.minute)
@@ -40,6 +46,7 @@ class NotificationScheduler(private val context: Context, private val dao: Habit
             pendingIntent
         )
         Timber.d("Scheduled reminder for habit %s at %s", habitId, time)
+        return ScheduleResult.Scheduled
     }
 
     /**
@@ -54,7 +61,12 @@ class NotificationScheduler(private val context: Context, private val dao: Habit
     /**
      * Schedules a one-time snooze alarm [delayMinutes] from now.
      */
-    fun scheduleSnooze(habitId: UUID, delayMinutes: Int = 10) {
+    fun scheduleSnooze(habitId: UUID, delayMinutes: Int = 10): ScheduleResult {
+        require(delayMinutes > 0) { "delayMinutes must be positive, was $delayMinutes" }
+        if (!alarmManager.canScheduleExactAlarms()) {
+            Timber.w("Cannot schedule exact alarms; permission revoked for habit %s", habitId)
+            return ScheduleResult.ExactAlarmDenied
+        }
         val triggerAt = System.currentTimeMillis() + delayMinutes * 60_000L
         val pendingIntent = buildAlarmIntent(habitId, NotificationIdStrategy.snoozedId(habitId))
         alarmManager.setExactAndAllowWhileIdle(
@@ -63,24 +75,30 @@ class NotificationScheduler(private val context: Context, private val dao: Habit
             pendingIntent
         )
         Timber.d("Scheduled snooze for habit %s in %d min", habitId, delayMinutes)
+        return ScheduleResult.Scheduled
     }
 
     /**
      * Schedules a persistent follow-up alarm.
      *
-     * Delays by follow-up number:
-     * - 1: 15 minutes from now
-     * - 2: 30 minutes from now
-     * - 3: 60 minutes from now
+     * The delay increases with each follow-up number (see implementation
+     * for current values).
      *
-     * @param followUpNumber 1-based follow-up index
+     * @param followUpNumber 1-based follow-up index (1..MAX_FOLLOW_UPS)
      */
-    fun scheduleFollowUp(habitId: UUID, followUpNumber: Int) {
+    fun scheduleFollowUp(habitId: UUID, followUpNumber: Int): ScheduleResult {
+        require(followUpNumber in 1..NotificationConstants.MAX_FOLLOW_UPS) {
+            "followUpNumber must be in 1..${NotificationConstants.MAX_FOLLOW_UPS}, was $followUpNumber"
+        }
+        if (!alarmManager.canScheduleExactAlarms()) {
+            Timber.w("Cannot schedule exact alarms; permission revoked for habit %s", habitId)
+            return ScheduleResult.ExactAlarmDenied
+        }
         val delayMinutes = when (followUpNumber) {
             1 -> 15
             2 -> 30
             3 -> 60
-            else -> return
+            else -> return ScheduleResult.Scheduled
         }
         val triggerAt = System.currentTimeMillis() + delayMinutes * 60_000L
         val requestCode = NotificationIdStrategy.followUpId(habitId, followUpNumber)
@@ -96,13 +114,14 @@ class NotificationScheduler(private val context: Context, private val dao: Habit
             habitId,
             delayMinutes
         )
+        return ScheduleResult.Scheduled
     }
 
     /**
      * Cancels all follow-up alarms (numbers 1, 2, 3) for a habit.
      */
     fun cancelFollowUps(habitId: UUID) {
-        for (number in 1..3) {
+        for (number in 1..NotificationConstants.MAX_FOLLOW_UPS) {
             val requestCode = NotificationIdStrategy.followUpId(habitId, number)
             val pendingIntent = buildFollowUpAlarmIntent(habitId, number, requestCode)
             alarmManager.cancel(pendingIntent)
@@ -112,7 +131,7 @@ class NotificationScheduler(private val context: Context, private val dao: Habit
 
     /**
      * Re-registers alarms for all enabled notifications from the database.
-     * Typically called after device boot or app update.
+     * Called after device boot via [BootReceiver].
      */
     suspend fun rescheduleAll() {
         val notifications = dao.getEnabled()
@@ -124,14 +143,22 @@ class NotificationScheduler(private val context: Context, private val dao: Habit
 
     /**
      * Schedules an alarm at a specific [LocalTime] for today (used for quiet-hours deferral).
-     * If the time has already passed today the alarm fires immediately.
+     *
+     * Unlike [scheduleReminder], this method is for one-shot deferred delivery
+     * and does not represent a recurring daily alarm. If the time has already
+     * passed today, the alarm is scheduled for tomorrow.
      */
-    fun scheduleAtTime(habitId: UUID, time: LocalTime) {
+    fun scheduleAtTime(habitId: UUID, time: LocalTime): ScheduleResult {
+        if (!alarmManager.canScheduleExactAlarms()) {
+            Timber.w("Cannot schedule exact alarms; permission revoked for habit %s", habitId)
+            return ScheduleResult.ExactAlarmDenied
+        }
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, time.hour)
             set(Calendar.MINUTE, time.minute)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
+            if (before(Calendar.getInstance())) add(Calendar.DAY_OF_YEAR, 1)
         }
         val pendingIntent = buildAlarmIntent(habitId, NotificationIdStrategy.reminderId(habitId))
         alarmManager.setExactAndAllowWhileIdle(
@@ -140,13 +167,14 @@ class NotificationScheduler(private val context: Context, private val dao: Habit
             pendingIntent
         )
         Timber.d("Scheduled deferred reminder for habit %s at %s", habitId, time)
+        return ScheduleResult.Scheduled
     }
 
     // -- Private helpers --
 
     private fun buildAlarmIntent(habitId: UUID, requestCode: Int): PendingIntent {
         val intent = Intent(context, ReminderAlarmReceiver::class.java).apply {
-            putExtra(HabitReminderBuilder.EXTRA_HABIT_ID, habitId.toString())
+            putExtra(NotificationConstants.EXTRA_HABIT_ID, habitId.toString())
         }
         return PendingIntent.getBroadcast(
             context,
@@ -158,8 +186,8 @@ class NotificationScheduler(private val context: Context, private val dao: Habit
 
     private fun buildFollowUpAlarmIntent(habitId: UUID, followUpNumber: Int, requestCode: Int): PendingIntent {
         val intent = Intent(context, ReminderAlarmReceiver::class.java).apply {
-            putExtra(HabitReminderBuilder.EXTRA_HABIT_ID, habitId.toString())
-            putExtra(EXTRA_FOLLOW_UP_NUMBER, followUpNumber)
+            putExtra(NotificationConstants.EXTRA_HABIT_ID, habitId.toString())
+            putExtra(NotificationConstants.EXTRA_FOLLOW_UP_NUMBER, followUpNumber)
         }
         return PendingIntent.getBroadcast(
             context,
@@ -170,6 +198,6 @@ class NotificationScheduler(private val context: Context, private val dao: Habit
     }
 
     companion object {
-        const val EXTRA_FOLLOW_UP_NUMBER = "follow_up_number"
+        const val EXTRA_FOLLOW_UP_NUMBER = NotificationConstants.EXTRA_FOLLOW_UP_NUMBER
     }
 }

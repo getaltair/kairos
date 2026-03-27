@@ -65,23 +65,39 @@ class NotificationSettingsViewModel(private val preferencesRepository: Preferenc
     }
 
     fun toggleNotifications(enabled: Boolean) {
-        val prefs = currentPreferences ?: return
+        val prefs = currentPreferences ?: run {
+            _uiState.update { it.copy(error = "Settings not loaded yet. Please wait.") }
+            return
+        }
         updatePreferences(prefs.copy(notificationEnabled = enabled))
     }
 
     fun toggleQuietHours(enabled: Boolean) {
-        val prefs = currentPreferences ?: return
+        val prefs = currentPreferences ?: run {
+            _uiState.update { it.copy(error = "Settings not loaded yet. Please wait.") }
+            return
+        }
         updatePreferences(prefs.copy(quietHoursEnabled = enabled))
     }
 
     fun setQuietHoursStart(time: LocalTime) {
-        val prefs = currentPreferences ?: return
+        val prefs = currentPreferences ?: run {
+            _uiState.update { it.copy(error = "Settings not loaded yet. Please wait.") }
+            return
+        }
         updatePreferences(prefs.copy(quietHoursStart = time))
     }
 
     fun setQuietHoursEnd(time: LocalTime) {
-        val prefs = currentPreferences ?: return
+        val prefs = currentPreferences ?: run {
+            _uiState.update { it.copy(error = "Settings not loaded yet. Please wait.") }
+            return
+        }
         updatePreferences(prefs.copy(quietHoursEnd = time))
+    }
+
+    fun onErrorConsumed() {
+        _uiState.update { it.copy(error = null) }
     }
 
     private fun updatePreferences(updated: UserPreferences) {

@@ -1,9 +1,13 @@
 package com.getaltair.kairos.notification
 
+import android.content.Context
+import android.content.pm.ApplicationInfo
 import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.AnchorType
 import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.enums.HabitFrequency
+import io.mockk.every
+import io.mockk.mockk
 import java.util.UUID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -13,11 +17,18 @@ import org.junit.Test
 /**
  * Unit tests for [HabitReminderBuilder] text content generation.
  *
- * Since building actual Android Notification objects requires a live Context,
- * these tests validate the text strings (title, body, follow-up variants)
- * and verify compliance with invariant D-2 (shame-free messaging).
+ * Uses an actual [HabitReminderBuilder] instance with a mocked Context so
+ * tests exercise the real production logic for title and body text.
+ * Also verifies compliance with invariant D-2 (shame-free messaging).
  */
 class HabitReminderBuilderTest {
+
+    private val mockContext: Context = mockk(relaxed = true) {
+        every { applicationInfo } returns ApplicationInfo()
+        every { packageName } returns "com.getaltair.kairos"
+        every { packageManager } returns mockk(relaxed = true)
+    }
+    private val builder = HabitReminderBuilder(mockContext)
 
     private val sampleHabit = Habit(
         id = UUID.fromString("11111111-1111-1111-1111-111111111111"),
@@ -49,7 +60,7 @@ class HabitReminderBuilderTest {
 
     @Test
     fun `title contains habit name`() {
-        val title = titleText(sampleHabit)
+        val title = builder.titleText(sampleHabit)
         assertTrue(
             "Title should contain habit name, got: $title",
             title.contains(sampleHabit.name)
@@ -58,7 +69,7 @@ class HabitReminderBuilderTest {
 
     @Test
     fun `title uses Time for prefix`() {
-        val title = titleText(sampleHabit)
+        val title = builder.titleText(sampleHabit)
         assertTrue(
             "Title should start with 'Time for:', got: $title",
             title.startsWith("Time for:")
@@ -69,20 +80,20 @@ class HabitReminderBuilderTest {
 
     @Test
     fun `initial reminder body is anchor behavior`() {
-        // Follow-up 0 or initial reminder uses the anchor behavior as body
-        assertEquals(sampleHabit.anchorBehavior, followUpBody(sampleHabit, 1))
+        // Follow-up 1 uses the anchor behavior as body (same as initial reminder)
+        assertEquals(sampleHabit.anchorBehavior, builder.followUpBody(sampleHabit, 1))
     }
 
     @Test
     fun `follow-up 1 body matches anchor behavior`() {
-        assertEquals(sampleHabit.anchorBehavior, followUpBody(sampleHabit, 1))
+        assertEquals(sampleHabit.anchorBehavior, builder.followUpBody(sampleHabit, 1))
     }
 
     @Test
     fun `follow-up 2 body is still waiting message`() {
         assertEquals(
             HabitReminderBuilder.FOLLOW_UP_2_BODY,
-            followUpBody(sampleHabit, 2)
+            builder.followUpBody(sampleHabit, 2)
         )
     }
 
@@ -90,7 +101,7 @@ class HabitReminderBuilderTest {
     fun `follow-up 3 body is last reminder message`() {
         assertEquals(
             HabitReminderBuilder.FOLLOW_UP_3_BODY,
-            followUpBody(sampleHabit, 3)
+            builder.followUpBody(sampleHabit, 3)
         )
     }
 
@@ -110,25 +121,25 @@ class HabitReminderBuilderTest {
 
     @Test
     fun `title contains no forbidden phrases`() {
-        val title = titleText(sampleHabit)
+        val title = builder.titleText(sampleHabit)
         assertNoForbiddenPhrases(title, "title")
     }
 
     @Test
     fun `follow-up 1 body contains no forbidden phrases`() {
-        val body = followUpBody(sampleHabit, 1)
+        val body = builder.followUpBody(sampleHabit, 1)
         assertNoForbiddenPhrases(body, "follow-up 1 body")
     }
 
     @Test
     fun `follow-up 2 body contains no forbidden phrases`() {
-        val body = followUpBody(sampleHabit, 2)
+        val body = builder.followUpBody(sampleHabit, 2)
         assertNoForbiddenPhrases(body, "follow-up 2 body")
     }
 
     @Test
     fun `follow-up 3 body contains no forbidden phrases`() {
-        val body = followUpBody(sampleHabit, 3)
+        val body = builder.followUpBody(sampleHabit, 3)
         assertNoForbiddenPhrases(body, "follow-up 3 body")
     }
 
@@ -166,22 +177,14 @@ class HabitReminderBuilderTest {
         assertEquals("habit_id", HabitReminderBuilder.EXTRA_HABIT_ID)
     }
 
-    // -- Helpers --
+    // -- Invalid follow-up number test --
 
-    /**
-     * Simulates [HabitReminderBuilder.titleText] logic without needing a Context.
-     */
-    private fun titleText(habit: Habit): String = "Time for: ${habit.name}"
-
-    /**
-     * Simulates [HabitReminderBuilder.followUpBody] logic without needing a Context.
-     */
-    private fun followUpBody(habit: Habit, followUpNumber: Int): String = when (followUpNumber) {
-        1 -> habit.anchorBehavior
-        2 -> HabitReminderBuilder.FOLLOW_UP_2_BODY
-        3 -> HabitReminderBuilder.FOLLOW_UP_3_BODY
-        else -> habit.anchorBehavior
+    @Test(expected = IllegalArgumentException::class)
+    fun `followUpBody throws for invalid follow-up number`() {
+        builder.followUpBody(sampleHabit, 4)
     }
+
+    // -- Helpers --
 
     private fun assertNoForbiddenPhrases(text: String, label: String) {
         val lower = text.lowercase()
