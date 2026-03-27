@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.getaltair.kairos.data.entity.RecoverySessionEntity
 import com.getaltair.kairos.domain.enums.SessionStatus
 import java.util.UUID
@@ -99,6 +100,13 @@ interface RecoverySessionDao {
      */
     @Insert
     fun insertAll(sessions: List<RecoverySessionEntity>)
+
+    /**
+     * Insert or update a recovery session.
+     * If a session with the same primary key exists, it is updated; otherwise, inserted.
+     */
+    @Upsert
+    suspend fun upsert(entity: RecoverySessionEntity)
 
     /**
      * Update a recovery session.

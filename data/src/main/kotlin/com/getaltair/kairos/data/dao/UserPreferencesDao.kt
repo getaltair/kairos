@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.getaltair.kairos.data.entity.UserPreferencesEntity
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
@@ -39,6 +40,13 @@ interface UserPreferencesDao {
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(preferences: UserPreferencesEntity)
+
+    /**
+     * Insert or update user preferences.
+     * If preferences with the same primary key exist, they are updated; otherwise, inserted.
+     */
+    @Upsert
+    suspend fun upsert(entity: UserPreferencesEntity)
 
     /**
      * Update user preferences.

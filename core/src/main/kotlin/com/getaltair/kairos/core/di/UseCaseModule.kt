@@ -12,9 +12,14 @@ import com.getaltair.kairos.domain.usecase.EditHabitUseCase
 import com.getaltair.kairos.domain.usecase.GetHabitDetailUseCase
 import com.getaltair.kairos.domain.usecase.GetHabitUseCase
 import com.getaltair.kairos.domain.usecase.GetWeeklyStatsUseCase
+import com.getaltair.kairos.domain.usecase.ObserveAuthStateUseCase
 import com.getaltair.kairos.domain.usecase.PauseHabitUseCase
+import com.getaltair.kairos.domain.usecase.ResetPasswordUseCase
 import com.getaltair.kairos.domain.usecase.RestoreHabitUseCase
 import com.getaltair.kairos.domain.usecase.ResumeHabitUseCase
+import com.getaltair.kairos.domain.usecase.SignInUseCase
+import com.getaltair.kairos.domain.usecase.SignOutUseCase
+import com.getaltair.kairos.domain.usecase.SignUpUseCase
 import org.koin.dsl.module
 
 /**
@@ -37,4 +42,11 @@ val useCaseModule = module {
     factory { BackdateCompletionUseCase(get(), get()) }
     factory { GetHabitUseCase(get()) }
     factory { GetHabitDetailUseCase(get(), get()) }
+
+    // Auth use cases
+    factory { SignInUseCase(get()) }
+    factory { SignUpUseCase(get()) }
+    factory { SignOutUseCase(get()) }
+    factory { ResetPasswordUseCase(get()) }
+    factory { ObserveAuthStateUseCase(get()) }
 }

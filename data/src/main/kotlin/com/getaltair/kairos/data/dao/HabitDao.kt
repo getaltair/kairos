@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import com.getaltair.kairos.data.entity.CompletionEntity
 import com.getaltair.kairos.data.entity.HabitEntity
 import com.getaltair.kairos.domain.enums.HabitCategory
@@ -45,6 +46,13 @@ interface HabitDao {
      */
     @Insert
     fun insertAll(habits: List<HabitEntity>)
+
+    /**
+     * Insert or update a habit.
+     * If a habit with the same primary key exists, it is updated; otherwise, inserted.
+     */
+    @Upsert
+    suspend fun upsert(entity: HabitEntity)
 
     /**
      * Update a habit.

@@ -3,8 +3,11 @@ package com.getaltair.kairos
 import android.app.Application
 import com.getaltair.kairos.core.di.useCaseModule
 import com.getaltair.kairos.data.di.dataModule
+import com.getaltair.kairos.feature.auth.di.authModule
 import com.getaltair.kairos.feature.habit.di.habitModule
+import com.getaltair.kairos.feature.settings.di.settingsModule
 import com.getaltair.kairos.feature.today.di.todayModule
+import com.getaltair.kairos.sync.di.syncModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -24,8 +27,11 @@ class KairosApp : Application() {
             modules(
                 dataModule,
                 useCaseModule,
+                syncModule,
+                authModule,
                 todayModule,
-                habitModule
+                habitModule,
+                settingsModule,
             )
         }
     }

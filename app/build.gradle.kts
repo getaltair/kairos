@@ -49,6 +49,7 @@ dependencies {
     implementation(project(":feature:today"))
     implementation(project(":feature:habit"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:auth"))
     implementation(project(":sync"))
 
     // Android Core

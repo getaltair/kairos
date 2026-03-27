@@ -4,9 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.getaltair.kairos.feature.auth.ForgotPasswordScreen
+import com.getaltair.kairos.feature.auth.LoginScreen
+import com.getaltair.kairos.feature.auth.SignUpScreen
 import com.getaltair.kairos.feature.habit.CreateHabitScreen
 import com.getaltair.kairos.feature.habit.EditHabitScreen
 import com.getaltair.kairos.feature.habit.HabitDetailScreen
+import com.getaltair.kairos.feature.settings.SettingsScreen
 import com.getaltair.kairos.feature.today.TodayScreen
 import java.util.UUID
 
@@ -20,7 +24,8 @@ fun KairosNavGraph() {
         composable("today") {
             TodayScreen(
                 onAddHabit = { navController.navigate("createHabit") },
-                onHabitClick = { habitId -> navController.navigate("habitDetail/$habitId") }
+                onHabitClick = { habitId -> navController.navigate("habitDetail/$habitId") },
+                onNavigateToSettings = { navController.navigate("settings") }
             )
         }
         composable("createHabit") {
@@ -57,7 +62,28 @@ fun KairosNavGraph() {
             )
         }
         composable("settings") {
-            // TODO: Settings screen
+            SettingsScreen(
+                onNavigateToLogin = { navController.navigate("login") },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("login") {
+            LoginScreen(
+                onLoginSuccess = { navController.popBackStack() },
+                onNavigateToSignUp = { navController.navigate("signup") },
+                onNavigateToForgotPassword = { navController.navigate("forgotPassword") }
+            )
+        }
+        composable("signup") {
+            SignUpScreen(
+                onSignUpSuccess = { navController.popBackStack("login", inclusive = true) },
+                onNavigateToLogin = { navController.popBackStack() }
+            )
+        }
+        composable("forgotPassword") {
+            ForgotPasswordScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

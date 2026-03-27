@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import com.getaltair.kairos.data.entity.RoutineVariantEntity
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
@@ -63,6 +64,13 @@ interface RoutineVariantDao {
      */
     @Insert
     fun insertAll(variants: List<RoutineVariantEntity>)
+
+    /**
+     * Insert or update a routine variant.
+     * If a variant with the same primary key exists, it is updated; otherwise, inserted.
+     */
+    @Upsert
+    suspend fun upsert(entity: RoutineVariantEntity)
 
     /**
      * Update a routine variant.

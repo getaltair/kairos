@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.getaltair.kairos.data.entity.RoutineEntity
 import com.getaltair.kairos.domain.enums.RoutineStatus
 import java.util.UUID
@@ -51,6 +52,13 @@ interface RoutineDao {
      */
     @Insert
     fun insertAll(routines: List<RoutineEntity>)
+
+    /**
+     * Insert or update a routine.
+     * If a routine with the same primary key exists, it is updated; otherwise, inserted.
+     */
+    @Upsert
+    suspend fun upsert(entity: RoutineEntity)
 
     /**
      * Update a routine.

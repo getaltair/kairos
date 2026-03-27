@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.getaltair.kairos.data.entity.CompletionEntity
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
@@ -84,6 +85,13 @@ interface CompletionDao {
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(completions: List<CompletionEntity>)
+
+    /**
+     * Insert or update a completion.
+     * If a completion with the same primary key exists, it is updated; otherwise, inserted.
+     */
+    @Upsert
+    suspend fun upsert(entity: CompletionEntity)
 
     /**
      * Update a completion.
