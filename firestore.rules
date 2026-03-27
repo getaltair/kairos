@@ -1,0 +1,241 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -----------------------------------------------------------------------
+    // Helper functions
+    // -----------------------------------------------------------------------
+
+    /** True when the authenticated user owns the {userId} path segment. */
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    /**
+     * True when the update does NOT modify immutable fields (id, createdAt).
+     * Uses diff().affectedKeys() so only actually-changed keys are checked.
+     */
+    function notImmutable() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['id', 'createdAt']);
+    }
+
+    // Shorthand: incoming document data
+    function data() {
+      return request.resource.data;
+    }
+
+    // -----------------------------------------------------------------------
+    // /users/{userId}  -- user profile document
+    // -----------------------------------------------------------------------
+    match /users/{userId} {
+      allow read:   if isOwner(userId);
+      allow create: if isOwner(userId)
+        && data().keys().hasAll(['email', 'createdAt', 'lastLoginAt'])
+        && data().email is string;
+      allow update: if isOwner(userId) && notImmutable();
+      allow delete: if false; // users cannot self-delete their profile doc
+
+      // -------------------------------------------------------------------
+      // /users/{userId}/habits/{habitId}
+      // -------------------------------------------------------------------
+      match /habits/{habitId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && data().keys().hasAll([
+               'id', 'name', 'anchorBehavior', 'anchorType',
+               'category', 'frequency', 'phase', 'status',
+               'estimatedSeconds', 'allowPartial',
+               'lapseThresholdDays', 'relapseThresholdDays',
+               'createdAt', 'updatedAt', 'version'
+             ])
+          && data().id is string
+          && data().name is string
+          && data().anchorBehavior is string
+          && data().anchorType is string
+          && data().category is string
+          && data().frequency is string
+          && data().phase is string
+          && data().status is string
+          && data().estimatedSeconds is int
+          && data().allowPartial is bool
+          && data().lapseThresholdDays is int
+          && data().relapseThresholdDays is int
+          && data().version is number;
+
+        allow update: if isOwner(userId) && notImmutable();
+        allow delete: if isOwner(userId);
+      }
+
+      // -------------------------------------------------------------------
+      // /users/{userId}/completions/{completionId}
+      // -------------------------------------------------------------------
+      match /completions/{completionId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && data().keys().hasAll([
+               'id', 'habitId', 'date', 'completedAt',
+               'type', 'createdAt', 'version'
+             ])
+          && data().id is string
+          && data().habitId is string
+          && data().date is string
+          && data().type is string
+          && data().version is number;
+
+        allow update: if isOwner(userId) && notImmutable();
+        allow delete: if isOwner(userId);
+      }
+
+      // -------------------------------------------------------------------
+      // /users/{userId}/routines/{routineId}
+      // -------------------------------------------------------------------
+      match /routines/{routineId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && data().keys().hasAll([
+               'id', 'name', 'category', 'status',
+               'createdAt', 'updatedAt', 'version'
+             ])
+          && data().id is string
+          && data().name is string
+          && data().category is string
+          && data().status is string
+          && data().version is number;
+
+        allow update: if isOwner(userId) && notImmutable();
+        allow delete: if isOwner(userId);
+
+        // ---------------------------------------------------------------
+        // /users/{userId}/routines/{routineId}/habits/{id}
+        // ---------------------------------------------------------------
+        match /habits/{id} {
+          allow read: if isOwner(userId);
+
+          allow create: if isOwner(userId)
+            && data().keys().hasAll([
+                 'id', 'routineId', 'habitId', 'orderIndex', 'version'
+               ])
+            && data().id is string
+            && data().routineId is string
+            && data().habitId is string
+            && data().orderIndex is int
+            && data().version is number;
+
+          allow update: if isOwner(userId) && notImmutable();
+          allow delete: if isOwner(userId);
+        }
+
+        // ---------------------------------------------------------------
+        // /users/{userId}/routines/{routineId}/variants/{variantId}
+        // ---------------------------------------------------------------
+        match /variants/{variantId} {
+          allow read: if isOwner(userId);
+
+          allow create: if isOwner(userId)
+            && data().keys().hasAll([
+                 'id', 'routineId', 'name', 'estimatedMinutes',
+                 'isDefault', 'version'
+               ])
+            && data().id is string
+            && data().routineId is string
+            && data().name is string
+            && data().estimatedMinutes is int
+            && data().isDefault is bool
+            && data().version is number;
+
+          allow update: if isOwner(userId) && notImmutable();
+          allow delete: if isOwner(userId);
+        }
+      }
+
+      // -------------------------------------------------------------------
+      // /users/{userId}/routine_executions/{executionId}
+      // -------------------------------------------------------------------
+      match /routine_executions/{executionId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && data().keys().hasAll([
+               'id', 'routineId', 'startedAt', 'status',
+               'currentStepIndex', 'totalPausedSeconds', 'version'
+             ])
+          && data().id is string
+          && data().routineId is string
+          && data().status is string
+          && data().currentStepIndex is int
+          && data().totalPausedSeconds is int
+          && data().version is number;
+
+        allow update: if isOwner(userId) && notImmutable();
+        allow delete: if isOwner(userId);
+      }
+
+      // -------------------------------------------------------------------
+      // /users/{userId}/recovery_sessions/{sessionId}
+      // -------------------------------------------------------------------
+      match /recovery_sessions/{sessionId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && data().keys().hasAll([
+               'id', 'habitId', 'type', 'status',
+               'triggeredAt', 'blockers', 'version'
+             ])
+          && data().id is string
+          && data().habitId is string
+          && data().type is string
+          && data().status is string
+          && data().blockers is list
+          && data().version is number;
+
+        allow update: if isOwner(userId) && notImmutable();
+        allow delete: if isOwner(userId);
+      }
+
+      // -------------------------------------------------------------------
+      // /users/{userId}/preferences/{prefId}
+      // -------------------------------------------------------------------
+      match /preferences/{prefId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && data().keys().hasAll([
+               'id', 'notificationEnabled', 'defaultReminderTime',
+               'theme', 'energyTrackingEnabled',
+               'createdAt', 'updatedAt', 'version'
+             ])
+          && data().id is string
+          && data().notificationEnabled is bool
+          && data().defaultReminderTime is string
+          && data().theme is string
+          && data().energyTrackingEnabled is bool
+          && data().version is number;
+
+        allow update: if isOwner(userId) && notImmutable();
+        allow delete: if isOwner(userId);
+      }
+
+      // -------------------------------------------------------------------
+      // /users/{userId}/deletions/{deletionId}
+      // -------------------------------------------------------------------
+      match /deletions/{deletionId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && data().keys().hasAll([
+               'id', 'entityType', 'entityId', 'deletedAt'
+             ])
+          && data().id is string
+          && data().entityType is string
+          && data().entityId is string;
+
+        allow update: if false; // deletion records are append-only
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

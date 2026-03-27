@@ -39,8 +39,9 @@ secrets.properties
 .env.*
 
 # Firebase
-firebase-debug.log
-firestore-debug.log
+.firebase/
+*-debug.log
+firebase-export-metadata.json
 
 # Project-specific
 opencode.json*
