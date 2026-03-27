@@ -50,3 +50,4 @@ opencode.json*
 .tools/
 .serena/
 dashboard/config/
+.claude/tasks/
