@@ -9,8 +9,13 @@ enum class SyncEntityType {
     HABIT,
     COMPLETION,
     ROUTINE,
+
+    /** Habit within a routine. Requires `routineId` in metadata for collection path resolution. */
     ROUTINE_HABIT,
+
+    /** Variant within a routine. Requires `routineId` in metadata for collection path resolution. */
     ROUTINE_VARIANT,
+
     ROUTINE_EXECUTION,
     RECOVERY_SESSION,
     USER_PREFERENCE,

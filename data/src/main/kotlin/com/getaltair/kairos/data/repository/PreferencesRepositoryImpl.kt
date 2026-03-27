@@ -7,6 +7,7 @@ import com.getaltair.kairos.data.mapper.UserPreferencesEntityMapper
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.entity.UserPreferences
 import com.getaltair.kairos.domain.repository.AuthRepository
+import com.getaltair.kairos.domain.sync.SyncEntityTypes
 import com.getaltair.kairos.domain.sync.SyncTrigger
 import java.time.Instant
 import kotlinx.coroutines.CancellationException
@@ -40,7 +41,7 @@ class PreferencesRepositoryImpl(
             val defaultPreferences = UserPreferences()
             val defaultEntity = UserPreferencesEntityMapper.toEntity(defaultPreferences)
             userPreferencesDao.insert(defaultEntity)
-            triggerSync(ENTITY_TYPE, defaultPreferences.id.toString(), defaultPreferences)
+            triggerSync(SyncEntityTypes.USER_PREFERENCE, defaultPreferences.id.toString(), defaultPreferences)
             Result.Success(defaultPreferences)
         }
     } catch (e: Exception) {
@@ -66,7 +67,7 @@ class PreferencesRepositoryImpl(
             notificationChannels = entity.notificationChannels,
             updatedAt = Instant.now().toEpochMilli()
         )
-        triggerSync(ENTITY_TYPE, preferences.id.toString(), preferences)
+        triggerSync(SyncEntityTypes.USER_PREFERENCE, preferences.id.toString(), preferences)
         Result.Success(preferences)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -79,7 +80,10 @@ class PreferencesRepositoryImpl(
      * local Room operation is never delayed by Firestore.
      */
     private fun triggerSync(entityType: String, id: String, entity: Any) {
-        val userId = authRepository.getCurrentUserId() ?: return
+        val userId = authRepository.getCurrentUserId() ?: run {
+            Timber.d("Skipping sync push: user not signed in")
+            return
+        }
         syncScope.launch(Dispatchers.IO) {
             try {
                 syncTrigger.triggerPush(userId, entityType, id, entity)
@@ -89,9 +93,5 @@ class PreferencesRepositoryImpl(
                 Timber.e(e, "Failed to push preferences sync change id=%s", id)
             }
         }
-    }
-
-    companion object {
-        private const val ENTITY_TYPE = "USER_PREFERENCE"
     }
 }

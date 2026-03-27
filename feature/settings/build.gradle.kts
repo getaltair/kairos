@@ -9,10 +9,8 @@ android {
 
 dependencies {
     implementation(project(":domain"))
-    implementation(project(":data"))
     implementation(project(":ui"))
     implementation(project(":core"))
-    implementation(project(":sync"))
 
     // Compose
     implementation(platform(libs.androidx.compose.bom))
@@ -34,4 +32,8 @@ dependencies {
 
     // Logging
     implementation(libs.timber)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

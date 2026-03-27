@@ -15,7 +15,7 @@ import timber.log.Timber
  * Firebase-backed implementation of [AuthRepository].
  * Delegates authentication to [FirebaseAuth] and maps results to domain types.
  */
-class AuthRepositoryImpl(private val auth: FirebaseAuth = FirebaseAuth.getInstance()) : AuthRepository {
+class AuthRepositoryImpl(private val auth: FirebaseAuth) : AuthRepository {
 
     override fun observeAuthState(): Flow<AuthState> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
@@ -25,7 +25,10 @@ class AuthRepositoryImpl(private val auth: FirebaseAuth = FirebaseAuth.getInstan
             } else {
                 AuthState.SignedOut
             }
-            trySend(state)
+            val result = trySend(state)
+            if (result.isFailure) {
+                Timber.w(result.exceptionOrNull(), "Failed to emit auth state change")
+            }
         }
         auth.addAuthStateListener(listener)
         awaitClose { auth.removeAuthStateListener(listener) }

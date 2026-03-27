@@ -9,7 +9,11 @@ sealed class AuthState {
     /**
      * User is signed in with a valid session.
      */
-    data class SignedIn(val userId: String, val email: String?) : AuthState()
+    data class SignedIn(val userId: String, val email: String?) : AuthState() {
+        init {
+            require(userId.isNotBlank()) { "userId must not be blank" }
+        }
+    }
 
     /**
      * User is not signed in.

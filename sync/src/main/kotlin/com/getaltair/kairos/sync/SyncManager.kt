@@ -17,6 +17,8 @@ import com.getaltair.kairos.data.mapper.RoutineHabitEntityMapper
 import com.getaltair.kairos.data.mapper.RoutineVariantEntityMapper
 import com.getaltair.kairos.data.mapper.UserPreferencesEntityMapper
 import com.getaltair.kairos.domain.repository.AuthState
+import com.getaltair.kairos.domain.sync.SyncState
+import com.getaltair.kairos.domain.sync.SyncStateProvider
 import com.getaltair.kairos.domain.sync.SyncTrigger
 import com.getaltair.kairos.sync.firestore.FirestoreCollections
 import com.getaltair.kairos.sync.firestore.FirestoreMapper
@@ -32,6 +34,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,14 +64,17 @@ class SyncManager(
     private val routineExecutionDao: RoutineExecutionDao,
     private val recoverySessionDao: RecoverySessionDao,
     private val userPreferencesDao: UserPreferencesDao,
-) : SyncTrigger {
+) : SyncTrigger,
+    SyncStateProvider {
 
     private val _syncState = MutableStateFlow<SyncState>(SyncState.NotSignedIn)
 
     /** Observable sync state for UI consumption. */
-    val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
+    override val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
 
     private val listenerRegistrations = mutableListOf<ListenerRegistration>()
+
+    private val activeRoutineListeners = mutableSetOf<String>()
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -82,6 +88,10 @@ class SyncManager(
      * to a Room entity, and upserted or deleted locally.
      */
     fun startListening(userId: String) {
+        // Remove any existing listeners to prevent duplicates on re-entry
+        listenerRegistrations.forEach { it.remove() }
+        listenerRegistrations.clear()
+        activeRoutineListeners.clear()
         _syncState.value = SyncState.Syncing
 
         attachHabitListener(userId)
@@ -91,10 +101,9 @@ class SyncManager(
         attachRecoverySessionListener(userId)
         attachUserPreferencesListener(userId)
         // RoutineHabit and RoutineVariant listeners are attached per-routine
-        // inside the routine listener when routines are discovered.
+        // via a separate routines collection listener that discovers routine IDs
+        // and subscribes to their subcollections.
         attachRoutineSubcollectionListeners(userId)
-
-        _syncState.value = SyncState.Synced
     }
 
     /**
@@ -106,6 +115,15 @@ class SyncManager(
         _syncState.value = SyncState.NotSignedIn
     }
 
+    /**
+     * Stops all listeners and cancels the internal coroutine scope.
+     * Call this when the SyncManager is no longer needed.
+     */
+    fun close() {
+        stopListening()
+        coroutineScope.cancel()
+    }
+
     // ------------------------------------------------------------------
     // Push operations
     // ------------------------------------------------------------------
@@ -113,9 +131,10 @@ class SyncManager(
     /**
      * Pushes a local entity change to Firestore.
      *
-     * This is fire-and-forget from the caller's perspective: the local Room
-     * write has already succeeded, so Firestore failures are logged but not
-     * propagated.
+     * Non-cancellation exceptions are caught and logged rather than propagated.
+     * Note: this is a suspending function that awaits the Firestore write;
+     * fire-and-forget semantics are achieved by the caller launching this in
+     * a non-blocking scope.
      *
      * @param userId      The owning user's ID.
      * @param entityType  Which entity collection to write to.
@@ -144,23 +163,29 @@ class SyncManager(
      * Writes a tombstone to `users/{userId}/deletions` and removes the
      * actual document from its collection.
      */
-    suspend fun pushDeletion(userId: String, entityType: SyncEntityType, id: String,) {
+    private suspend fun pushDeletion(
+        userId: String,
+        entityType: SyncEntityType,
+        id: String,
+        firestoreMap: Map<String, Any?> = emptyMap(),
+    ) {
         try {
-            // Write deletion record
             val deletionData = mapOf(
                 "entityType" to entityType.name,
                 "entityId" to id,
                 "deletedAt" to Timestamp.now(),
             )
-            firestore
+            val deletionRef = firestore
                 .collection(FirestoreCollections.deletions(userId).value)
                 .document()
-                .set(deletionData)
-                .await()
+            val path = collectionPathForType(userId, entityType, firestoreMap)
+            val docRef = firestore.collection(path).document(id)
 
-            // Delete the actual document
-            val path = collectionPathForType(userId, entityType, emptyMap())
-            firestore.collection(path).document(id).delete().await()
+            firestore.batch()
+                .set(deletionRef, deletionData)
+                .delete(docRef)
+                .commit()
+                .await()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -175,10 +200,11 @@ class SyncManager(
     /**
      * Performs an initial bidirectional merge between Room and Firestore.
      *
-     * Three scenarios:
+     * Four scenarios:
      * 1. Remote empty, local has data: push all local data to Firestore.
      * 2. Remote has data, local empty: pull all Firestore data into Room.
      * 3. Both have data: per-entity timestamp comparison, newest wins.
+     * 4. Both empty: no action needed.
      */
     suspend fun performInitialSync(userId: String) {
         _syncState.value = SyncState.Syncing
@@ -215,7 +241,9 @@ class SyncManager(
                 when (state) {
                     is AuthState.SignedIn -> {
                         performInitialSync(state.userId)
-                        startListening(state.userId)
+                        if (_syncState.value !is SyncState.Error) {
+                            startListening(state.userId)
+                        }
                     }
 
                     is AuthState.SignedOut -> {
@@ -344,10 +372,23 @@ class SyncManager(
                     handleSnapshotError(error)
                     return@addSnapshotListener
                 }
-                snapshots?.documents?.forEach { doc ->
-                    val routineId = doc.id
-                    attachRoutineHabitListener(userId, routineId)
-                    attachRoutineVariantListener(userId, routineId)
+                snapshots?.documentChanges?.forEach { change ->
+                    val routineId = change.document.id
+                    when (change.type) {
+                        DocumentChange.Type.ADDED -> {
+                            if (activeRoutineListeners.add(routineId)) {
+                                attachRoutineHabitListener(userId, routineId)
+                                attachRoutineVariantListener(userId, routineId)
+                            }
+                        }
+
+                        DocumentChange.Type.REMOVED -> {
+                            activeRoutineListeners.remove(routineId)
+                            // Listeners for removed routines will be cleaned up on stopListening
+                        }
+
+                        DocumentChange.Type.MODIFIED -> { /* no-op for listener management */ }
+                    }
                 }
             }
         listenerRegistrations.add(registration)
@@ -409,6 +450,10 @@ class SyncManager(
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to handle habit change: %s", change.document.id)
+            _syncState.value = SyncState.Error(
+                message = "Failed to sync: ${e.message}",
+                cause = e,
+            )
         }
     }
 
@@ -430,6 +475,10 @@ class SyncManager(
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to handle completion change: %s", change.document.id)
+            _syncState.value = SyncState.Error(
+                message = "Failed to sync: ${e.message}",
+                cause = e,
+            )
         }
     }
 
@@ -451,6 +500,10 @@ class SyncManager(
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to handle routine change: %s", change.document.id)
+            _syncState.value = SyncState.Error(
+                message = "Failed to sync: ${e.message}",
+                cause = e,
+            )
         }
     }
 
@@ -472,6 +525,10 @@ class SyncManager(
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to handle routine-habit change: %s", change.document.id)
+            _syncState.value = SyncState.Error(
+                message = "Failed to sync: ${e.message}",
+                cause = e,
+            )
         }
     }
 
@@ -493,6 +550,10 @@ class SyncManager(
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to handle routine-variant change: %s", change.document.id)
+            _syncState.value = SyncState.Error(
+                message = "Failed to sync: ${e.message}",
+                cause = e,
+            )
         }
     }
 
@@ -514,6 +575,10 @@ class SyncManager(
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to handle routine-execution change: %s", change.document.id)
+            _syncState.value = SyncState.Error(
+                message = "Failed to sync: ${e.message}",
+                cause = e,
+            )
         }
     }
 
@@ -535,6 +600,10 @@ class SyncManager(
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to handle recovery-session change: %s", change.document.id)
+            _syncState.value = SyncState.Error(
+                message = "Failed to sync: ${e.message}",
+                cause = e,
+            )
         }
     }
 
@@ -556,6 +625,10 @@ class SyncManager(
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to handle user-preferences change: %s", change.document.id)
+            _syncState.value = SyncState.Error(
+                message = "Failed to sync: ${e.message}",
+                cause = e,
+            )
         }
     }
 
@@ -1087,6 +1160,11 @@ class SyncManager(
         if (version is Number) {
             return version.toLong()
         }
+        Timber.w(
+            "Could not extract version from Firestore document, updatedAt=%s, version=%s",
+            updatedAt?.javaClass?.simpleName,
+            version?.javaClass?.simpleName,
+        )
         return 0L
     }
 
@@ -1159,19 +1237,36 @@ class SyncManager(
     // ------------------------------------------------------------------
 
     override suspend fun triggerPush(userId: String, entityType: String, id: String, entity: Any) {
-        val type = SyncEntityType.valueOf(entityType)
+        val type = try {
+            SyncEntityType.valueOf(entityType)
+        } catch (e: IllegalArgumentException) {
+            Timber.e(e, "Unknown entity type for sync push: %s", entityType)
+            return
+        }
         val firestoreMap = entityToFirestoreMap(entity)
         pushLocalChange(userId, type, id, firestoreMap)
     }
 
-    override suspend fun triggerDeletion(userId: String, entityType: String, id: String) {
-        val type = SyncEntityType.valueOf(entityType)
-        pushDeletion(userId, type, id)
+    override suspend fun triggerDeletion(
+        userId: String,
+        entityType: String,
+        id: String,
+        metadata: Map<String, String>,
+    ) {
+        val type = try {
+            SyncEntityType.valueOf(entityType)
+        } catch (e: IllegalArgumentException) {
+            Timber.e(e, "Unknown entity type for sync deletion: %s", entityType)
+            return
+        }
+        val firestoreMap: Map<String, Any?> = metadata
+        pushDeletion(userId, type, id, firestoreMap)
     }
 
     /**
      * Converts a domain entity to its Firestore-compatible map representation.
-     * Delegates to the appropriate `toFirestoreMap()` extension from [FirestoreMapper].
+     * Delegates to the appropriate `toFirestoreMap()` extension defined as
+     * top-level extensions in the firestore package (alongside FirestoreMapper).
      */
     private fun entityToFirestoreMap(entity: Any): Map<String, Any?> = when (entity) {
         is com.getaltair.kairos.domain.entity.Habit -> entity.toFirestoreMap()

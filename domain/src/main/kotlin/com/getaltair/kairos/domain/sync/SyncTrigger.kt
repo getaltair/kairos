@@ -6,7 +6,7 @@ package com.getaltair.kairos.domain.sync
  * Repositories call these methods after successful local Room writes.
  * The implementation (in the sync module) resolves the entity type,
  * converts the domain entity to a Firestore-compatible map, and pushes
- * the change via [com.getaltair.kairos.sync.SyncManager].
+ * the change via the SyncTrigger implementation provided by the sync module.
  *
  * All calls are fire-and-forget: callers should launch these in a
  * non-blocking scope so that local operations are never blocked by sync.
@@ -31,5 +31,10 @@ interface SyncTrigger {
      * @param entityType Canonical entity type name (e.g. "HABIT", "COMPLETION").
      * @param id         The entity's primary key as a string.
      */
-    suspend fun triggerDeletion(userId: String, entityType: String, id: String)
+    suspend fun triggerDeletion(
+        userId: String,
+        entityType: String,
+        id: String,
+        metadata: Map<String, String> = emptyMap(),
+    )
 }

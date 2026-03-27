@@ -9,6 +9,7 @@ import com.getaltair.kairos.data.dao.RoutineHabitDao
 import com.getaltair.kairos.data.dao.RoutineVariantDao
 import com.getaltair.kairos.data.dao.UserPreferencesDao
 import com.getaltair.kairos.data.entity.HabitEntity
+import com.getaltair.kairos.domain.sync.SyncState
 import com.getaltair.kairos.sync.firestore.FirestoreCollections
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
@@ -22,6 +23,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
@@ -289,11 +291,335 @@ class SyncManagerTest {
     }
 
     // ------------------------------------------------------------------
+    // triggerDeletion -> pushDeletion (WriteBatch)
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `triggerDeletion writes tombstone and deletes document atomically using WriteBatch`() = runTest {
+        val habitId = UUID.randomUUID().toString()
+
+        val batchMock = mockk<com.google.firebase.firestore.WriteBatch>(relaxed = true)
+        every { firestore.batch() } returns batchMock
+        val tombstoneSlot = slot<Map<String, Any?>>()
+        every { batchMock.set(any(), capture(tombstoneSlot)) } returns batchMock
+        every { batchMock.delete(any()) } returns batchMock
+        every { batchMock.commit() } returns Tasks.forResult(null)
+
+        val deletionsCollection = mockk<CollectionReference>(relaxed = true)
+        val deletionDocRef = mockk<DocumentReference>(relaxed = true)
+        every {
+            firestore.collection(FirestoreCollections.deletions(userId).value)
+        } returns deletionsCollection
+        every { deletionsCollection.document() } returns deletionDocRef
+
+        val habitsCollection = mockk<CollectionReference>(relaxed = true)
+        val habitDocRef = mockk<DocumentReference>(relaxed = true)
+        every {
+            firestore.collection(FirestoreCollections.habits(userId).value)
+        } returns habitsCollection
+        every { habitsCollection.document(habitId) } returns habitDocRef
+
+        syncManager.triggerDeletion(userId, "HABIT", habitId)
+
+        verify { firestore.batch() }
+        verify { batchMock.set(deletionDocRef, any()) }
+        assert(tombstoneSlot.isCaptured) { "Tombstone data should have been captured" }
+        val tombstone = tombstoneSlot.captured
+        assert(tombstone["entityType"] == "HABIT") { "entityType should be HABIT" }
+        assert(tombstone["entityId"] == habitId) { "entityId should be $habitId" }
+        assert(tombstone.containsKey("deletedAt")) { "deletedAt should be present" }
+        verify { batchMock.delete(habitDocRef) }
+        verify { batchMock.commit() }
+    }
+
+    @Test
+    fun `triggerDeletion handles Firestore failure and sets SyncState to Error`() = runTest {
+        val habitId = UUID.randomUUID().toString()
+
+        val batchMock = mockk<com.google.firebase.firestore.WriteBatch>(relaxed = true)
+        every { firestore.batch() } returns batchMock
+        every { batchMock.set(any(), any()) } returns batchMock
+        every { batchMock.delete(any()) } returns batchMock
+        every { batchMock.commit() } returns Tasks.forException(
+            RuntimeException("Permission denied"),
+        )
+
+        val deletionsCollection = mockk<CollectionReference>(relaxed = true)
+        every {
+            firestore.collection(FirestoreCollections.deletions(userId).value)
+        } returns deletionsCollection
+        every { deletionsCollection.document() } returns mockk(relaxed = true)
+
+        val habitsCollection = mockk<CollectionReference>(relaxed = true)
+        every {
+            firestore.collection(FirestoreCollections.habits(userId).value)
+        } returns habitsCollection
+        every { habitsCollection.document(habitId) } returns mockk(relaxed = true)
+
+        syncManager.triggerDeletion(userId, "HABIT", habitId)
+
+        val state = syncManager.syncState.value
+        assert(state is SyncState.Error) {
+            "Expected SyncState.Error but got $state"
+        }
+    }
+
+    @Test
+    fun `triggerDeletion for ROUTINE_HABIT passes routineId from metadata to build correct collection path`() =
+        runTest {
+            val id = UUID.randomUUID().toString()
+            val routineId = UUID.randomUUID().toString()
+            val expectedPath = FirestoreCollections.routineHabits(userId, routineId).value
+
+            val batchMock = mockk<com.google.firebase.firestore.WriteBatch>(relaxed = true)
+            every { firestore.batch() } returns batchMock
+            every { batchMock.set(any(), any()) } returns batchMock
+            every { batchMock.delete(any()) } returns batchMock
+            every { batchMock.commit() } returns Tasks.forResult(null)
+
+            val deletionsCollection = mockk<CollectionReference>(relaxed = true)
+            every {
+                firestore.collection(FirestoreCollections.deletions(userId).value)
+            } returns deletionsCollection
+            every { deletionsCollection.document() } returns mockk(relaxed = true)
+
+            val routineHabitsCollection = mockk<CollectionReference>(relaxed = true)
+            every { firestore.collection(expectedPath) } returns routineHabitsCollection
+            every { routineHabitsCollection.document(id) } returns mockk(relaxed = true)
+
+            syncManager.triggerDeletion(
+                userId,
+                "ROUTINE_HABIT",
+                id,
+                mapOf("routineId" to routineId),
+            )
+
+            verify { firestore.collection(expectedPath) }
+        }
+
+    // ------------------------------------------------------------------
+    // triggerPush / triggerDeletion: unknown entityType
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `triggerPush with unknown entityType returns without pushing`() = runTest {
+        syncManager.triggerPush(userId, "UNKNOWN_TYPE", "some-id", mockk())
+
+        // No Firestore write should have occurred
+        verify(exactly = 0) { firestore.collection(any()) }
+        // syncState should remain unchanged (NotSignedIn from init)
+        assert(syncManager.syncState.value is SyncState.NotSignedIn) {
+            "Expected SyncState.NotSignedIn but got ${syncManager.syncState.value}"
+        }
+    }
+
+    @Test
+    fun `triggerDeletion with unknown entityType returns without pushing`() = runTest {
+        syncManager.triggerDeletion(userId, "UNKNOWN_TYPE", "some-id")
+
+        // No Firestore write should have occurred
+        verify(exactly = 0) { firestore.batch() }
+        // syncState should remain unchanged
+        assert(syncManager.syncState.value is SyncState.NotSignedIn) {
+            "Expected SyncState.NotSignedIn but got ${syncManager.syncState.value}"
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Conflict resolution: remote newer wins
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `performInitialSync remote newer than local - remote wins`() = runTest {
+        val habitId = UUID.randomUUID()
+        val oldTimestamp = 1000L
+        val newTimestamp = 2000L
+
+        // Local has older data
+        val localEntity = createTestHabitEntity(id = habitId, updatedAt = oldTimestamp)
+        every { habitDao.getAll() } returns listOf(localEntity)
+        every { completionDao.getAll() } returns emptyList()
+        every { routineDao.getAll() } returns emptyList()
+        every { routineExecutionDao.getAll() } returns emptyList()
+        every { recoverySessionDao.getAll() } returns emptyList()
+        every { userPreferencesDao.get() } returns null
+        coEvery { habitDao.upsert(any()) } returns Unit
+
+        // Remote has newer data (version > local updatedAt)
+        val remoteData = createTestFirestoreHabitMap(habitId, version = newTimestamp)
+
+        val docSnapshot = mockk<DocumentSnapshot>(relaxed = true)
+        every { docSnapshot.id } returns habitId.toString()
+        every { docSnapshot.data } returns remoteData
+
+        val habitSnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { habitSnapshot.documents } returns listOf(docSnapshot)
+
+        val emptySnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptySnapshot.documents } returns emptyList()
+
+        val habitsCollection = mockk<CollectionReference>(relaxed = true)
+        every {
+            firestore.collection(FirestoreCollections.habits(userId).value)
+        } returns habitsCollection
+        every { habitsCollection.get() } returns Tasks.forResult(habitSnapshot)
+
+        every { firestore.collection(neq(FirestoreCollections.habits(userId).value)) } returns
+            mockk(relaxed = true) {
+                every { get() } returns Tasks.forResult(emptySnapshot)
+            }
+
+        syncManager.performInitialSync(userId)
+
+        // Remote wins: local DAO should be updated
+        coVerify { habitDao.upsert(any()) }
+    }
+
+    // ------------------------------------------------------------------
+    // Conflict resolution: local newer wins
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `performInitialSync local newer than remote - local wins and pushes to Firestore`() = runTest {
+        val habitId = UUID.randomUUID()
+        val oldTimestamp = 1000L
+        val newTimestamp = 2000L
+
+        // Local has newer data
+        val localEntity = createTestHabitEntity(id = habitId, updatedAt = newTimestamp)
+        every { habitDao.getAll() } returns listOf(localEntity)
+        every { completionDao.getAll() } returns emptyList()
+        every { routineDao.getAll() } returns emptyList()
+        every { routineExecutionDao.getAll() } returns emptyList()
+        every { recoverySessionDao.getAll() } returns emptyList()
+        every { userPreferencesDao.get() } returns null
+
+        // Remote has older data (version < local updatedAt)
+        val remoteData = createTestFirestoreHabitMap(habitId, version = oldTimestamp)
+
+        val docSnapshot = mockk<DocumentSnapshot>(relaxed = true)
+        every { docSnapshot.id } returns habitId.toString()
+        every { docSnapshot.data } returns remoteData
+
+        val habitSnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { habitSnapshot.documents } returns listOf(docSnapshot)
+
+        val emptySnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptySnapshot.documents } returns emptyList()
+
+        val habitsCollection = mockk<CollectionReference>(relaxed = true)
+        val docRef = mockk<DocumentReference>(relaxed = true)
+        every {
+            firestore.collection(FirestoreCollections.habits(userId).value)
+        } returns habitsCollection
+        every { habitsCollection.get() } returns Tasks.forResult(habitSnapshot)
+        every { habitsCollection.document(habitId.toString()) } returns docRef
+        every { docRef.set(any()) } returns Tasks.forResult(null)
+
+        every { firestore.collection(neq(FirestoreCollections.habits(userId).value)) } returns
+            mockk(relaxed = true) {
+                every { get() } returns Tasks.forResult(emptySnapshot)
+            }
+
+        syncManager.performInitialSync(userId)
+
+        // Local wins: should push to Firestore
+        verify { habitsCollection.document(habitId.toString()) }
+        verify { docRef.set(any()) }
+        // Should NOT upsert into local DAO (local is already newer)
+        coVerify(exactly = 0) { habitDao.upsert(any()) }
+    }
+
+    // ------------------------------------------------------------------
+    // Conflict resolution: local-only entity pushes to Firestore
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `performInitialSync local only entity pushes to Firestore`() = runTest {
+        val localOnlyId = UUID.randomUUID()
+        val remoteOnlyId = UUID.randomUUID()
+
+        // Local has an entity that remote does not
+        val localEntity = createTestHabitEntity(id = localOnlyId, updatedAt = 1000L)
+        every { habitDao.getAll() } returns listOf(localEntity)
+        every { completionDao.getAll() } returns emptyList()
+        every { routineDao.getAll() } returns emptyList()
+        every { routineExecutionDao.getAll() } returns emptyList()
+        every { recoverySessionDao.getAll() } returns emptyList()
+        every { userPreferencesDao.get() } returns null
+
+        // Remote has a different entity
+        val remoteData = createTestFirestoreHabitMap(remoteOnlyId, version = 1000L)
+        val docSnapshot = mockk<DocumentSnapshot>(relaxed = true)
+        every { docSnapshot.id } returns remoteOnlyId.toString()
+        every { docSnapshot.data } returns remoteData
+
+        val habitSnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { habitSnapshot.documents } returns listOf(docSnapshot)
+
+        val emptySnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptySnapshot.documents } returns emptyList()
+
+        val habitsCollection = mockk<CollectionReference>(relaxed = true)
+        val localDocRef = mockk<DocumentReference>(relaxed = true)
+        every {
+            firestore.collection(FirestoreCollections.habits(userId).value)
+        } returns habitsCollection
+        every { habitsCollection.get() } returns Tasks.forResult(habitSnapshot)
+        every { habitsCollection.document(localOnlyId.toString()) } returns localDocRef
+        every { localDocRef.set(any()) } returns Tasks.forResult(null)
+
+        every { firestore.collection(neq(FirestoreCollections.habits(userId).value)) } returns
+            mockk(relaxed = true) {
+                every { get() } returns Tasks.forResult(emptySnapshot)
+            }
+
+        // Remote-only entity should be upserted locally
+        coEvery { habitDao.upsert(any()) } returns Unit
+
+        syncManager.performInitialSync(userId)
+
+        // Local-only entity should be pushed to Firestore
+        verify { habitsCollection.document(localOnlyId.toString()) }
+        verify { localDocRef.set(any()) }
+        // Remote-only entity should be upserted into local DAO
+        coVerify { habitDao.upsert(any()) }
+    }
+
+    // ------------------------------------------------------------------
+    // startListening clears existing listeners before attaching new ones
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `startListening clears existing listeners before attaching new ones`() {
+        val listenerReg1 = mockk<com.google.firebase.firestore.ListenerRegistration>(relaxed = true)
+        val listenerReg2 = mockk<com.google.firebase.firestore.ListenerRegistration>(relaxed = true)
+
+        val collectionRef = mockk<CollectionReference>(relaxed = true)
+        every { firestore.collection(any()) } returns collectionRef
+        every { collectionRef.addSnapshotListener(any()) } returnsMany listOf(
+            listenerReg1, listenerReg1, listenerReg1, listenerReg1, listenerReg1, listenerReg1, listenerReg1,
+            listenerReg2, listenerReg2, listenerReg2, listenerReg2, listenerReg2, listenerReg2, listenerReg2,
+        )
+
+        // First call attaches listeners
+        syncManager.startListening(userId)
+
+        // Second call should remove existing listeners before attaching new ones
+        syncManager.startListening(userId)
+
+        verify { listenerReg1.remove() }
+    }
+
+    // ------------------------------------------------------------------
     // Test helpers
     // ------------------------------------------------------------------
 
-    private fun createTestHabitEntity(): HabitEntity = HabitEntity(
-        id = UUID.randomUUID(),
+    private fun createTestHabitEntity(
+        id: UUID = UUID.randomUUID(),
+        updatedAt: Long = System.currentTimeMillis(),
+    ): HabitEntity = HabitEntity(
+        id = id,
         name = "Test Habit",
         anchorBehavior = "After waking up",
         anchorType = "AfterBehavior",
@@ -303,35 +629,41 @@ class SyncManagerTest {
         phase = "FORMING",
         status = "Active",
         createdAt = System.currentTimeMillis(),
-        updatedAt = System.currentTimeMillis(),
+        updatedAt = updatedAt,
         lapseThresholdDays = 3,
         relapseThresholdDays = 7,
     )
 
-    private fun createTestFirestoreHabitMap(id: UUID): Map<String, Any?> = mapOf(
-        "id" to id.toString(),
-        "name" to "Remote Habit",
-        "description" to null,
-        "icon" to null,
-        "color" to null,
-        "anchorBehavior" to "After lunch",
-        "anchorType" to "AFTER_BEHAVIOR",
-        "timeWindow" to null,
-        "category" to "AFTERNOON",
-        "frequency" to "DAILY",
-        "activeDays" to null,
-        "estimatedSeconds" to 300,
-        "microVersion" to null,
-        "allowPartial" to true,
-        "subtasks" to emptyList<String>(),
-        "lapseThresholdDays" to 3,
-        "relapseThresholdDays" to 7,
-        "phase" to "FORMING",
-        "status" to "ACTIVE",
-        "createdAt" to com.google.firebase.Timestamp.now(),
-        "updatedAt" to com.google.firebase.Timestamp.now(),
-        "pausedAt" to null,
-        "archivedAt" to null,
-        "version" to System.currentTimeMillis(),
-    )
+    private fun createTestFirestoreHabitMap(id: UUID, version: Long = System.currentTimeMillis()): Map<String, Any?> {
+        val updatedAtTimestamp = com.google.firebase.Timestamp(
+            version / 1000,
+            ((version % 1000) * 1_000_000).toInt(),
+        )
+        return mapOf(
+            "id" to id.toString(),
+            "name" to "Remote Habit",
+            "description" to null,
+            "icon" to null,
+            "color" to null,
+            "anchorBehavior" to "After lunch",
+            "anchorType" to "AFTER_BEHAVIOR",
+            "timeWindow" to null,
+            "category" to "AFTERNOON",
+            "frequency" to "DAILY",
+            "activeDays" to null,
+            "estimatedSeconds" to 300,
+            "microVersion" to null,
+            "allowPartial" to true,
+            "subtasks" to emptyList<String>(),
+            "lapseThresholdDays" to 3,
+            "relapseThresholdDays" to 7,
+            "phase" to "FORMING",
+            "status" to "ACTIVE",
+            "createdAt" to com.google.firebase.Timestamp.now(),
+            "updatedAt" to updatedAtTimestamp,
+            "pausedAt" to null,
+            "archivedAt" to null,
+            "version" to version,
+        )
+    }
 }

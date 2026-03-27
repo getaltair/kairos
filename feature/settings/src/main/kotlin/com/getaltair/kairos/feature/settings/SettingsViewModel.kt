@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.repository.AuthState
+import com.getaltair.kairos.domain.sync.SyncStateProvider
 import com.getaltair.kairos.domain.usecase.ObserveAuthStateUseCase
 import com.getaltair.kairos.domain.usecase.SignOutUseCase
-import com.getaltair.kairos.sync.SyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class SettingsViewModel(
-    private val syncManager: SyncManager,
+    private val syncStateProvider: SyncStateProvider,
     private val observeAuthStateUseCase: ObserveAuthStateUseCase,
     private val signOutUseCase: SignOutUseCase,
 ) : ViewModel() {
@@ -30,7 +30,7 @@ class SettingsViewModel(
 
     private fun observeSyncState() {
         viewModelScope.launch {
-            syncManager.syncState.collect { syncState ->
+            syncStateProvider.syncState.collect { syncState ->
                 _uiState.update { it.copy(syncState = syncState) }
             }
         }
@@ -74,9 +74,16 @@ class SettingsViewModel(
 
                 is Result.Error -> {
                     Timber.e(result.cause, "Failed to sign out: %s", result.message)
+                    _uiState.update {
+                        it.copy(errorMessage = "Unable to sign out. Please try again.")
+                    }
                 }
             }
         }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 
     fun onDeleteAccountRequest() {
@@ -84,9 +91,12 @@ class SettingsViewModel(
     }
 
     fun onDeleteAccountConfirm() {
-        _uiState.update { it.copy(showDeleteAccountDialog = false) }
-        // TODO: Implement account deletion
-        Timber.d("Account deletion requested but not yet implemented")
+        _uiState.update {
+            it.copy(
+                showDeleteAccountDialog = false,
+                errorMessage = "Account deletion is not yet available.",
+            )
+        }
     }
 
     fun onDeleteAccountDismiss() {

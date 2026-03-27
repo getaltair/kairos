@@ -11,6 +11,8 @@ import com.getaltair.kairos.domain.repository.AuthRepository
 import com.getaltair.kairos.domain.repository.CompletionRepository
 import com.getaltair.kairos.domain.repository.HabitRepository
 import com.getaltair.kairos.domain.repository.PreferencesRepository
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -70,7 +72,7 @@ val dataModule = module {
             syncScope = get(named("syncScope")),
         )
     }
-    single<AuthRepository> { AuthRepositoryImpl() }
+    single<AuthRepository> { AuthRepositoryImpl(Firebase.auth) }
 }
 
 /**

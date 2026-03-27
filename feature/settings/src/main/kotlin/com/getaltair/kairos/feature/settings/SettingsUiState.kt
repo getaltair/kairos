@@ -1,6 +1,6 @@
 package com.getaltair.kairos.feature.settings
 
-import com.getaltair.kairos.sync.SyncState
+import com.getaltair.kairos.domain.sync.SyncState
 import java.time.Instant
 
 data class SettingsUiState(
@@ -10,4 +10,5 @@ data class SettingsUiState(
     val lastSyncTime: Instant? = null,
     val showDeleteAccountDialog: Boolean = false,
     val showSignOutDialog: Boolean = false,
+    val errorMessage: String? = null,
 )

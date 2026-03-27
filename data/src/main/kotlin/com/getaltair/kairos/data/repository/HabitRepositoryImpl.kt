@@ -13,6 +13,7 @@ import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.enums.HabitStatus
 import com.getaltair.kairos.domain.repository.AuthRepository
+import com.getaltair.kairos.domain.sync.SyncEntityTypes
 import com.getaltair.kairos.domain.sync.SyncTrigger
 import com.getaltair.kairos.domain.util.HabitScheduleUtil
 import java.time.Instant
@@ -115,7 +116,7 @@ class HabitRepositoryImpl(
     override suspend fun insert(habit: Habit): Result<Habit> = try {
         val entity = HabitEntityMapper.toEntity(habit)
         withContext(Dispatchers.IO) { habitDao.insert(entity) }
-        triggerSync(ENTITY_TYPE, habit.id.toString(), habit)
+        triggerSync(SyncEntityTypes.HABIT, habit.id.toString(), habit)
         Result.Success(habit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -160,7 +161,7 @@ class HabitRepositoryImpl(
                 updatedAt = Instant.now().toEpochMilli()
             )
         }
-        triggerSync(ENTITY_TYPE, habit.id.toString(), habit)
+        triggerSync(SyncEntityTypes.HABIT, habit.id.toString(), habit)
         Result.Success(habit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -170,7 +171,7 @@ class HabitRepositoryImpl(
 
     override suspend fun delete(id: UUID): Result<Unit> = try {
         withContext(Dispatchers.IO) { habitDao.delete(id) }
-        triggerDeletion(ENTITY_TYPE, id.toString())
+        triggerDeletion(SyncEntityTypes.HABIT, id.toString())
         Result.Success(Unit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -183,7 +184,10 @@ class HabitRepositoryImpl(
      * local Room operation is never delayed by Firestore.
      */
     private fun triggerSync(entityType: String, id: String, entity: Any) {
-        val userId = authRepository.getCurrentUserId() ?: return
+        val userId = authRepository.getCurrentUserId() ?: run {
+            Timber.d("Skipping sync push: user not signed in")
+            return
+        }
         syncScope.launch(Dispatchers.IO) {
             try {
                 syncTrigger.triggerPush(userId, entityType, id, entity)
@@ -199,7 +203,10 @@ class HabitRepositoryImpl(
      * Fire-and-forget sync deletion. Same non-blocking semantics as [triggerSync].
      */
     private fun triggerDeletion(entityType: String, id: String) {
-        val userId = authRepository.getCurrentUserId() ?: return
+        val userId = authRepository.getCurrentUserId() ?: run {
+            Timber.d("Skipping sync push: user not signed in")
+            return
+        }
         syncScope.launch(Dispatchers.IO) {
             try {
                 syncTrigger.triggerDeletion(userId, entityType, id)
@@ -212,7 +219,6 @@ class HabitRepositoryImpl(
     }
 
     companion object {
-        private const val ENTITY_TYPE = "HABIT"
         private const val DEFAULT_LAPSE_THRESHOLD_DAYS = 3
     }
 }
