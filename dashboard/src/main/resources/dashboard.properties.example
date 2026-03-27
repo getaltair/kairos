@@ -1,0 +1,18 @@
+# Kairos Dashboard Configuration Template
+# Copy this file to dashboard.properties and fill in your values.
+
+# Firebase
+# Path to the Firebase service account JSON key file
+firebase.service_account_path=config/service-account.json
+# Your Firebase Auth UID (find in Firebase Console > Authentication > Users)
+firebase.user_id=YOUR_FIREBASE_USER_ID
+
+# Display
+# Set to true for kiosk/fullscreen mode on the Pi
+dashboard.fullscreen=false
+# Screen resolution
+dashboard.width=1920
+dashboard.height=1080
+
+# HTTP server for Home Assistant integration
+server.port=8888

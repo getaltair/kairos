@@ -1,0 +1,19 @@
+[Unit]
+Description=Kairos Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Update User/Group if your Pi uses a different username
+User=pi
+Group=pi
+ExecStart=/usr/bin/java -jar /opt/kairos/dashboard.jar
+Restart=always
+RestartSec=5
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+WorkingDirectory=/opt/kairos
+
+[Install]
+WantedBy=graphical.target
