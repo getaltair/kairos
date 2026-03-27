@@ -23,7 +23,13 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    // Logging
+    implementation(libs.timber)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.reflect)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

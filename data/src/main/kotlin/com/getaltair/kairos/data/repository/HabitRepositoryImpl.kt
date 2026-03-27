@@ -12,12 +12,16 @@ import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.enums.HabitStatus
+import com.getaltair.kairos.domain.repository.AuthRepository
+import com.getaltair.kairos.domain.sync.SyncTrigger
 import com.getaltair.kairos.domain.util.HabitScheduleUtil
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -30,7 +34,12 @@ import timber.log.Timber
  * [HabitPhaseConverter], [DayOfWeekListConverter], [JsonListConverter]) rather than the mapper,
  * because the DAO update query accepts individual field parameters.
  */
-class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos.domain.repository.HabitRepository {
+class HabitRepositoryImpl(
+    private val habitDao: HabitDao,
+    private val syncTrigger: SyncTrigger,
+    private val authRepository: AuthRepository,
+    private val syncScope: CoroutineScope,
+) : com.getaltair.kairos.domain.repository.HabitRepository {
 
     private val anchorTypeConverter = AnchorTypeConverter()
     private val frequencyConverter = HabitFrequencyConverter()
@@ -106,6 +115,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
     override suspend fun insert(habit: Habit): Result<Habit> = try {
         val entity = HabitEntityMapper.toEntity(habit)
         withContext(Dispatchers.IO) { habitDao.insert(entity) }
+        triggerSync(ENTITY_TYPE, habit.id.toString(), habit)
         Result.Success(habit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -150,6 +160,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
                 updatedAt = Instant.now().toEpochMilli()
             )
         }
+        triggerSync(ENTITY_TYPE, habit.id.toString(), habit)
         Result.Success(habit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -159,6 +170,7 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
 
     override suspend fun delete(id: UUID): Result<Unit> = try {
         withContext(Dispatchers.IO) { habitDao.delete(id) }
+        triggerDeletion(ENTITY_TYPE, id.toString())
         Result.Success(Unit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -166,7 +178,41 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : com.getaltair.kairos
         Result.Error("Failed to delete habit: ${e.message}", cause = e)
     }
 
+    /**
+     * Fire-and-forget sync push. Runs in a non-blocking scope so that the
+     * local Room operation is never delayed by Firestore.
+     */
+    private fun triggerSync(entityType: String, id: String, entity: Any) {
+        val userId = authRepository.getCurrentUserId() ?: return
+        syncScope.launch(Dispatchers.IO) {
+            try {
+                syncTrigger.triggerPush(userId, entityType, id, entity)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to push habit sync change id=%s", id)
+            }
+        }
+    }
+
+    /**
+     * Fire-and-forget sync deletion. Same non-blocking semantics as [triggerSync].
+     */
+    private fun triggerDeletion(entityType: String, id: String) {
+        val userId = authRepository.getCurrentUserId() ?: return
+        syncScope.launch(Dispatchers.IO) {
+            try {
+                syncTrigger.triggerDeletion(userId, entityType, id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to push habit deletion sync id=%s", id)
+            }
+        }
+    }
+
     companion object {
+        private const val ENTITY_TYPE = "HABIT"
         private const val DEFAULT_LAPSE_THRESHOLD_DAYS = 3
     }
 }

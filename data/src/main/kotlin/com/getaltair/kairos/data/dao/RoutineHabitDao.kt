@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.getaltair.kairos.data.entity.RoutineHabitEntity
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
@@ -69,6 +70,13 @@ interface RoutineHabitDao {
      */
     @Insert
     fun insertAll(routineHabits: List<RoutineHabitEntity>)
+
+    /**
+     * Insert or update a routine-habit association.
+     * If an association with the same primary key exists, it is updated; otherwise, inserted.
+     */
+    @Upsert
+    suspend fun upsert(entity: RoutineHabitEntity)
 
     /**
      * Update a routine-habit association.

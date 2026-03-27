@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.getaltair.kairos.data.entity.RoutineExecutionEntity
 import com.getaltair.kairos.domain.enums.ExecutionStatus
 import java.util.UUID
@@ -89,6 +90,13 @@ interface RoutineExecutionDao {
      */
     @Insert
     fun insertAll(executions: List<RoutineExecutionEntity>)
+
+    /**
+     * Insert or update a routine execution.
+     * If an execution with the same primary key exists, it is updated; otherwise, inserted.
+     */
+    @Upsert
+    suspend fun upsert(entity: RoutineExecutionEntity)
 
     /**
      * Update a routine execution.

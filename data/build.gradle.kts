@@ -24,9 +24,14 @@ dependencies {
     // Moshi for JSON converters
     implementation(libs.moshi)
 
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // Koin
     implementation(platform(libs.koin.bom))
@@ -46,6 +51,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.androidx.test.runner)
 }
