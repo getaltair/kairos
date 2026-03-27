@@ -10,6 +10,7 @@ import com.getaltair.kairos.feature.auth.SignUpScreen
 import com.getaltair.kairos.feature.habit.CreateHabitScreen
 import com.getaltair.kairos.feature.habit.EditHabitScreen
 import com.getaltair.kairos.feature.habit.HabitDetailScreen
+import com.getaltair.kairos.feature.settings.NotificationSettingsScreen
 import com.getaltair.kairos.feature.settings.SettingsScreen
 import com.getaltair.kairos.feature.today.TodayScreen
 import java.util.UUID
@@ -64,7 +65,15 @@ fun KairosNavGraph() {
         composable("settings") {
             SettingsScreen(
                 onNavigateToLogin = { navController.navigate("login") },
+                onNavigateToNotificationSettings = {
+                    navController.navigate("settings/notifications")
+                },
                 onBack = { navController.popBackStack() }
+            )
+        }
+        composable("settings/notifications") {
+            NotificationSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         composable("login") {

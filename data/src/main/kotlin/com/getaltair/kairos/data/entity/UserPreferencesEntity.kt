@@ -54,6 +54,15 @@ data class UserPreferencesEntity(
     @ColumnInfo(name = "notification_channels")
     val notificationChannels: String? = null,
 
+    @ColumnInfo(name = "quiet_hours_enabled")
+    val quietHoursEnabled: Boolean = true,
+
+    @ColumnInfo(name = "quiet_hours_start")
+    val quietHoursStart: LocalTime = LocalTime.of(22, 0),
+
+    @ColumnInfo(name = "quiet_hours_end")
+    val quietHoursEnd: LocalTime = LocalTime.of(7, 0),
+
     @ColumnInfo(name = "created_at")
     val createdAt: Long,
 

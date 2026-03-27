@@ -16,6 +16,9 @@ import java.util.UUID
  * @property theme Current theme preference
  * @property energyTrackingEnabled Whether energy level tracking is enabled
  * @property notificationChannels Per-channel notification settings (JSON)
+ * @property quietHoursEnabled Whether quiet hours are active
+ * @property quietHoursStart Start of the quiet hours window (inclusive)
+ * @property quietHoursEnd End of the quiet hours window (exclusive)
  * @property createdAt When preferences were created
  * @property updatedAt When preferences were last updated
  */
@@ -27,6 +30,9 @@ data class UserPreferences(
     val theme: Theme = Theme.System,
     val energyTrackingEnabled: Boolean = false,
     val notificationChannels: Map<String, Any>? = null, // JSON representation
+    val quietHoursEnabled: Boolean = true,
+    val quietHoursStart: LocalTime = LocalTime.of(22, 0),
+    val quietHoursEnd: LocalTime = LocalTime.of(7, 0),
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now()
 ) {
@@ -39,6 +45,9 @@ data class UserPreferences(
         theme: Theme = this.theme,
         energyTrackingEnabled: Boolean = this.energyTrackingEnabled,
         notificationChannels: Map<String, Any>? = this.notificationChannels,
+        quietHoursEnabled: Boolean = this.quietHoursEnabled,
+        quietHoursStart: LocalTime = this.quietHoursStart,
+        quietHoursEnd: LocalTime = this.quietHoursEnd,
         updatedAt: Instant = Instant.now()
     ): UserPreferences = UserPreferences(
         id = this.id,
@@ -48,6 +57,9 @@ data class UserPreferences(
         theme = theme,
         energyTrackingEnabled = energyTrackingEnabled,
         notificationChannels = notificationChannels,
+        quietHoursEnabled = quietHoursEnabled,
+        quietHoursStart = quietHoursStart,
+        quietHoursEnd = quietHoursEnd,
         createdAt = this.createdAt,
         updatedAt = updatedAt
     )

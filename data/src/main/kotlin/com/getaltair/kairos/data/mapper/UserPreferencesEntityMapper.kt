@@ -35,6 +35,9 @@ object UserPreferencesEntityMapper {
             theme = entity.theme,
             energyTrackingEnabled = entity.energyTrackingEnabled,
             notificationChannels = notificationChannels,
+            quietHoursEnabled = entity.quietHoursEnabled,
+            quietHoursStart = entity.quietHoursStart,
+            quietHoursEnd = entity.quietHoursEnd,
             createdAt = Instant.ofEpochMilli(entity.createdAt),
             updatedAt = Instant.ofEpochMilli(entity.updatedAt)
         )
@@ -61,6 +64,9 @@ object UserPreferencesEntityMapper {
             theme = domain.theme,
             energyTrackingEnabled = domain.energyTrackingEnabled,
             notificationChannels = notificationChannels,
+            quietHoursEnabled = domain.quietHoursEnabled,
+            quietHoursStart = domain.quietHoursStart,
+            quietHoursEnd = domain.quietHoursEnd,
             createdAt = domain.createdAt.toEpochMilli(),
             updatedAt = domain.updatedAt.toEpochMilli()
         )

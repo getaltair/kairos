@@ -16,6 +16,8 @@ import java.util.UUID
  * @property habitId ID of the associated habit
  * @property time Time for the notification
  * @property isEnabled Whether this notification is enabled
+ * @property isPersistent Whether persistent follow-up reminders are enabled
+ * @property maxFollowUps Maximum number of follow-up reminders (default 3)
  * @property createdAt When this notification was created
  * @property updatedAt When this notification was last updated
  */
@@ -45,6 +47,12 @@ data class HabitNotificationEntity(
 
     @ColumnInfo(name = "is_enabled")
     val isEnabled: Boolean = true,
+
+    @ColumnInfo(name = "is_persistent")
+    val isPersistent: Boolean = false,
+
+    @ColumnInfo(name = "max_follow_ups")
+    val maxFollowUps: Int = 3,
 
     @ColumnInfo(name = "created_at")
     val createdAt: Long,

@@ -51,6 +51,7 @@ dependencies {
     implementation(project(":feature:settings"))
     implementation(project(":feature:auth"))
     implementation(project(":sync"))
+    implementation(project(":notification"))
 
     // Android Core
     implementation(libs.androidx.core.ktx)

@@ -18,6 +18,10 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
 
+    // Android Core
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
+
     // Lifecycle + ViewModel
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

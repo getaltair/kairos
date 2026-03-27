@@ -31,13 +31,19 @@ interface HabitNotificationDao {
      * Get notification for a specific habit.
      */
     @Query("SELECT * FROM habit_notifications WHERE habit_id = :habitId LIMIT 1")
-    fun getForHabit(habitId: UUID): HabitNotificationEntity?
+    suspend fun getForHabit(habitId: UUID): HabitNotificationEntity?
 
     /**
      * Get enabled notifications.
      */
     @Query("SELECT * FROM habit_notifications WHERE is_enabled = 1 ORDER BY created_at DESC")
-    fun getEnabled(): List<HabitNotificationEntity>
+    suspend fun getEnabled(): List<HabitNotificationEntity>
+
+    /**
+     * Get enabled notifications that have persistent reminders turned on.
+     */
+    @Query("SELECT * FROM habit_notifications WHERE is_enabled = 1 AND is_persistent = 1")
+    suspend fun getEnabledPersistent(): List<HabitNotificationEntity>
 
     /**
      * Insert a new habit notification.
