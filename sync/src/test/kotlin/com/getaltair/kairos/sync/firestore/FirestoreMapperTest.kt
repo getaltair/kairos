@@ -31,6 +31,7 @@ import java.util.UUID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FirestoreMapperTest {
@@ -415,6 +416,7 @@ class FirestoreMapperTest {
             energyLevel = 4,
             note = "Felt great",
             createdAt = now,
+            updatedAt = later,
         )
 
         val map = completion.toFirestoreMap()
@@ -430,6 +432,7 @@ class FirestoreMapperTest {
         assertEquals(completion.energyLevel, restored.energyLevel)
         assertEquals(completion.note, restored.note)
         assertEquals(completion.createdAt, restored.createdAt)
+        assertEquals(completion.updatedAt, restored.updatedAt)
     }
 
     @Test
@@ -559,6 +562,8 @@ class FirestoreMapperTest {
             orderIndex = 2,
             overrideDurationSeconds = 120,
             variantIds = listOf(variantId1, variantId2),
+            createdAt = now,
+            updatedAt = later,
         )
 
         val map = rh.toFirestoreMap()
@@ -570,6 +575,8 @@ class FirestoreMapperTest {
         assertEquals(rh.orderIndex, restored.orderIndex)
         assertEquals(rh.overrideDurationSeconds, restored.overrideDurationSeconds)
         assertEquals(rh.variantIds, restored.variantIds)
+        assertEquals(rh.createdAt, restored.createdAt)
+        assertEquals(rh.updatedAt, restored.updatedAt)
     }
 
     @Test
@@ -602,6 +609,8 @@ class FirestoreMapperTest {
             name = "Quick Version",
             estimatedMinutes = 15,
             isDefault = true,
+            createdAt = now,
+            updatedAt = later,
         )
 
         val map = variant.toFirestoreMap()
@@ -612,6 +621,8 @@ class FirestoreMapperTest {
         assertEquals(variant.name, restored.name)
         assertEquals(variant.estimatedMinutes, restored.estimatedMinutes)
         assertEquals(variant.isDefault, restored.isDefault)
+        assertEquals(variant.createdAt, restored.createdAt)
+        assertEquals(variant.updatedAt, restored.updatedAt)
     }
 
     @Test
@@ -648,6 +659,8 @@ class FirestoreMapperTest {
             currentStepIndex = 3,
             currentStepRemainingSeconds = 45,
             totalPausedSeconds = 10,
+            createdAt = now,
+            updatedAt = later,
         )
 
         val map = execution.toFirestoreMap()
@@ -665,6 +678,8 @@ class FirestoreMapperTest {
             restored.currentStepRemainingSeconds,
         )
         assertEquals(execution.totalPausedSeconds, restored.totalPausedSeconds)
+        assertEquals(execution.createdAt, restored.createdAt)
+        assertEquals(execution.updatedAt, restored.updatedAt)
     }
 
     @Test
@@ -705,6 +720,8 @@ class FirestoreMapperTest {
             blockers = listOf(Blocker.NoEnergy, Blocker.TooBusy),
             action = RecoveryAction.Resume,
             notes = "Getting back on track",
+            createdAt = now,
+            updatedAt = later,
         )
 
         val map = session.toFirestoreMap()
@@ -719,6 +736,8 @@ class FirestoreMapperTest {
         assertEquals(session.blockers, restored.blockers)
         assertEquals(session.action, restored.action)
         assertEquals(session.notes, restored.notes)
+        assertEquals(session.createdAt, restored.createdAt)
+        assertEquals(session.updatedAt, restored.updatedAt)
     }
 
     @Test
@@ -893,6 +912,350 @@ class FirestoreMapperTest {
             assert(map["version"] is Long) {
                 "version should be Long"
             }
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Unknown tag tests (Task 2)
+    // -----------------------------------------------------------------------
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown HabitCategory tag throws`() {
+        habitCategoryFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown HabitFrequency tag throws`() {
+        habitFrequencyFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown HabitPhase tag throws`() {
+        habitPhaseFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown HabitStatus tag throws`() {
+        habitStatusFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown SkipReason tag throws`() {
+        skipReasonFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown RecoveryType tag throws`() {
+        recoveryTypeFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown SessionStatus tag throws`() {
+        sessionStatusFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown RecoveryAction tag throws`() {
+        recoveryActionFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown Blocker tag throws`() {
+        blockerFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown RoutineStatus tag throws`() {
+        routineStatusFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown ExecutionStatus tag throws`() {
+        executionStatusFromTag("INVALID")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `unknown Theme tag throws`() {
+        themeFromTag("INVALID")
+    }
+
+    // -----------------------------------------------------------------------
+    // Habit with empty subtasks (Task 3)
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `Habit with empty subtasks serializes correctly and deserializes to null`() {
+        val habit = Habit(
+            id = UUID.randomUUID(),
+            name = "Meditate",
+            anchorBehavior = "After brushing teeth",
+            anchorType = AnchorType.AfterBehavior,
+            category = HabitCategory.Morning,
+            frequency = HabitFrequency.Daily,
+            subtasks = emptyList(),
+            createdAt = now,
+            updatedAt = now,
+        )
+
+        val map = habit.toFirestoreMap()
+        assertEquals(emptyList<String>(), map["subtasks"])
+
+        val restored = FirestoreMapper.habitFromMap(map)
+        assertNull(restored.subtasks) // empty list normalizes to null
+    }
+
+    // -----------------------------------------------------------------------
+    // Habit map structure assertion (Task 4)
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `Habit toFirestoreMap contains expected keys and field formats`() {
+        val id = UUID.randomUUID()
+        val habit = Habit(
+            id = id,
+            name = "Meditate",
+            description = "10 min morning meditation",
+            icon = "brain",
+            color = "#FF5733",
+            anchorBehavior = "After brushing teeth",
+            anchorType = AnchorType.AfterBehavior,
+            timeWindowStart = "07:00",
+            timeWindowEnd = "08:00",
+            category = HabitCategory.Morning,
+            frequency = HabitFrequency.Custom,
+            activeDays = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+            estimatedSeconds = 600,
+            microVersion = "5 deep breaths",
+            allowPartialCompletion = true,
+            subtasks = listOf("Sit down", "Set timer"),
+            phase = HabitPhase.FORMING,
+            status = HabitStatus.Active,
+            createdAt = now,
+            updatedAt = later,
+            pausedAt = null,
+            archivedAt = null,
+            lapseThresholdDays = 3,
+            relapseThresholdDays = 7,
+        )
+
+        val map = habit.toFirestoreMap(version = 42L)
+
+        val expectedKeys = setOf(
+            "id", "name", "description", "icon", "color",
+            "anchorBehavior", "anchorType", "timeWindow",
+            "category", "frequency", "activeDays",
+            "estimatedSeconds", "microVersion", "allowPartial",
+            "subtasks", "lapseThresholdDays", "relapseThresholdDays",
+            "phase", "status", "createdAt", "updatedAt",
+            "pausedAt", "archivedAt", "version",
+        )
+        assertEquals(expectedKeys, map.keys)
+
+        // Assert specific field formats
+        assertEquals("AFTER_BEHAVIOR", map["anchorType"])
+        assertEquals("MORNING", map["category"])
+        assertEquals("CUSTOM", map["frequency"])
+        assertEquals("FORMING", map["phase"])
+        assertEquals("ACTIVE", map["status"])
+        assertEquals(42L, map["version"])
+        assertEquals(id.toString(), map["id"])
+    }
+
+    // -----------------------------------------------------------------------
+    // Reflection-based sealed subclass coverage (Task 5)
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `all AnchorType subclasses round-trip through tags`() {
+        AnchorType::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, anchorTypeFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all HabitCategory subclasses round-trip through tags`() {
+        HabitCategory::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, habitCategoryFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all HabitFrequency subclasses round-trip through tags`() {
+        HabitFrequency::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, habitFrequencyFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all HabitPhase subclasses round-trip through tags`() {
+        HabitPhase::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, habitPhaseFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all HabitStatus subclasses round-trip through tags`() {
+        HabitStatus::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, habitStatusFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all CompletionType subclasses round-trip through tags`() {
+        CompletionType::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, completionTypeFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all SkipReason subclasses round-trip through tags`() {
+        SkipReason::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, skipReasonFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all RecoveryType subclasses round-trip through tags`() {
+        RecoveryType::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, recoveryTypeFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all SessionStatus subclasses round-trip through tags`() {
+        SessionStatus::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, sessionStatusFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all RecoveryAction subclasses round-trip through tags`() {
+        RecoveryAction::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, recoveryActionFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all Blocker subclasses round-trip through tags`() {
+        Blocker::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, blockerFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all RoutineStatus subclasses round-trip through tags`() {
+        RoutineStatus::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, routineStatusFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all ExecutionStatus subclasses round-trip through tags`() {
+        ExecutionStatus::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, executionStatusFromTag(tag))
+        }
+    }
+
+    @Test
+    fun `all Theme subclasses round-trip through tags`() {
+        Theme::class.sealedSubclasses.forEach { subclass ->
+            val instance = subclass.objectInstance ?: return@forEach
+            val tag = instance.toTag()
+            assertEquals(instance, themeFromTag(tag))
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // FirestoreMappingException test (Task 6)
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `habitFromMap with missing name field throws FirestoreMappingException`() {
+        val incompleteMap = mapOf<String, Any?>("id" to UUID.randomUUID().toString())
+        val ex = org.junit.Assert.assertThrows(FirestoreMappingException::class.java) {
+            FirestoreMapper.habitFromMap(incompleteMap)
+        }
+        assertTrue(ex.message!!.contains("Habit"))
+        assertTrue(ex.message!!.contains("name"))
+    }
+
+    @Test
+    fun `completionFromMap with missing date field throws FirestoreMappingException`() {
+        val incompleteMap = mapOf<String, Any?>(
+            "id" to UUID.randomUUID().toString(),
+            "habitId" to UUID.randomUUID().toString(),
+        )
+        val ex = org.junit.Assert.assertThrows(FirestoreMappingException::class.java) {
+            FirestoreMapper.completionFromMap(incompleteMap)
+        }
+        assertTrue(ex.message!!.contains("Completion"))
+        assertTrue(ex.message!!.contains("date"))
+    }
+
+    @Test
+    fun `routineHabitFromMap with missing orderIndex throws FirestoreMappingException`() {
+        val incompleteMap = mapOf<String, Any?>(
+            "id" to UUID.randomUUID().toString(),
+            "routineId" to UUID.randomUUID().toString(),
+            "habitId" to UUID.randomUUID().toString(),
+        )
+        val ex = org.junit.Assert.assertThrows(FirestoreMappingException::class.java) {
+            FirestoreMapper.routineHabitFromMap(incompleteMap)
+        }
+        assertTrue(ex.message!!.contains("RoutineHabit"))
+        assertTrue(ex.message!!.contains("orderIndex"))
+    }
+
+    // -----------------------------------------------------------------------
+    // RecoverySession boundary case (Task 7)
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `recoverySessionFromMap with empty blockers propagates domain constraint exception`() {
+        val triggeredTs = now.toTimestamp()
+        val createdTs = now.toTimestamp()
+        val updatedTs = now.toTimestamp()
+        val validMapWithEmptyBlockers = mapOf<String, Any?>(
+            "id" to UUID.randomUUID().toString(),
+            "habitId" to UUID.randomUUID().toString(),
+            "type" to "LAPSE",
+            "status" to "PENDING",
+            "triggeredAt" to triggeredTs,
+            "completedAt" to null,
+            "blockers" to emptyList<String>(),
+            "action" to null,
+            "notes" to null,
+            "createdAt" to createdTs,
+            "updatedAt" to updatedTs,
+        )
+        org.junit.Assert.assertThrows(Exception::class.java) {
+            FirestoreMapper.recoverySessionFromMap(validMapWithEmptyBlockers)
         }
     }
 }

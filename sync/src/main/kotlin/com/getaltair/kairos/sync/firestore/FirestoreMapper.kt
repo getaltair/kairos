@@ -32,10 +32,11 @@ import java.util.UUID
 // ---------------------------------------------------------------------------
 // Sealed-class serialization helpers
 //
-// Every sealed class in the domain uses PascalCase data-object names
-// (e.g. AfterBehavior, NotFeelingWell). Firestore stores them as
-// UPPER_SNAKE_CASE strings (e.g. AFTER_BEHAVIOR, NOT_FEELING_WELL) to
-// match the document schemas in docs/08-erd.md.
+// Most sealed classes in the domain use PascalCase data-object names
+// (e.g. AfterBehavior, NotFeelingWell), while HabitPhase uses
+// UPPER_SNAKE_CASE object names (ONBOARD, FORMING, etc.). Firestore
+// stores all variants as UPPER_SNAKE_CASE strings to match the document
+// schemas in docs/08-erd.md.
 // ---------------------------------------------------------------------------
 
 // --- AnchorType ---
@@ -303,7 +304,7 @@ internal fun Instant.toTimestamp(): Timestamp = Timestamp(epochSecond, nano)
 // ---------------------------------------------------------------------------
 
 /** Converts this [Habit] to a Firestore-compatible [Map]. */
-fun Habit.toFirestoreMap(): Map<String, Any?> = mapOf(
+fun Habit.toFirestoreMap(version: Long = System.currentTimeMillis()): Map<String, Any?> = mapOf(
     "id" to id.toString(),
     "name" to name,
     "description" to description,
@@ -311,10 +312,11 @@ fun Habit.toFirestoreMap(): Map<String, Any?> = mapOf(
     "color" to color,
     "anchorBehavior" to anchorBehavior,
     "anchorType" to anchorType.toTag(),
-    "timeWindow" to if (timeWindowStart != null && timeWindowEnd != null) {
-        mapOf("start" to timeWindowStart, "end" to timeWindowEnd)
-    } else {
-        null
+    "timeWindow" to run {
+        val tw = mutableMapOf<String, String>()
+        timeWindowStart?.let { tw["start"] = it }
+        timeWindowEnd?.let { tw["end"] = it }
+        tw.ifEmpty { null }
     },
     "category" to category.toTag(),
     "frequency" to frequency.toTag(),
@@ -331,11 +333,11 @@ fun Habit.toFirestoreMap(): Map<String, Any?> = mapOf(
     "updatedAt" to updatedAt.toTimestamp(),
     "pausedAt" to pausedAt?.toTimestamp(),
     "archivedAt" to archivedAt?.toTimestamp(),
-    "version" to System.currentTimeMillis(),
+    "version" to version,
 )
 
 /** Converts this [Completion] to a Firestore-compatible [Map]. */
-fun Completion.toFirestoreMap(): Map<String, Any?> = mapOf(
+fun Completion.toFirestoreMap(version: Long = System.currentTimeMillis()): Map<String, Any?> = mapOf(
     "id" to id.toString(),
     "habitId" to habitId.toString(),
     "date" to date.toString(), // YYYY-MM-DD
@@ -346,11 +348,12 @@ fun Completion.toFirestoreMap(): Map<String, Any?> = mapOf(
     "energyLevel" to energyLevel,
     "note" to note,
     "createdAt" to createdAt.toTimestamp(),
-    "version" to System.currentTimeMillis(),
+    "updatedAt" to updatedAt.toTimestamp(),
+    "version" to version,
 )
 
 /** Converts this [Routine] to a Firestore-compatible [Map]. */
-fun Routine.toFirestoreMap(): Map<String, Any?> = mapOf(
+fun Routine.toFirestoreMap(version: Long = System.currentTimeMillis()): Map<String, Any?> = mapOf(
     "id" to id.toString(),
     "name" to name,
     "description" to description,
@@ -360,32 +363,36 @@ fun Routine.toFirestoreMap(): Map<String, Any?> = mapOf(
     "status" to status.toTag(),
     "createdAt" to createdAt.toTimestamp(),
     "updatedAt" to updatedAt.toTimestamp(),
-    "version" to System.currentTimeMillis(),
+    "version" to version,
 )
 
 /** Converts this [RoutineHabit] to a Firestore-compatible [Map]. */
-fun RoutineHabit.toFirestoreMap(): Map<String, Any?> = mapOf(
+fun RoutineHabit.toFirestoreMap(version: Long = System.currentTimeMillis()): Map<String, Any?> = mapOf(
     "id" to id.toString(),
     "routineId" to routineId.toString(),
     "habitId" to habitId.toString(),
     "orderIndex" to orderIndex,
     "overrideDurationSeconds" to overrideDurationSeconds,
     "variantIds" to variantIds?.map { it.toString() },
-    "version" to System.currentTimeMillis(),
+    "createdAt" to createdAt.toTimestamp(),
+    "updatedAt" to updatedAt.toTimestamp(),
+    "version" to version,
 )
 
 /** Converts this [RoutineVariant] to a Firestore-compatible [Map]. */
-fun RoutineVariant.toFirestoreMap(): Map<String, Any?> = mapOf(
+fun RoutineVariant.toFirestoreMap(version: Long = System.currentTimeMillis()): Map<String, Any?> = mapOf(
     "id" to id.toString(),
     "routineId" to routineId.toString(),
     "name" to name,
     "estimatedMinutes" to estimatedMinutes,
     "isDefault" to isDefault,
-    "version" to System.currentTimeMillis(),
+    "createdAt" to createdAt.toTimestamp(),
+    "updatedAt" to updatedAt.toTimestamp(),
+    "version" to version,
 )
 
 /** Converts this [RoutineExecution] to a Firestore-compatible [Map]. */
-fun RoutineExecution.toFirestoreMap(): Map<String, Any?> = mapOf(
+fun RoutineExecution.toFirestoreMap(version: Long = System.currentTimeMillis()): Map<String, Any?> = mapOf(
     "id" to id.toString(),
     "routineId" to routineId.toString(),
     "variantId" to variantId?.toString(),
@@ -395,11 +402,13 @@ fun RoutineExecution.toFirestoreMap(): Map<String, Any?> = mapOf(
     "currentStepIndex" to currentStepIndex,
     "currentStepRemainingSeconds" to currentStepRemainingSeconds,
     "totalPausedSeconds" to totalPausedSeconds,
-    "version" to System.currentTimeMillis(),
+    "createdAt" to createdAt.toTimestamp(),
+    "updatedAt" to updatedAt.toTimestamp(),
+    "version" to version,
 )
 
 /** Converts this [RecoverySession] to a Firestore-compatible [Map]. */
-fun RecoverySession.toFirestoreMap(): Map<String, Any?> = mapOf(
+fun RecoverySession.toFirestoreMap(version: Long = System.currentTimeMillis()): Map<String, Any?> = mapOf(
     "id" to id.toString(),
     "habitId" to habitId.toString(),
     "type" to type.toTag(),
@@ -409,11 +418,13 @@ fun RecoverySession.toFirestoreMap(): Map<String, Any?> = mapOf(
     "blockers" to blockers.map { it.toTag() },
     "action" to action?.toTag(),
     "notes" to notes,
-    "version" to System.currentTimeMillis(),
+    "createdAt" to createdAt.toTimestamp(),
+    "updatedAt" to updatedAt.toTimestamp(),
+    "version" to version,
 )
 
 /** Converts this [UserPreferences] to a Firestore-compatible [Map]. */
-fun UserPreferences.toFirestoreMap(): Map<String, Any?> = mapOf(
+fun UserPreferences.toFirestoreMap(version: Long = System.currentTimeMillis()): Map<String, Any?> = mapOf(
     "id" to id.toString(),
     "userId" to userId,
     "notificationEnabled" to notificationEnabled,
@@ -423,7 +434,7 @@ fun UserPreferences.toFirestoreMap(): Map<String, Any?> = mapOf(
     "notificationChannels" to notificationChannels,
     "createdAt" to createdAt.toTimestamp(),
     "updatedAt" to updatedAt.toTimestamp(),
-    "version" to System.currentTimeMillis(),
+    "version" to version,
 )
 
 // ---------------------------------------------------------------------------
@@ -438,9 +449,21 @@ fun UserPreferences.toFirestoreMap(): Map<String, Any?> = mapOf(
  * Factory that reconstructs domain entities from Firestore document maps.
  *
  * Each function mirrors the field layout produced by the corresponding
- * `toFirestoreMap()` extension above.
+ * `toFirestoreMap()` extension above, except for the `version` field
+ * (used only for conflict resolution, not stored on domain entities).
  */
 object FirestoreMapper {
+
+    private inline fun <reified T> Map<String, Any?>.requireField(entityType: String, key: String): T {
+        val value = this[key]
+            ?: throw FirestoreMappingException(entityType, key)
+        return (value as? T)
+            ?: throw FirestoreMappingException(
+                entityType,
+                key,
+                ClassCastException("Expected ${T::class.simpleName}, got ${value::class.simpleName}")
+            )
+    }
 
     /** Reconstructs a [Habit] from a Firestore document [Map]. */
     fun habitFromMap(map: Map<String, Any?>): Habit {
@@ -451,30 +474,30 @@ object FirestoreMapper {
         val activeDaysRaw = map["activeDays"] as? List<String>
 
         return Habit(
-            id = UUID.fromString(map["id"] as String),
-            name = map["name"] as String,
+            id = UUID.fromString(map.requireField<String>("Habit", "id")),
+            name = map.requireField("Habit", "name"),
             description = map["description"] as? String,
             icon = map["icon"] as? String,
             color = map["color"] as? String,
-            anchorBehavior = map["anchorBehavior"] as String,
-            anchorType = anchorTypeFromTag(map["anchorType"] as String),
+            anchorBehavior = map.requireField("Habit", "anchorBehavior"),
+            anchorType = anchorTypeFromTag(map.requireField("Habit", "anchorType")),
             timeWindowStart = timeWindow?.get("start"),
             timeWindowEnd = timeWindow?.get("end"),
-            category = habitCategoryFromTag(map["category"] as String),
-            frequency = habitFrequencyFromTag(map["frequency"] as String),
+            category = habitCategoryFromTag(map.requireField("Habit", "category")),
+            frequency = habitFrequencyFromTag(map.requireField("Habit", "frequency")),
             activeDays = activeDaysRaw?.map { DayOfWeek.valueOf(it) }?.toSet(),
-            estimatedSeconds = (map["estimatedSeconds"] as Number).toInt(),
+            estimatedSeconds = map.requireField<Number>("Habit", "estimatedSeconds").toInt(),
             microVersion = map["microVersion"] as? String,
             allowPartialCompletion = map["allowPartial"] as? Boolean ?: true,
             subtasks = (map["subtasks"] as? List<*>)
                 ?.filterIsInstance<String>()
                 ?.ifEmpty { null },
-            lapseThresholdDays = (map["lapseThresholdDays"] as Number).toInt(),
-            relapseThresholdDays = (map["relapseThresholdDays"] as Number).toInt(),
-            phase = habitPhaseFromTag(map["phase"] as String),
-            status = habitStatusFromTag(map["status"] as String),
-            createdAt = (map["createdAt"] as Timestamp).toInstant(),
-            updatedAt = (map["updatedAt"] as Timestamp).toInstant(),
+            lapseThresholdDays = map.requireField<Number>("Habit", "lapseThresholdDays").toInt(),
+            relapseThresholdDays = map.requireField<Number>("Habit", "relapseThresholdDays").toInt(),
+            phase = habitPhaseFromTag(map.requireField("Habit", "phase")),
+            status = habitStatusFromTag(map.requireField("Habit", "status")),
+            createdAt = map.requireField<Timestamp>("Habit", "createdAt").toInstant(),
+            updatedAt = map.requireField<Timestamp>("Habit", "updatedAt").toInstant(),
             pausedAt = (map["pausedAt"] as? Timestamp)?.toInstant(),
             archivedAt = (map["archivedAt"] as? Timestamp)?.toInstant(),
         )
@@ -482,30 +505,31 @@ object FirestoreMapper {
 
     /** Reconstructs a [Completion] from a Firestore document [Map]. */
     fun completionFromMap(map: Map<String, Any?>): Completion = Completion(
-        id = UUID.fromString(map["id"] as String),
-        habitId = UUID.fromString(map["habitId"] as String),
-        date = LocalDate.parse(map["date"] as String),
-        completedAt = (map["completedAt"] as Timestamp).toInstant(),
-        type = completionTypeFromTag(map["type"] as String),
+        id = UUID.fromString(map.requireField<String>("Completion", "id")),
+        habitId = UUID.fromString(map.requireField<String>("Completion", "habitId")),
+        date = LocalDate.parse(map.requireField<String>("Completion", "date")),
+        completedAt = map.requireField<Timestamp>("Completion", "completedAt").toInstant(),
+        type = completionTypeFromTag(map.requireField("Completion", "type")),
         partialPercent = (map["partialPercent"] as? Number)?.toInt(),
         skipReason = (map["skipReason"] as? String)
             ?.let { skipReasonFromTag(it) },
         energyLevel = (map["energyLevel"] as? Number)?.toInt(),
         note = map["note"] as? String,
-        createdAt = (map["createdAt"] as Timestamp).toInstant(),
+        createdAt = map.requireField<Timestamp>("Completion", "createdAt").toInstant(),
+        updatedAt = map.requireField<Timestamp>("Completion", "updatedAt").toInstant(),
     )
 
     /** Reconstructs a [Routine] from a Firestore document [Map]. */
     fun routineFromMap(map: Map<String, Any?>): Routine = Routine(
-        id = UUID.fromString(map["id"] as String),
-        name = map["name"] as String,
+        id = UUID.fromString(map.requireField<String>("Routine", "id")),
+        name = map.requireField("Routine", "name"),
         description = map["description"] as? String,
         icon = map["icon"] as? String,
         color = map["color"] as? String,
-        category = habitCategoryFromTag(map["category"] as String),
-        status = routineStatusFromTag(map["status"] as String),
-        createdAt = (map["createdAt"] as Timestamp).toInstant(),
-        updatedAt = (map["updatedAt"] as Timestamp).toInstant(),
+        category = habitCategoryFromTag(map.requireField("Routine", "category")),
+        status = routineStatusFromTag(map.requireField("Routine", "status")),
+        createdAt = map.requireField<Timestamp>("Routine", "createdAt").toInstant(),
+        updatedAt = map.requireField<Timestamp>("Routine", "updatedAt").toInstant(),
     )
 
     /** Reconstructs a [RoutineHabit] from a Firestore document [Map]. */
@@ -513,55 +537,63 @@ object FirestoreMapper {
         @Suppress("UNCHECKED_CAST")
         val variantIdsRaw = map["variantIds"] as? List<String>
         return RoutineHabit(
-            id = UUID.fromString(map["id"] as String),
-            routineId = UUID.fromString(map["routineId"] as String),
-            habitId = UUID.fromString(map["habitId"] as String),
-            orderIndex = (map["orderIndex"] as Number).toInt(),
+            id = UUID.fromString(map.requireField<String>("RoutineHabit", "id")),
+            routineId = UUID.fromString(map.requireField<String>("RoutineHabit", "routineId")),
+            habitId = UUID.fromString(map.requireField<String>("RoutineHabit", "habitId")),
+            orderIndex = map.requireField<Number>("RoutineHabit", "orderIndex").toInt(),
             overrideDurationSeconds =
                 (map["overrideDurationSeconds"] as? Number)?.toInt(),
             variantIds = variantIdsRaw?.map { UUID.fromString(it) },
+            createdAt = map.requireField<Timestamp>("RoutineHabit", "createdAt").toInstant(),
+            updatedAt = map.requireField<Timestamp>("RoutineHabit", "updatedAt").toInstant(),
         )
     }
 
     /** Reconstructs a [RoutineVariant] from a Firestore document [Map]. */
     fun routineVariantFromMap(map: Map<String, Any?>): RoutineVariant = RoutineVariant(
-        id = UUID.fromString(map["id"] as String),
-        routineId = UUID.fromString(map["routineId"] as String),
-        name = map["name"] as String,
-        estimatedMinutes = (map["estimatedMinutes"] as Number).toInt(),
+        id = UUID.fromString(map.requireField<String>("RoutineVariant", "id")),
+        routineId = UUID.fromString(map.requireField<String>("RoutineVariant", "routineId")),
+        name = map.requireField("RoutineVariant", "name"),
+        estimatedMinutes = map.requireField<Number>("RoutineVariant", "estimatedMinutes").toInt(),
         isDefault = map["isDefault"] as? Boolean ?: false,
+        createdAt = map.requireField<Timestamp>("RoutineVariant", "createdAt").toInstant(),
+        updatedAt = map.requireField<Timestamp>("RoutineVariant", "updatedAt").toInstant(),
     )
 
     /** Reconstructs a [RoutineExecution] from a Firestore document [Map]. */
     fun routineExecutionFromMap(map: Map<String, Any?>): RoutineExecution = RoutineExecution(
-        id = UUID.fromString(map["id"] as String),
-        routineId = UUID.fromString(map["routineId"] as String),
+        id = UUID.fromString(map.requireField<String>("RoutineExecution", "id")),
+        routineId = UUID.fromString(map.requireField<String>("RoutineExecution", "routineId")),
         variantId = (map["variantId"] as? String)
             ?.let { UUID.fromString(it) },
-        startedAt = (map["startedAt"] as Timestamp).toInstant(),
+        startedAt = map.requireField<Timestamp>("RoutineExecution", "startedAt").toInstant(),
         completedAt = (map["completedAt"] as? Timestamp)?.toInstant(),
-        status = executionStatusFromTag(map["status"] as String),
-        currentStepIndex = (map["currentStepIndex"] as Number).toInt(),
+        status = executionStatusFromTag(map.requireField("RoutineExecution", "status")),
+        currentStepIndex = map.requireField<Number>("RoutineExecution", "currentStepIndex").toInt(),
         currentStepRemainingSeconds =
             (map["currentStepRemainingSeconds"] as? Number)?.toInt(),
-        totalPausedSeconds = (map["totalPausedSeconds"] as Number).toInt(),
+        totalPausedSeconds = map.requireField<Number>("RoutineExecution", "totalPausedSeconds").toInt(),
+        createdAt = map.requireField<Timestamp>("RoutineExecution", "createdAt").toInstant(),
+        updatedAt = map.requireField<Timestamp>("RoutineExecution", "updatedAt").toInstant(),
     )
 
     /** Reconstructs a [RecoverySession] from a Firestore document [Map]. */
     fun recoverySessionFromMap(map: Map<String, Any?>): RecoverySession {
         @Suppress("UNCHECKED_CAST")
-        val blockerTags = map["blockers"] as List<String>
+        val blockerTags = map.requireField<List<String>>("RecoverySession", "blockers")
         return RecoverySession(
-            id = UUID.fromString(map["id"] as String),
-            habitId = UUID.fromString(map["habitId"] as String),
-            type = recoveryTypeFromTag(map["type"] as String),
-            status = sessionStatusFromTag(map["status"] as String),
-            triggeredAt = (map["triggeredAt"] as Timestamp).toInstant(),
+            id = UUID.fromString(map.requireField<String>("RecoverySession", "id")),
+            habitId = UUID.fromString(map.requireField<String>("RecoverySession", "habitId")),
+            type = recoveryTypeFromTag(map.requireField("RecoverySession", "type")),
+            status = sessionStatusFromTag(map.requireField("RecoverySession", "status")),
+            triggeredAt = map.requireField<Timestamp>("RecoverySession", "triggeredAt").toInstant(),
             completedAt = (map["completedAt"] as? Timestamp)?.toInstant(),
             blockers = blockerTags.map { blockerFromTag(it) },
             action = (map["action"] as? String)
                 ?.let { recoveryActionFromTag(it) },
             notes = map["notes"] as? String,
+            createdAt = map.requireField<Timestamp>("RecoverySession", "createdAt").toInstant(),
+            updatedAt = map.requireField<Timestamp>("RecoverySession", "updatedAt").toInstant(),
         )
     }
 
@@ -570,18 +602,18 @@ object FirestoreMapper {
         @Suppress("UNCHECKED_CAST")
         val channels = map["notificationChannels"] as? Map<String, Any>
         return UserPreferences(
-            id = UUID.fromString(map["id"] as String),
+            id = UUID.fromString(map.requireField<String>("UserPreferences", "id")),
             userId = map["userId"] as? String,
             notificationEnabled =
                 map["notificationEnabled"] as? Boolean ?: true,
             defaultReminderTime =
-                LocalTime.parse(map["defaultReminderTime"] as String),
-            theme = themeFromTag(map["theme"] as String),
+                LocalTime.parse(map.requireField<String>("UserPreferences", "defaultReminderTime")),
+            theme = themeFromTag(map.requireField("UserPreferences", "theme")),
             energyTrackingEnabled =
                 map["energyTrackingEnabled"] as? Boolean ?: false,
             notificationChannels = channels,
-            createdAt = (map["createdAt"] as Timestamp).toInstant(),
-            updatedAt = (map["updatedAt"] as Timestamp).toInstant(),
+            createdAt = map.requireField<Timestamp>("UserPreferences", "createdAt").toInstant(),
+            updatedAt = map.requireField<Timestamp>("UserPreferences", "updatedAt").toInstant(),
         )
     }
 }

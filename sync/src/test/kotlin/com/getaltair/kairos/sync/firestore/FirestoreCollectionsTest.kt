@@ -21,14 +21,14 @@ class FirestoreCollectionsTest {
 
     @Test
     fun `users() returns top-level collection path`() {
-        assertEquals("users", FirestoreCollections.users())
+        assertEquals("users", FirestoreCollections.users().value)
     }
 
     @Test
     fun `user() returns document path`() {
         assertEquals(
             "users/$userId",
-            FirestoreCollections.user(userId),
+            FirestoreCollections.user(userId).value,
         )
     }
 
@@ -38,7 +38,7 @@ class FirestoreCollectionsTest {
     fun `habits() returns subcollection path`() {
         assertEquals(
             "users/$userId/habits",
-            FirestoreCollections.habits(userId),
+            FirestoreCollections.habits(userId).value,
         )
     }
 
@@ -46,7 +46,7 @@ class FirestoreCollectionsTest {
     fun `habit() returns document path`() {
         assertEquals(
             "users/$userId/habits/$habitId",
-            FirestoreCollections.habit(userId, habitId),
+            FirestoreCollections.habit(userId, habitId).value,
         )
     }
 
@@ -56,7 +56,7 @@ class FirestoreCollectionsTest {
     fun `completions() returns subcollection path`() {
         assertEquals(
             "users/$userId/completions",
-            FirestoreCollections.completions(userId),
+            FirestoreCollections.completions(userId).value,
         )
     }
 
@@ -64,7 +64,7 @@ class FirestoreCollectionsTest {
     fun `completion() returns document path`() {
         assertEquals(
             "users/$userId/completions/$completionId",
-            FirestoreCollections.completion(userId, completionId),
+            FirestoreCollections.completion(userId, completionId).value,
         )
     }
 
@@ -74,7 +74,7 @@ class FirestoreCollectionsTest {
     fun `routines() returns subcollection path`() {
         assertEquals(
             "users/$userId/routines",
-            FirestoreCollections.routines(userId),
+            FirestoreCollections.routines(userId).value,
         )
     }
 
@@ -82,7 +82,7 @@ class FirestoreCollectionsTest {
     fun `routine() returns document path`() {
         assertEquals(
             "users/$userId/routines/$routineId",
-            FirestoreCollections.routine(userId, routineId),
+            FirestoreCollections.routine(userId, routineId).value,
         )
     }
 
@@ -92,7 +92,7 @@ class FirestoreCollectionsTest {
     fun `routineHabits() returns nested subcollection path`() {
         assertEquals(
             "users/$userId/routines/$routineId/habits",
-            FirestoreCollections.routineHabits(userId, routineId),
+            FirestoreCollections.routineHabits(userId, routineId).value,
         )
     }
 
@@ -100,7 +100,7 @@ class FirestoreCollectionsTest {
     fun `routineHabit() returns nested document path`() {
         assertEquals(
             "users/$userId/routines/$routineId/habits/$routineHabitId",
-            FirestoreCollections.routineHabit(userId, routineId, routineHabitId),
+            FirestoreCollections.routineHabit(userId, routineId, routineHabitId).value,
         )
     }
 
@@ -110,7 +110,7 @@ class FirestoreCollectionsTest {
     fun `routineVariants() returns nested subcollection path`() {
         assertEquals(
             "users/$userId/routines/$routineId/variants",
-            FirestoreCollections.routineVariants(userId, routineId),
+            FirestoreCollections.routineVariants(userId, routineId).value,
         )
     }
 
@@ -118,7 +118,7 @@ class FirestoreCollectionsTest {
     fun `routineVariant() returns nested document path`() {
         assertEquals(
             "users/$userId/routines/$routineId/variants/$variantId",
-            FirestoreCollections.routineVariant(userId, routineId, variantId),
+            FirestoreCollections.routineVariant(userId, routineId, variantId).value,
         )
     }
 
@@ -128,7 +128,7 @@ class FirestoreCollectionsTest {
     fun `routineExecutions() returns subcollection path`() {
         assertEquals(
             "users/$userId/routine_executions",
-            FirestoreCollections.routineExecutions(userId),
+            FirestoreCollections.routineExecutions(userId).value,
         )
     }
 
@@ -136,7 +136,7 @@ class FirestoreCollectionsTest {
     fun `routineExecution() returns document path`() {
         assertEquals(
             "users/$userId/routine_executions/$executionId",
-            FirestoreCollections.routineExecution(userId, executionId),
+            FirestoreCollections.routineExecution(userId, executionId).value,
         )
     }
 
@@ -146,7 +146,7 @@ class FirestoreCollectionsTest {
     fun `recoverySessions() returns subcollection path`() {
         assertEquals(
             "users/$userId/recovery_sessions",
-            FirestoreCollections.recoverySessions(userId),
+            FirestoreCollections.recoverySessions(userId).value,
         )
     }
 
@@ -154,7 +154,7 @@ class FirestoreCollectionsTest {
     fun `recoverySession() returns document path`() {
         assertEquals(
             "users/$userId/recovery_sessions/$recoveryId",
-            FirestoreCollections.recoverySession(userId, recoveryId),
+            FirestoreCollections.recoverySession(userId, recoveryId).value,
         )
     }
 
@@ -164,7 +164,7 @@ class FirestoreCollectionsTest {
     fun `preferences() returns subcollection path`() {
         assertEquals(
             "users/$userId/preferences",
-            FirestoreCollections.preferences(userId),
+            FirestoreCollections.preferences(userId).value,
         )
     }
 
@@ -172,7 +172,7 @@ class FirestoreCollectionsTest {
     fun `preference() returns document path`() {
         assertEquals(
             "users/$userId/preferences/$preferenceId",
-            FirestoreCollections.preference(userId, preferenceId),
+            FirestoreCollections.preference(userId, preferenceId).value,
         )
     }
 
@@ -182,7 +182,7 @@ class FirestoreCollectionsTest {
     fun `deletions() returns subcollection path`() {
         assertEquals(
             "users/$userId/deletions",
-            FirestoreCollections.deletions(userId),
+            FirestoreCollections.deletions(userId).value,
         )
     }
 
@@ -190,7 +190,7 @@ class FirestoreCollectionsTest {
     fun `deletion() returns document path`() {
         assertEquals(
             "users/$userId/deletions/$deletionId",
-            FirestoreCollections.deletion(userId, deletionId),
+            FirestoreCollections.deletion(userId, deletionId).value,
         )
     }
 
@@ -203,7 +203,7 @@ class FirestoreCollectionsTest {
             routineId,
             routineHabitId,
         )
-        val segments = routineHabitPath.split("/")
+        val segments = routineHabitPath.value.split("/")
         // users / {userId} / routines / {routineId} / habits / {id} = 6
         assertEquals(6, segments.size)
 
@@ -219,8 +219,225 @@ class FirestoreCollectionsTest {
     fun `collection path is always the prefix of its document path`() {
         val collection = FirestoreCollections.habits(userId)
         val document = FirestoreCollections.habit(userId, habitId)
-        assert(document.startsWith("$collection/")) {
+        assert(document.value.startsWith("${collection.value}/")) {
             "Document path should start with collection path + /"
         }
+    }
+
+    // --- Blank input validation ----------------------------------------------
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `user with blank userId throws`() {
+        FirestoreCollections.user("")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `user with whitespace userId throws`() {
+        FirestoreCollections.user("   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `habits with blank userId throws`() {
+        FirestoreCollections.habits("")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `habits with whitespace userId throws`() {
+        FirestoreCollections.habits("   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `habit with blank userId throws`() {
+        FirestoreCollections.habit("", habitId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `habit with blank habitId throws`() {
+        FirestoreCollections.habit(userId, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `habit with whitespace habitId throws`() {
+        FirestoreCollections.habit(userId, "   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `completions with blank userId throws`() {
+        FirestoreCollections.completions("")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `completions with whitespace userId throws`() {
+        FirestoreCollections.completions("   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `completion with blank userId throws`() {
+        FirestoreCollections.completion("", completionId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `completion with blank completionId throws`() {
+        FirestoreCollections.completion(userId, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `completion with whitespace completionId throws`() {
+        FirestoreCollections.completion(userId, "   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routines with blank userId throws`() {
+        FirestoreCollections.routines("")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routines with whitespace userId throws`() {
+        FirestoreCollections.routines("   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routine with blank userId throws`() {
+        FirestoreCollections.routine("", routineId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routine with blank routineId throws`() {
+        FirestoreCollections.routine(userId, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routine with whitespace routineId throws`() {
+        FirestoreCollections.routine(userId, "   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineHabits with blank userId throws`() {
+        FirestoreCollections.routineHabits("", routineId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineHabits with blank routineId throws`() {
+        FirestoreCollections.routineHabits(userId, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineHabit with blank userId throws`() {
+        FirestoreCollections.routineHabit("", routineId, routineHabitId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineHabit with blank routineId throws`() {
+        FirestoreCollections.routineHabit(userId, "", routineHabitId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineHabit with blank id throws`() {
+        FirestoreCollections.routineHabit(userId, routineId, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineVariants with blank userId throws`() {
+        FirestoreCollections.routineVariants("", routineId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineVariants with blank routineId throws`() {
+        FirestoreCollections.routineVariants(userId, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineVariant with blank userId throws`() {
+        FirestoreCollections.routineVariant("", routineId, variantId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineVariant with blank routineId throws`() {
+        FirestoreCollections.routineVariant(userId, "", variantId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineVariant with blank id throws`() {
+        FirestoreCollections.routineVariant(userId, routineId, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineExecutions with blank userId throws`() {
+        FirestoreCollections.routineExecutions("")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineExecutions with whitespace userId throws`() {
+        FirestoreCollections.routineExecutions("   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineExecution with blank userId throws`() {
+        FirestoreCollections.routineExecution("", executionId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `routineExecution with blank id throws`() {
+        FirestoreCollections.routineExecution(userId, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `recoverySessions with blank userId throws`() {
+        FirestoreCollections.recoverySessions("")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `recoverySessions with whitespace userId throws`() {
+        FirestoreCollections.recoverySessions("   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `recoverySession with blank userId throws`() {
+        FirestoreCollections.recoverySession("", recoveryId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `recoverySession with blank id throws`() {
+        FirestoreCollections.recoverySession(userId, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `preferences with blank userId throws`() {
+        FirestoreCollections.preferences("")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `preferences with whitespace userId throws`() {
+        FirestoreCollections.preferences("   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `preference with blank userId throws`() {
+        FirestoreCollections.preference("", preferenceId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `preference with blank id throws`() {
+        FirestoreCollections.preference(userId, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `deletions with blank userId throws`() {
+        FirestoreCollections.deletions("")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `deletions with whitespace userId throws`() {
+        FirestoreCollections.deletions("   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `deletion with blank userId throws`() {
+        FirestoreCollections.deletion("", deletionId)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `deletion with blank id throws`() {
+        FirestoreCollections.deletion(userId, "")
     }
 }
