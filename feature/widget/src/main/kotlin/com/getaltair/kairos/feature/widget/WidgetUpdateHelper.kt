@@ -2,9 +2,7 @@ package com.getaltair.kairos.feature.widget
 
 import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 
 object WidgetUpdateHelper {
@@ -16,13 +14,8 @@ object WidgetUpdateHelper {
             val ids = manager.getGlanceIds(widget.javaClass)
             ids.forEach { id -> widget.update(context, id) }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Timber.e(e, "Failed to update widgets")
-        }
-    }
-
-    fun updateAllBlocking(context: Context) {
-        CoroutineScope(Dispatchers.IO).launch {
-            updateAll(context)
         }
     }
 }

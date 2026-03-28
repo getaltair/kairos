@@ -12,6 +12,7 @@ import com.getaltair.kairos.feature.recovery.di.recoveryModule
 import com.getaltair.kairos.feature.routine.di.routineModule
 import com.getaltair.kairos.feature.settings.di.settingsModule
 import com.getaltair.kairos.feature.today.di.todayModule
+import com.getaltair.kairos.feature.widget.di.widgetModule
 import com.getaltair.kairos.notification.NotificationChannels
 import com.getaltair.kairos.notification.di.notificationModule
 import com.getaltair.kairos.notification.worker.FreshStartWorker
@@ -54,6 +55,7 @@ class KairosApp : Application() {
                 settingsModule,
                 recoveryModule,
                 routineModule,
+                widgetModule,
             )
         }
 

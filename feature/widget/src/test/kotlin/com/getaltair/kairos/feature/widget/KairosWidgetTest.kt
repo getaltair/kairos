@@ -178,4 +178,29 @@ class KairosWidgetTest {
         assertEquals(3, categoryOrder(HabitCategory.Anytime))
         assertEquals(4, categoryOrder(HabitCategory.Departure))
     }
+
+    @Test
+    fun `sortByCategory includes Departure category in correct position`() {
+        val habits = listOf(
+            makeHabitWithStatus(habit = makeHabit(name = "Anytime", category = HabitCategory.Anytime)),
+            makeHabitWithStatus(habit = makeHabit(name = "Departure", category = HabitCategory.Departure)),
+            makeHabitWithStatus(habit = makeHabit(name = "Morning", category = HabitCategory.Morning)),
+            makeHabitWithStatus(habit = makeHabit(name = "Evening", category = HabitCategory.Evening)),
+            makeHabitWithStatus(habit = makeHabit(name = "Afternoon", category = HabitCategory.Afternoon))
+        )
+
+        val sorted = sortByCategory(habits)
+        assertEquals(HabitCategory.Morning, sorted[0].habit.category)
+        assertEquals(HabitCategory.Afternoon, sorted[1].habit.category)
+        assertEquals(HabitCategory.Evening, sorted[2].habit.category)
+        assertEquals(HabitCategory.Anytime, sorted[3].habit.category)
+        assertEquals(HabitCategory.Departure, sorted[4].habit.category)
+    }
+
+    // -- progress clamping test ----------------------------------------------
+
+    @Test
+    fun `computeProgress clamps to 1 when completedCount exceeds total`() {
+        assertEquals(1f, computeProgress(6, 5), 0.001f)
+    }
 }

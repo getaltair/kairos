@@ -34,19 +34,14 @@ internal const val MAX_WIDGET_HABITS = 5
 /**
  * Root composable for the Kairos home-screen widget.
  *
- * Displays three possible states:
- * 1. Empty -- no habits configured
- * 2. All done -- every habit completed
- * 3. Normal -- header with progress, list of up to [MAX_WIDGET_HABITS] habits
+ * Displays four possible states:
+ * 1. Error -- failed to load habits (null)
+ * 2. Empty -- no habits configured
+ * 3. All done -- every habit completed
+ * 4. Normal -- header with progress, list of up to [MAX_WIDGET_HABITS] habits
  */
 @Composable
-internal fun KairosWidgetContent(habits: List<HabitWithStatus>) {
-    val sorted = sortByCategory(habits)
-    val completedCount = countCompleted(sorted)
-    val total = sorted.size
-    val progress = computeProgress(completedCount, total)
-    val allDone = total > 0 && completedCount == total
-
+internal fun KairosWidgetContent(habits: List<HabitWithStatus>?) {
     val context = LocalContext.current
     val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
         ?: Intent()
@@ -62,15 +57,52 @@ internal fun KairosWidgetContent(habits: List<HabitWithStatus>) {
             contentAlignment = Alignment.TopStart
         ) {
             when {
-                total == 0 -> EmptyState()
-                allDone -> AllDoneState(total)
-                else -> NormalState(sorted, completedCount, total, progress)
+                habits == null -> ErrorState()
+
+                else -> {
+                    val sorted = sortByCategory(habits)
+                    val completedCount = countCompleted(sorted)
+                    val total = sorted.size
+                    val progress = computeProgress(completedCount, total)
+                    val allDone = total > 0 && completedCount == total
+                    when {
+                        total == 0 -> EmptyState()
+                        allDone -> AllDoneState(total)
+                        else -> NormalState(sorted, completedCount, total, progress)
+                    }
+                }
             }
         }
     }
 }
 
 // -- States ------------------------------------------------------------------
+
+@Composable
+private fun ErrorState() {
+    Column(
+        modifier = GlanceModifier.fillMaxSize(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Couldn't load habits",
+            style = TextStyle(
+                color = GlanceTheme.colors.onSurface,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+        )
+        Spacer(modifier = GlanceModifier.height(4.dp))
+        Text(
+            text = "Tap to refresh",
+            style = TextStyle(
+                color = GlanceTheme.colors.secondary,
+                fontSize = 12.sp
+            )
+        )
+    }
+}
 
 @Composable
 private fun EmptyState() {
@@ -124,7 +156,6 @@ private fun AllDoneState(total: Int) {
 @Composable
 private fun NormalState(habits: List<HabitWithStatus>, completedCount: Int, total: Int, progress: Float) {
     Column(modifier = GlanceModifier.fillMaxSize()) {
-        // Header
         Text(
             text = "Kairos \u2014 $completedCount/$total done",
             style = TextStyle(
@@ -136,12 +167,10 @@ private fun NormalState(habits: List<HabitWithStatus>, completedCount: Int, tota
 
         Spacer(modifier = GlanceModifier.height(6.dp))
 
-        // Progress bar
         ProgressBar(progress)
 
         Spacer(modifier = GlanceModifier.height(8.dp))
 
-        // Habit rows (max 5)
         val display = habits.take(MAX_WIDGET_HABITS)
         display.forEach { habitWithStatus ->
             HabitRow(habitWithStatus)
@@ -166,7 +195,8 @@ private fun ProgressBar(progress: Float) {
                 Box(
                     modifier = GlanceModifier
                         .height(6.dp)
-                        .width((progress * 200).dp) // approximate visual width
+                        // Glance lacks percentage-based widths; 200dp approximates a 3-column widget. Resizing may cause overflow.
+                        .width((progress * 200).dp)
                         .cornerRadius(3.dp)
                         .background(GlanceTheme.colors.primary)
                 ) {}
@@ -197,7 +227,7 @@ private fun HabitRow(habitWithStatus: HabitWithStatus) {
     }
 }
 
-// -- Pure helpers (visible for testing) --------------------------------------
+// -- Helpers (internal for unit testing) --------------------------------------
 
 /** Returns a status icon character based on the completion type. */
 internal fun statusIcon(type: CompletionType?): String = when (type) {
@@ -216,7 +246,7 @@ internal fun statusIcon(type: CompletionType?): String = when (type) {
     null -> "\u25CB" // empty circle (pending)
 }
 
-/** Category sort order: Morning -> Afternoon -> Evening -> Anytime. */
+/** Sorts by time-of-day: Morning (0), Afternoon (1), Evening (2), Anytime (3), Departure (4). */
 internal fun categoryOrder(category: HabitCategory): Int = when (category) {
     is HabitCategory.Morning -> 0
     is HabitCategory.Afternoon -> 1
@@ -233,6 +263,6 @@ internal fun sortByCategory(habits: List<HabitWithStatus>): List<HabitWithStatus
 internal fun countCompleted(habits: List<HabitWithStatus>): Int =
     habits.count { it.todayCompletion?.type is CompletionType.Full }
 
-/** Computes progress fraction (0.0 to 1.0). */
+/** Computes progress fraction (0.0 to 1.0), clamped to prevent overflow. */
 internal fun computeProgress(completedCount: Int, total: Int): Float =
-    if (total == 0) 0f else completedCount.toFloat() / total.toFloat()
+    if (total == 0) 0f else (completedCount.toFloat() / total.toFloat()).coerceAtMost(1f)

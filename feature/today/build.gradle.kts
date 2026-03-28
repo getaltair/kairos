@@ -11,7 +11,6 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":ui"))
     implementation(project(":core"))
-    implementation(project(":feature:widget"))
 
     // Compose
     implementation(platform(libs.androidx.compose.bom))

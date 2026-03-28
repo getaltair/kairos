@@ -17,6 +17,7 @@ dependencies {
     implementation(libs.androidx.glance.material3)
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
+    implementation(libs.koin.android)
     implementation(libs.timber)
 
     testImplementation(libs.junit)
