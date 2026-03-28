@@ -170,8 +170,18 @@ private fun completionTypeToTag(type: CompletionType): String = when (type) {
     is CompletionType.Missed -> "MISSED"
 }
 
+/** Converts a [SkipReason] to its Firestore UPPER_SNAKE_CASE tag. */
+private fun skipReasonToTag(reason: SkipReason): String = when (reason) {
+    is SkipReason.TooTired -> "TOO_TIRED"
+    is SkipReason.NoTime -> "NO_TIME"
+    is SkipReason.NotFeelingWell -> "NOT_FEELING_WELL"
+    is SkipReason.Traveling -> "TRAVELING"
+    is SkipReason.TookDayOff -> "TOOK_DAY_OFF"
+    is SkipReason.Other -> "OTHER"
+}
+
 // ---------------------------------------------------------------------------
-// Firestore Map -> Domain Entity
+// Firestore Map <-> Domain Entity
 // ---------------------------------------------------------------------------
 
 /**
@@ -182,8 +192,8 @@ private fun completionTypeToTag(type: CompletionType): String = when (type) {
  * instead of `com.google.firebase.Timestamp` (Android SDK).
  *
  * Unlike the sync mapper, unknown enum tags fall back to sensible defaults
- * rather than throwing, because the dashboard is a read-only display that
- * should never crash on unexpected data.
+ * rather than throwing, because the dashboard prioritizes resilience over strictness and
+ * should degrade gracefully on unexpected data.
  */
 object AdminFirestoreMapper {
 
@@ -233,7 +243,7 @@ object AdminFirestoreMapper {
     /**
      * Converts a [Completion] to a Firestore-compatible [Map].
      *
-     * Produces the exact same field set as `Completion.toFirestoreMap()` in
+     * Produces the same Firestore document schema as `Completion.toFirestoreMap()` in
      * the sync module, but uses `com.google.cloud.Timestamp` (Admin SDK)
      * instead of `com.google.firebase.Timestamp` (Android SDK).
      *
@@ -247,12 +257,12 @@ object AdminFirestoreMapper {
         "completedAt" to completion.completedAt.toCloudTimestamp(),
         "type" to completionTypeToTag(completion.type),
         "partialPercent" to completion.partialPercent,
-        "skipReason" to null,
+        "skipReason" to completion.skipReason?.let { skipReasonToTag(it) },
         "energyLevel" to completion.energyLevel,
         "note" to completion.note,
         "createdAt" to completion.createdAt.toCloudTimestamp(),
         "updatedAt" to completion.updatedAt.toCloudTimestamp(),
-        "version" to System.currentTimeMillis(),
+        "version" to completion.updatedAt.toEpochMilli(),
     )
 
     /**
@@ -265,7 +275,7 @@ object AdminFirestoreMapper {
         val typeTag = map["type"] as? String ?: "FULL"
         val type = completionTypeFromTag(typeTag)
 
-        // updatedAt intentionally omitted -- not displayed on dashboard
+        // updatedAt defaults to Instant.now() -- not parsed from the document since it is not displayed on dashboard
         return Completion(
             id = UUID.fromString(id),
             habitId = UUID.fromString(

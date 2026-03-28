@@ -8,8 +8,11 @@ import io.ktor.server.application.install
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.ContentTransformationException
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.receive
+import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -35,7 +38,10 @@ data class ModeRequest(val mode: String)
 @Serializable
 data class ModeResponse(val status: String, val mode: String)
 
-class StatusServer(private val port: Int, private val stateHolder: DashboardStateHolder,) {
+@Serializable
+data class ErrorResponse(val status: String = "error", val error: String)
+
+class StatusServer(private val port: Int, private val stateHolder: DashboardStateHolder) {
     private val logger = LoggerFactory.getLogger(StatusServer::class.java)
     private var server: EmbeddedServer<*, *>? = null
 
@@ -43,6 +49,15 @@ class StatusServer(private val port: Int, private val stateHolder: DashboardStat
         server = embeddedServer(Netty, port = port, host = "0.0.0.0") {
             install(ContentNegotiation) {
                 json()
+            }
+            install(StatusPages) {
+                exception<ContentTransformationException> { call, cause ->
+                    logger.warn("Bad request on {}: {}", call.request.uri, cause.message)
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(error = cause.message ?: "Invalid request body"),
+                    )
+                }
             }
             routing {
                 get("/health") {
@@ -61,26 +76,33 @@ class StatusServer(private val port: Int, private val stateHolder: DashboardStat
                     )
                 }
                 post("/mode") {
-                    val request = call.receive<ModeRequest>()
-                    val modeStr = request.mode.lowercase()
-                    val displayMode = when (modeStr) {
-                        "active" -> DisplayMode.Active
-
-                        "standby" -> DisplayMode.Standby
-
-                        else -> {
+                    val request = try {
+                        call.receive<ModeRequest>()
+                    } catch (e: Exception) {
+                        logger.warn("Malformed /mode request: {}", e.message)
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ErrorResponse(
+                                error = "Invalid request body. Expected JSON: {\"mode\": \"active|standby\"}",
+                            ),
+                        )
+                        return@post
+                    }
+                    logger.info(
+                        "Mode change to '{}' requested from {}",
+                        request.mode.lowercase(),
+                        call.request.local.remoteAddress,
+                    )
+                    val displayMode = DisplayMode.fromString(request.mode)
+                        ?: run {
                             call.respond(
                                 HttpStatusCode.BadRequest,
-                                ModeResponse(
-                                    status = "error",
-                                    mode = "Invalid mode. Use 'active' or 'standby'.",
-                                ),
+                                ErrorResponse(error = "Invalid mode. Use 'active' or 'standby'."),
                             )
                             return@post
                         }
-                    }
                     stateHolder.setDisplayMode(displayMode)
-                    call.respond(ModeResponse(status = "ok", mode = modeStr))
+                    call.respond(ModeResponse(status = "ok", mode = request.mode.lowercase()))
                 }
             }
         }

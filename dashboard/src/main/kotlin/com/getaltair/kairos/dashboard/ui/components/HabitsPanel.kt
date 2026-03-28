@@ -34,7 +34,8 @@ import java.util.UUID
  *
  * Each category section has a header with the category emoji and name,
  * followed by habit rows with completion circles. A summary line at the
- * bottom shows progress.
+ * bottom shows progress. Each habit row is tappable; tapping an
+ * incomplete habit invokes [onComplete].
  */
 @Composable
 fun HabitsPanel(

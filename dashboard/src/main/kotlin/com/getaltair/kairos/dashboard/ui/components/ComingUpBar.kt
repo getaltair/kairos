@@ -10,11 +10,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -23,29 +19,18 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.AnchorType
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.coroutines.delay
 
 /**
- * Bottom bar showing the current time and next pending habits.
- *
- * Left side: prominent current time updated every second.
- * Right side: upcoming habit names with anchor context, time windows,
- * and estimated durations for 3-4 ft readability.
+ * Shows the current time followed by upcoming habit names with anchor
+ * context, time windows, and estimated durations, designed for
+ * readability at 3-4 ft.
  */
 @Composable
 fun ComingUpBar(comingUpHabits: List<Habit>, modifier: Modifier = Modifier,) {
-    var now by remember { mutableStateOf(LocalDateTime.now()) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1000L)
-            now = LocalDateTime.now()
-        }
-    }
+    val now = rememberCurrentTime()
 
     val timeFormatter = remember {
         DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
@@ -138,12 +123,13 @@ private fun formatTimeWindow(time: String): String? = try {
     val parsed = LocalTime.parse(time)
     val formatter = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
     parsed.format(formatter)
-} catch (_: Exception) {
+} catch (_: java.time.format.DateTimeParseException) {
     null
 }
 
 /**
- * Returns an estimated duration string like "~5 min" or null if not applicable.
+ * Returns an estimated duration string like "~5 min", or null when the
+ * habit has no meaningful duration (zero, negative, or under one minute).
  */
 private fun formatEstimatedDuration(habit: Habit): String? {
     val seconds = habit.estimatedSeconds

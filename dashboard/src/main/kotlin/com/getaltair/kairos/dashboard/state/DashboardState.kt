@@ -24,7 +24,15 @@ enum class ConnectionStatus {
  */
 enum class DisplayMode {
     Active,
-    Standby,
+    Standby;
+
+    companion object {
+        fun fromString(value: String): DisplayMode? = when (value.lowercase()) {
+            "active" -> Active
+            "standby" -> Standby
+            else -> null
+        }
+    }
 }
 
 /**

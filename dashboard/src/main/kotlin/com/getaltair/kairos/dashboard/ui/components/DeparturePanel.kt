@@ -33,7 +33,8 @@ import java.util.UUID
  * "Don't Forget" panel showing departure-category habits as a checklist.
  *
  * Completed habits display with a filled checkbox and strikethrough text;
- * pending habits show an empty checkbox at full brightness.
+ * pending habits show an empty checkbox at full brightness. Tapping a
+ * pending item records a full completion via [onComplete].
  */
 @Composable
 fun DeparturePanel(

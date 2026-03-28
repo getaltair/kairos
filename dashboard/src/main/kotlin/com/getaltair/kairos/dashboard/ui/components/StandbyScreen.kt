@@ -8,20 +8,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.sp
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.coroutines.delay
 
 /**
  * Minimal clock display for standby mode.
@@ -32,14 +26,7 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun StandbyScreen(offset: DpOffset = DpOffset.Zero) {
-    var now by remember { mutableStateOf(LocalDateTime.now()) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1000L)
-            now = LocalDateTime.now()
-        }
-    }
+    val now = rememberCurrentTime()
 
     val timeFormatter = remember {
         DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())

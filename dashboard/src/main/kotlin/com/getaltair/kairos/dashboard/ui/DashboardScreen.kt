@@ -43,6 +43,9 @@ import java.util.UUID
  * In **Standby** mode a minimal clock screen is displayed to prevent
  * burn-in during idle periods.
  *
+ * Tapping a habit row or departure item invokes [onComplete] with the
+ * habit's UUID to record a completion.
+ *
  * The optional [offset] parameter is driven by the screen-saver utility
  * to shift the entire layout by a few pixels and prevent burn-in.
  */

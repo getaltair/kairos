@@ -287,7 +287,7 @@ class DashboardStateTest {
     }
 
     @Test
-    fun completeHabit_duplicateCompletionDoesNotAddTwice() {
+    fun completedHabitIds_deduplicatesByHabitId() {
         val habitId = UUID.randomUUID()
         val c1 = makeCompletion(habitId = habitId)
 
