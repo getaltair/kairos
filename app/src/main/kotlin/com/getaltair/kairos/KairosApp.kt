@@ -1,6 +1,7 @@
 package com.getaltair.kairos
 
 import android.app.Application
+import android.content.Intent
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
@@ -19,6 +20,7 @@ import com.getaltair.kairos.notification.worker.FreshStartWorker
 import com.getaltair.kairos.notification.worker.LapseDetectionWorker
 import com.getaltair.kairos.notification.worker.MissedCompletionWorker
 import com.getaltair.kairos.sync.di.syncModule
+import com.getaltair.kairos.wear.WearDataSyncService
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
@@ -61,6 +63,22 @@ class KairosApp : Application() {
 
         // Recovery system workers
         scheduleRecoveryWorkers()
+
+        // Start Wear Data Layer sync service
+        startWearDataSync()
+    }
+
+    /**
+     * Starts the [WearDataSyncService] to push habit/completion data to the
+     * Wear Data Layer. Wrapped in a try-catch so the app still functions on
+     * devices without Google Play Services Wearable support.
+     */
+    private fun startWearDataSync() {
+        try {
+            startService(Intent(this, WearDataSyncService::class.java))
+        } catch (e: Exception) {
+            Timber.w(e, "Could not start WearDataSyncService")
+        }
     }
 
     /**
