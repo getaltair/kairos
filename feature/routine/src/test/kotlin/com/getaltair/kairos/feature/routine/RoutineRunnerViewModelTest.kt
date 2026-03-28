@@ -12,6 +12,7 @@ import com.getaltair.kairos.domain.enums.ExecutionStatus
 import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.enums.HabitFrequency
 import com.getaltair.kairos.domain.enums.StepResult
+import com.getaltair.kairos.domain.model.RoutineStep
 import com.getaltair.kairos.domain.usecase.AbandonRoutineUseCase
 import com.getaltair.kairos.domain.usecase.AdvanceRoutineStepUseCase
 import com.getaltair.kairos.domain.usecase.CompleteRoutineUseCase
@@ -79,7 +80,6 @@ class RoutineRunnerViewModelTest {
 
     @After
     fun tearDown() {
-        RoutineTimerState.clearAction()
         Dispatchers.resetMain()
     }
 
@@ -169,7 +169,7 @@ class RoutineRunnerViewModelTest {
         val routine = mockRoutine()
 
         coEvery { getRoutineDetailUseCase(routineId) } returns Result.Success(
-            Pair(routine, listOf(Pair(rh1, habit1), Pair(rh2, habit2)))
+            Pair(routine, listOf(RoutineStep(rh1, habit1), RoutineStep(rh2, habit2)))
         )
         coEvery { startRoutineUseCase(routineId) } returns Result.Success(mockExecution())
 
@@ -231,7 +231,7 @@ class RoutineRunnerViewModelTest {
         val routine = mockRoutine()
 
         coEvery { getRoutineDetailUseCase(routineId) } returns Result.Success(
-            Pair(routine, listOf(Pair(rh, habit)))
+            Pair(routine, listOf(RoutineStep(rh, habit)))
         )
         coEvery { startRoutineUseCase(routineId) } returns
             Result.Error("Another execution already active (E-1)")
@@ -469,7 +469,7 @@ class RoutineRunnerViewModelTest {
         coEvery { abandonRoutineUseCase(executionId) } returns
             Result.Success(mockExecution().copy(status = ExecutionStatus.Abandoned))
 
-        viewModel.onAbandon()
+        viewModel.onAbandon { }
         advanceTimeBy(500)
 
         coVerify { abandonRoutineUseCase(executionId) }
@@ -493,7 +493,7 @@ class RoutineRunnerViewModelTest {
         val routine = mockRoutine()
 
         coEvery { getRoutineDetailUseCase(routineId) } returns Result.Success(
-            Pair(routine, listOf(Pair(rh1, habit1), Pair(rh2, habit2)))
+            Pair(routine, listOf(RoutineStep(rh1, habit1), RoutineStep(rh2, habit2)))
         )
         coEvery { startRoutineUseCase(routineId) } returns Result.Success(mockExecution())
 
@@ -595,5 +595,103 @@ class RoutineRunnerViewModelTest {
 
         // ViewModel should have advanced the step
         assertEquals(1, viewModel.uiState.value.currentStepIndex)
+    }
+
+    // -------------------------------------------------------------------------
+    // 17. Completion failure keeps isComplete false and sets error
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `completion failure keeps isComplete false`() = runViewModelTest {
+        val (viewModel, habit1, habit2) = setupTwoHabitRoutine()
+        advanceTimeBy(500)
+
+        // Advance past first step
+        val afterStep1 = mockExecution().copy(currentStepIndex = 1)
+        coEvery {
+            advanceRoutineStepUseCase(
+                executionId = executionId,
+                stepResult = StepResult.Completed,
+                habitId = habit1.id,
+            )
+        } returns Result.Success(afterStep1)
+
+        viewModel.onDone()
+        advanceTimeBy(500)
+
+        // Now on last step (index 1) -- advance succeeds but complete fails
+        val afterStep2 = mockExecution().copy(currentStepIndex = 2)
+        coEvery {
+            advanceRoutineStepUseCase(
+                executionId = executionId,
+                stepResult = StepResult.Completed,
+                habitId = habit2.id,
+            )
+        } returns Result.Success(afterStep2)
+
+        coEvery { completeRoutineUseCase(executionId) } returns
+            Result.Error("DB error")
+
+        viewModel.onDone()
+        advanceTimeBy(500)
+
+        val state = viewModel.uiState.value
+        // C2 FIX: The ViewModel returns early without setting isComplete when
+        // completeRoutineUseCase returns an error.
+        coVerify { completeRoutineUseCase(executionId) }
+        assertFalse(state.isComplete)
+    }
+
+    // -------------------------------------------------------------------------
+    // 18. Pause prevents timer countdown
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `pause prevents timer from counting down`() = runViewModelTest {
+        val (viewModel, _, _) = setupTwoHabitRoutine()
+        advanceTimeBy(500)
+
+        val timeBeforePause = viewModel.uiState.value.timeRemainingSeconds
+
+        // Pause the timer
+        viewModel.onPause()
+        assertTrue(viewModel.uiState.value.isPaused)
+
+        // Advance virtual time significantly while paused
+        advanceTimeBy(5000)
+
+        // Timer should not have decreased while paused
+        val timeAfterPause = viewModel.uiState.value.timeRemainingSeconds
+        assertEquals(timeBeforePause, timeAfterPause)
+
+        // Resume and verify timer resumes counting
+        viewModel.onResume()
+        assertFalse(viewModel.uiState.value.isPaused)
+    }
+
+    // -------------------------------------------------------------------------
+    // 19. onAbandon cancels timer and calls use case
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `onAbandon cancels timer job and invokes use case`() = runViewModelTest {
+        val (viewModel, _, _) = setupTwoHabitRoutine()
+        advanceTimeBy(500)
+
+        // Verify timer is running
+        assertNotNull(viewModel.timerJob)
+        assertTrue(viewModel.timerJob?.isActive == true)
+
+        coEvery { abandonRoutineUseCase(executionId) } returns
+            Result.Success(mockExecution().copy(status = ExecutionStatus.Abandoned))
+
+        viewModel.onAbandon { }
+        advanceTimeBy(500)
+
+        // Timer job should be cancelled
+        assertTrue(viewModel.timerJob?.isCancelled == true)
+
+        // Use case should have been called
+        coVerify(exactly = 1) { abandonRoutineUseCase(executionId) }
     }
 }

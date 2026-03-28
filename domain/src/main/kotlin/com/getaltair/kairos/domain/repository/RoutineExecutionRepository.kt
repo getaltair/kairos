@@ -6,12 +6,9 @@ import java.util.UUID
 
 /**
  * Repository interface for RoutineExecution entity operations.
- * Implemented in data layer with Room database.
+ * Implemented in data layer.
  */
 interface RoutineExecutionRepository {
-    /**
-     * Gets an execution by its ID.
-     */
     suspend fun getById(id: UUID): Result<RoutineExecution?>
 
     /**
@@ -20,13 +17,7 @@ interface RoutineExecutionRepository {
      */
     suspend fun getActiveForRoutine(routineId: UUID): Result<RoutineExecution?>
 
-    /**
-     * Inserts a new routine execution.
-     */
     suspend fun insert(execution: RoutineExecution): Result<RoutineExecution>
 
-    /**
-     * Updates an existing routine execution.
-     */
     suspend fun update(execution: RoutineExecution): Result<RoutineExecution>
 }

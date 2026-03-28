@@ -85,6 +85,19 @@ class CreateRoutineUseCaseTest {
     }
 
     @Test
+    fun `returns failure when name is empty string`() = runTest {
+        val habitIds = listOf(UUID.randomUUID(), UUID.randomUUID())
+
+        val result = useCase("", HabitCategory.Morning, habitIds)
+
+        assertTrue(result is Result.Error)
+        assertTrue(
+            (result as Result.Error).message.contains("blank")
+        )
+        coVerify(exactly = 0) { routineRepository.insert(any(), any()) }
+    }
+
+    @Test
     fun `returns failure when name exceeds 50 characters`() = runTest {
         val habitIds = listOf(UUID.randomUUID(), UUID.randomUUID())
         val longName = "A".repeat(51)
@@ -96,6 +109,25 @@ class CreateRoutineUseCaseTest {
             (result as Result.Error).message.contains("50 characters")
         )
         coVerify(exactly = 0) { routineRepository.insert(any(), any()) }
+    }
+
+    @Test
+    fun `accepts name at exactly 50 characters`() = runTest {
+        val habitIds = listOf(UUID.randomUUID(), UUID.randomUUID())
+        val maxName = "A".repeat(50)
+        val routineSlot = slot<Routine>()
+
+        coEvery {
+            routineRepository.insert(capture(routineSlot), eq(habitIds))
+        } answers {
+            Result.Success(routineSlot.captured)
+        }
+
+        val result = useCase(maxName, HabitCategory.Morning, habitIds)
+
+        assertTrue(result is Result.Success)
+        assertEquals(maxName, (result as Result.Success).value.name)
+        coVerify(exactly = 1) { routineRepository.insert(any(), eq(habitIds)) }
     }
 
     @Test

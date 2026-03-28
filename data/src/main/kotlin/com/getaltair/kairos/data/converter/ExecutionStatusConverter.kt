@@ -28,7 +28,7 @@ class ExecutionStatusConverter {
             "Paused" -> ExecutionStatus.Paused
             "Completed" -> ExecutionStatus.Completed
             "Abandoned" -> ExecutionStatus.Abandoned
-            else -> null
+            else -> throw IllegalArgumentException("Unknown ExecutionStatus: $name")
         }
     }
 }

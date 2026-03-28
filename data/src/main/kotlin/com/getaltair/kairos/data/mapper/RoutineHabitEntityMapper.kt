@@ -26,9 +26,9 @@ object RoutineHabitEntityMapper {
             try {
                 jsonListConverter.stringToUuidList(variantIdsString)
             } catch (e: Exception) {
-                null
+                emptyList()
             }
-        },
+        } ?: emptyList(),
         createdAt = Instant.ofEpochMilli(entity.createdAt),
         updatedAt = Instant.ofEpochMilli(entity.updatedAt)
     )
@@ -37,8 +37,10 @@ object RoutineHabitEntityMapper {
      * Converts domain [RoutineHabit] to [RoutineHabitEntity].
      */
     fun toEntity(domain: RoutineHabit): RoutineHabitEntity {
-        val variantIds = domain.variantIds?.let {
-            jsonListConverter.uuidListToString(it)
+        val variantIds = if (domain.variantIds.isEmpty()) {
+            null
+        } else {
+            jsonListConverter.uuidListToString(domain.variantIds)
         }
 
         return RoutineHabitEntity(

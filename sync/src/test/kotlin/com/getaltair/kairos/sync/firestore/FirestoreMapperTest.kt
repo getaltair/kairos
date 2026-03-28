@@ -587,14 +587,14 @@ class FirestoreMapperTest {
             habitId = UUID.randomUUID(),
             orderIndex = 0,
             overrideDurationSeconds = null,
-            variantIds = null,
+            variantIds = emptyList(),
         )
 
         val map = rh.toFirestoreMap()
         val restored = FirestoreMapper.routineHabitFromMap(map)
 
         assertNull(restored.overrideDurationSeconds)
-        assertNull(restored.variantIds)
+        assertTrue(restored.variantIds.isEmpty())
     }
 
     // -----------------------------------------------------------------------

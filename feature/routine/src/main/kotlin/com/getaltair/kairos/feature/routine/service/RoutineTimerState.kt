@@ -1,30 +1,29 @@
 package com.getaltair.kairos.feature.routine.service
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
 
 /**
- * Singleton communication bridge between [RoutineTimerService] and the ViewModel.
+ * Singleton shared state for the RoutineTimerService foreground notification actions.
  *
- * The service emits [TimerAction] values when the user interacts with
- * notification action buttons (Done, Skip, Pause). The ViewModel observes
- * these actions and handles them accordingly.
+ * Actions emitted from the notification:
+ * - [TimerAction.DONE]: User tapped the "Done" (complete step) action.
+ * - [TimerAction.SKIP]: User tapped the "Skip" action.
+ * - [TimerAction.PAUSE]: User tapped the "Pause" action.
+ * - [TimerAction.RESUME]: User tapped the "Resume" action.
  *
- * After consuming an action, the ViewModel should call [clearAction] to reset.
+ * Using a [Channel] ensures each action is consumed exactly once and not replayed
+ * to late collectors.
  */
 object RoutineTimerState {
 
     enum class TimerAction { DONE, SKIP, PAUSE, RESUME }
 
-    private val _action = MutableStateFlow<TimerAction?>(null)
-    val action: StateFlow<TimerAction?> = _action.asStateFlow()
+    private val _action = Channel<TimerAction>(Channel.BUFFERED)
+    val action: Flow<TimerAction> = _action.receiveAsFlow()
 
     fun emitAction(action: TimerAction) {
-        _action.value = action
-    }
-
-    fun clearAction() {
-        _action.value = null
+        _action.trySend(action)
     }
 }

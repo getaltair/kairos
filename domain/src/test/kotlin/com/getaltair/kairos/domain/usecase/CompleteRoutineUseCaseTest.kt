@@ -159,9 +159,9 @@ class CompleteRoutineUseCaseTest {
         val result = useCase(executionId)
 
         assertTrue(result is Result.Error)
-        assertTrue(
-            (result as Result.Error).message.contains("Cannot complete execution")
-        )
+        val error = result as Result.Error
+        assertTrue(error.message.contains("Cannot complete execution"))
+        assertTrue(error.message.contains("Abandoned"))
         coVerify(exactly = 0) { routineExecutionRepository.update(any()) }
     }
 

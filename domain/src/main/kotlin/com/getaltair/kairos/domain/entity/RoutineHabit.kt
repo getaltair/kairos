@@ -21,7 +21,7 @@ data class RoutineHabit(
     val habitId: UUID,
     val orderIndex: Int,
     val overrideDurationSeconds: Int? = null,
-    val variantIds: List<UUID>? = null,
+    val variantIds: List<UUID> = emptyList(),
     val createdAt: java.time.Instant = java.time.Instant.now(),
     val updatedAt: java.time.Instant = java.time.Instant.now()
 ) {
@@ -40,7 +40,7 @@ data class RoutineHabit(
     fun copy(
         orderIndex: Int = this.orderIndex,
         overrideDurationSeconds: Int? = this.overrideDurationSeconds,
-        variantIds: List<UUID>? = this.variantIds,
+        variantIds: List<UUID> = this.variantIds,
         updatedAt: java.time.Instant = java.time.Instant.now()
     ): RoutineHabit = RoutineHabit(
         id = this.id,

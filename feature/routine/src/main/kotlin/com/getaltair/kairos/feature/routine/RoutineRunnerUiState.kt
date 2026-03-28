@@ -1,7 +1,11 @@
 package com.getaltair.kairos.feature.routine
 
 /**
- * Result type for each step in the routine.
+ * Presentation-layer step result type for the routine runner.
+ *
+ * This intentionally differs from the domain [com.getaltair.kairos.domain.enums.StepResult]
+ * which only has Completed and Skipped. The UI needs a PENDING state for steps that have
+ * not yet been reached, which the domain does not model.
  */
 enum class StepResultType {
     PENDING,

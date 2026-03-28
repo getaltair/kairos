@@ -19,6 +19,7 @@ val routineModule = module {
     viewModel {
         RoutineListViewModel(
             getActiveRoutinesUseCase = get(),
+            getRoutineDetailUseCase = get(),
         )
     }
     viewModel { params ->
@@ -27,6 +28,7 @@ val routineModule = module {
             getRoutineDetailUseCase = get(),
             getActiveHabitsUseCase = get(),
             createRoutineUseCase = get(),
+            updateRoutineUseCase = get(),
         )
     }
     viewModel { params ->

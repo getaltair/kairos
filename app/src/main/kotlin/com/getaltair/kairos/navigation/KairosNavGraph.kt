@@ -113,6 +113,7 @@ fun KairosNavGraph() {
         composable("editRoutine/{routineId}") { backStackEntry ->
             val routineId = backStackEntry.arguments?.getString("routineId")
             if (routineId == null) {
+                Timber.w("editRoutine route: routineId argument is null")
                 navController.popBackStack()
                 return@composable
             }
@@ -125,6 +126,7 @@ fun KairosNavGraph() {
         composable("routineRunner/{routineId}") { backStackEntry ->
             val routineId = backStackEntry.arguments?.getString("routineId")
             if (routineId == null) {
+                Timber.w("routineRunner route: routineId argument is null")
                 navController.popBackStack()
                 return@composable
             }
@@ -141,6 +143,7 @@ fun KairosNavGraph() {
         composable("routineSummary/{executionId}") { backStackEntry ->
             val executionId = backStackEntry.arguments?.getString("executionId")
             if (executionId == null) {
+                Timber.w("routineSummary route: executionId argument is null")
                 navController.popBackStack()
                 return@composable
             }

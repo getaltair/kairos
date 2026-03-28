@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import timber.log.Timber
 
 /**
  * Foreground service providing persistent notification during routine execution.
@@ -61,7 +62,13 @@ class RoutineTimerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
+        if (intent == null) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        when (intent.action) {
             ACTION_START -> startForeground(intent)
 
             ACTION_UPDATE -> handleUpdate(intent)
@@ -84,8 +91,10 @@ class RoutineTimerService : Service() {
             ACTION_PAUSE -> {
                 RoutineTimerState.emitAction(RoutineTimerState.TimerAction.PAUSE)
             }
+
+            else -> Timber.w("Unknown action: %s", intent.action)
         }
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private fun startForeground(intent: Intent) {

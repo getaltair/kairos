@@ -303,8 +303,8 @@ fun RoutineRunnerScreen(
                 TextButton(
                     onClick = {
                         showAbandonDialog = false
-                        viewModel.onAbandon()
-                        onNavigateBack()
+                        // C3 FIX: Pass navigation as callback to avoid race condition
+                        viewModel.onAbandon { onNavigateBack() }
                     },
                 ) {
                     Text("Leave")

@@ -543,7 +543,7 @@ object FirestoreMapper {
             orderIndex = map.requireField<Number>("RoutineHabit", "orderIndex").toInt(),
             overrideDurationSeconds =
                 (map["overrideDurationSeconds"] as? Number)?.toInt(),
-            variantIds = variantIdsRaw?.map { UUID.fromString(it) },
+            variantIds = variantIdsRaw?.map { UUID.fromString(it) } ?: emptyList(),
             createdAt = map.requireField<Timestamp>("RoutineHabit", "createdAt").toInstant(),
             updatedAt = map.requireField<Timestamp>("RoutineHabit", "updatedAt").toInstant(),
         )

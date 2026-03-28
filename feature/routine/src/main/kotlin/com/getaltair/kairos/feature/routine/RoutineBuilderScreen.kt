@@ -178,16 +178,16 @@ fun RoutineBuilderScreen(
                     }
                     itemsIndexed(
                         uiState.selectedHabits,
-                        key = { _, pair -> pair.first.id },
-                    ) { index, (habit, durationOverride) ->
+                        key = { _, selectedHabit -> selectedHabit.habit.id },
+                    ) { index, selectedHabit ->
                         SelectedHabitRow(
-                            habit = habit,
-                            durationOverride = durationOverride,
+                            habit = selectedHabit.habit,
+                            durationOverride = selectedHabit.overrideDurationSeconds,
                             index = index,
                             totalCount = uiState.selectedHabits.size,
-                            onRemove = { viewModel.removeHabit(habit.id) },
+                            onRemove = { viewModel.removeHabit(selectedHabit.habit.id) },
                             onDurationChanged = { seconds ->
-                                viewModel.setDurationOverride(habit.id, seconds)
+                                viewModel.setDurationOverride(selectedHabit.habit.id, seconds)
                             },
                             onReorder = { fromIdx, toIdx ->
                                 viewModel.reorderHabits(fromIdx, toIdx)
@@ -206,7 +206,7 @@ fun RoutineBuilderScreen(
                     )
                 }
 
-                val selectedIds = uiState.selectedHabits.map { it.first.id }.toSet()
+                val selectedIds = uiState.selectedHabits.map { it.habit.id }.toSet()
                 val availableToAdd = uiState.availableHabits.filter { it.id !in selectedIds }
 
                 if (availableToAdd.isEmpty()) {

@@ -91,7 +91,6 @@ val dataModule = module {
         RoutineRepositoryImpl(
             routineDao = get(),
             routineHabitDao = get(),
-            routineExecutionDao = get(),
             routineVariantDao = get(),
             syncTrigger = get(),
             authRepository = get(),

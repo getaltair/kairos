@@ -25,14 +25,14 @@ import androidx.compose.ui.unit.sp
  *
  * Shows an outer progress arc representing the percentage of time remaining,
  * a large center text showing MM:SS format, and secondary text with the habit name.
- * Animate smoothly between ticks for a polished feel.
+ * Animates smoothly between ticks for a polished feel.
  *
  * Styling follows DESIGN.md: primary teal for the arc, soft off-white for text,
  * surface container for the background track. No hard borders.
  *
  * @param timeRemainingSeconds Current seconds remaining
  * @param totalTimeSeconds Total allocated seconds for this step
- * @param habitName Name of the current habit
+ * @param habitName Name of the current habit (used for accessibility context, not displayed directly)
  * @param isPaused Whether the timer is paused
  */
 @Composable

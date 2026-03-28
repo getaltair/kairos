@@ -4,8 +4,10 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import com.getaltair.kairos.data.entity.RoutineEntity
+import com.getaltair.kairos.data.entity.RoutineHabitEntity
 import com.getaltair.kairos.domain.enums.RoutineStatus
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
@@ -46,6 +48,22 @@ interface RoutineDao {
      */
     @Insert
     fun insert(routine: RoutineEntity)
+
+    /**
+     * Atomically insert a routine and its associated habit entries.
+     * Both inserts succeed or both roll back.
+     */
+    @Transaction
+    fun insertWithHabits(routine: RoutineEntity, habits: List<RoutineHabitEntity>) {
+        insert(routine)
+        insertAllHabits(habits)
+    }
+
+    /**
+     * Insert multiple routine-habit associations (internal helper for [insertWithHabits]).
+     */
+    @Insert
+    fun insertAllHabits(habits: List<RoutineHabitEntity>)
 
     /**
      * Insert multiple routines.

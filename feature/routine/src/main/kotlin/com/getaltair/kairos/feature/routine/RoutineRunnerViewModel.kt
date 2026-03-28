@@ -5,9 +5,8 @@ import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.getaltair.kairos.domain.common.Result
-import com.getaltair.kairos.domain.entity.Habit
-import com.getaltair.kairos.domain.entity.RoutineHabit
 import com.getaltair.kairos.domain.enums.StepResult
+import com.getaltair.kairos.domain.model.RoutineStep
 import com.getaltair.kairos.domain.usecase.AbandonRoutineUseCase
 import com.getaltair.kairos.domain.usecase.AdvanceRoutineStepUseCase
 import com.getaltair.kairos.domain.usecase.CompleteRoutineUseCase
@@ -22,7 +21,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -59,8 +57,8 @@ class RoutineRunnerViewModel(
     private val _uiState = MutableStateFlow(RoutineRunnerUiState())
     val uiState: StateFlow<RoutineRunnerUiState> = _uiState.asStateFlow()
 
-    /** Ordered list of (RoutineHabit, Habit) for the routine steps. */
-    private var steps: List<Pair<RoutineHabit, Habit>> = emptyList()
+    /** Ordered list of routine steps (RoutineHabit + Habit). */
+    private var steps: List<RoutineStep> = emptyList()
 
     /** The execution UUID after starting. */
     private var executionId: UUID? = null
@@ -68,50 +66,68 @@ class RoutineRunnerViewModel(
     /** The active timer coroutine job. Internal for test cancellation. */
     internal var timerJob: Job? = null
 
+    // C5 FIX: Pause time accumulation
+    private var pauseStartNanos: Long = 0L
+    private var accumulatedPausedMs: Long = 0L
+
+    // Action 7: Service call protection
     private fun startForegroundTimerService(habitName: String, timeRemaining: Int, stepInfo: String) {
-        val intent = Intent(getApplication(), RoutineTimerService::class.java).apply {
-            action = RoutineTimerService.ACTION_START
-            putExtra(RoutineTimerService.EXTRA_ROUTINE_NAME, _uiState.value.routineName)
-            putExtra(RoutineTimerService.EXTRA_HABIT_NAME, habitName)
-            putExtra(RoutineTimerService.EXTRA_TIME_REMAINING, timeRemaining)
-            putExtra(RoutineTimerService.EXTRA_STEP_INFO, stepInfo)
-            putExtra(RoutineTimerService.EXTRA_IS_PAUSED, false)
+        try {
+            val intent = Intent(getApplication(), RoutineTimerService::class.java).apply {
+                action = RoutineTimerService.ACTION_START
+                putExtra(RoutineTimerService.EXTRA_ROUTINE_NAME, _uiState.value.routineName)
+                putExtra(RoutineTimerService.EXTRA_HABIT_NAME, habitName)
+                putExtra(RoutineTimerService.EXTRA_TIME_REMAINING, timeRemaining)
+                putExtra(RoutineTimerService.EXTRA_STEP_INFO, stepInfo)
+                putExtra(RoutineTimerService.EXTRA_IS_PAUSED, false)
+            }
+            getApplication<Application>().startForegroundService(intent)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Timber.w(e, "Failed to start timer service -- continuing without it")
         }
-        getApplication<Application>().startForegroundService(intent)
     }
 
     private fun updateTimerService(habitName: String, timeRemaining: Int, stepInfo: String, isPaused: Boolean) {
-        val intent = Intent(getApplication(), RoutineTimerService::class.java).apply {
-            action = RoutineTimerService.ACTION_UPDATE
-            putExtra(RoutineTimerService.EXTRA_HABIT_NAME, habitName)
-            putExtra(RoutineTimerService.EXTRA_TIME_REMAINING, timeRemaining)
-            putExtra(RoutineTimerService.EXTRA_STEP_INFO, stepInfo)
-            putExtra(RoutineTimerService.EXTRA_IS_PAUSED, isPaused)
+        try {
+            val intent = Intent(getApplication(), RoutineTimerService::class.java).apply {
+                action = RoutineTimerService.ACTION_UPDATE
+                putExtra(RoutineTimerService.EXTRA_HABIT_NAME, habitName)
+                putExtra(RoutineTimerService.EXTRA_TIME_REMAINING, timeRemaining)
+                putExtra(RoutineTimerService.EXTRA_STEP_INFO, stepInfo)
+                putExtra(RoutineTimerService.EXTRA_IS_PAUSED, isPaused)
+            }
+            getApplication<Application>().startService(intent)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Timber.w(e, "Failed to update timer service -- continuing without it")
         }
-        getApplication<Application>().startService(intent)
     }
 
     private fun stopTimerService() {
-        val intent = Intent(getApplication(), RoutineTimerService::class.java).apply {
-            action = RoutineTimerService.ACTION_STOP
+        try {
+            val intent = Intent(getApplication(), RoutineTimerService::class.java).apply {
+                action = RoutineTimerService.ACTION_STOP
+            }
+            getApplication<Application>().startService(intent)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Timber.w(e, "Failed to stop timer service -- continuing without it")
         }
-        getApplication<Application>().startService(intent)
     }
 
     init {
         loadAndStart()
+        // Collect RoutineTimerState actions from the Channel-backed flow.
         viewModelScope.launch {
-            RoutineTimerState.action
-                .filterNotNull()
-                .collect { action ->
-                    RoutineTimerState.clearAction()
-                    when (action) {
-                        RoutineTimerState.TimerAction.DONE -> onDone()
-                        RoutineTimerState.TimerAction.SKIP -> onSkip()
-                        RoutineTimerState.TimerAction.PAUSE -> onPause()
-                        RoutineTimerState.TimerAction.RESUME -> onResume()
-                    }
+            RoutineTimerState.action.collect { action ->
+                when (action) {
+                    RoutineTimerState.TimerAction.DONE -> onDone()
+                    RoutineTimerState.TimerAction.SKIP -> onSkip()
+                    RoutineTimerState.TimerAction.PAUSE -> onPause()
+                    RoutineTimerState.TimerAction.RESUME -> onResume()
                 }
+            }
         }
     }
 
@@ -170,11 +186,11 @@ class RoutineRunnerViewModel(
                                         routineName = routine.name,
                                         currentStepIndex = 0,
                                         totalSteps = steps.size,
-                                        currentHabitName = firstStep.second.name,
+                                        currentHabitName = firstStep.habit.name,
                                         timeRemainingSeconds = duration,
                                         totalTimeSeconds = duration,
                                         isPaused = false,
-                                        upNextHabitName = steps.getOrNull(1)?.second?.name,
+                                        upNextHabitName = steps.getOrNull(1)?.habit?.name,
                                         stepResults = List(steps.size) { StepResultType.PENDING },
                                         isComplete = false,
                                         executionId = startResult.value.id.toString(),
@@ -187,7 +203,7 @@ class RoutineRunnerViewModel(
 
                                 val stepInfo = "Step 1 of ${steps.size}"
                                 startForegroundTimerService(
-                                    habitName = firstStep.second.name,
+                                    habitName = firstStep.habit.name,
                                     timeRemaining = duration,
                                     stepInfo = stepInfo,
                                 )
@@ -261,9 +277,16 @@ class RoutineRunnerViewModel(
     }
 
     private fun advanceStep(uiResult: StepResultType, domainResult: StepResult) {
-        val execId = executionId ?: return
+        // Action 8: Null-guard logging
+        val execId = executionId ?: run {
+            Timber.w("advanceStep called with null executionId")
+            return
+        }
         val currentIndex = _uiState.value.currentStepIndex
-        val currentStep = steps.getOrNull(currentIndex) ?: return
+        val currentStep = steps.getOrNull(currentIndex) ?: run {
+            Timber.w("advanceStep called with null currentStep at index %d", currentIndex)
+            return
+        }
 
         viewModelScope.launch {
             try {
@@ -271,7 +294,7 @@ class RoutineRunnerViewModel(
                 val result = advanceRoutineStepUseCase(
                     executionId = execId,
                     stepResult = domainResult,
-                    habitId = currentStep.first.habitId,
+                    habitId = currentStep.routineHabit.habitId,
                 )
 
                 if (result is Result.Error) {
@@ -291,13 +314,19 @@ class RoutineRunnerViewModel(
                 if (nextIndex >= steps.size) {
                     // Last step -- complete the routine
                     timerJob?.cancel()
+
+                    // C2 FIX: Only set isComplete on success
                     when (val completeResult = completeRoutineUseCase(execId)) {
                         is Result.Error -> {
                             Timber.e("Failed to complete routine: %s", completeResult.message)
+                            _uiState.update {
+                                it.copy(error = "Failed to complete routine. Please try again.")
+                            }
+                            return@launch
                         }
 
                         is Result.Success -> {
-                            // Success
+                            // Success -- now safe to mark complete
                         }
                     }
                     stopTimerService()
@@ -311,12 +340,12 @@ class RoutineRunnerViewModel(
                     // Move to next step
                     val nextStep = steps[nextIndex]
                     val nextDuration = effectiveDuration(nextStep)
-                    val upNext = steps.getOrNull(nextIndex + 1)?.second?.name
+                    val upNext = steps.getOrNull(nextIndex + 1)?.habit?.name
 
                     _uiState.update {
                         it.copy(
                             currentStepIndex = nextIndex,
-                            currentHabitName = nextStep.second.name,
+                            currentHabitName = nextStep.habit.name,
                             timeRemainingSeconds = nextDuration,
                             totalTimeSeconds = nextDuration,
                             upNextHabitName = upNext,
@@ -326,7 +355,7 @@ class RoutineRunnerViewModel(
                     }
 
                     updateTimerService(
-                        habitName = nextStep.second.name,
+                        habitName = nextStep.habit.name,
                         timeRemaining = nextDuration,
                         stepInfo = "Step ${nextIndex + 1} of ${steps.size}",
                         isPaused = false,
@@ -345,9 +374,11 @@ class RoutineRunnerViewModel(
     }
 
     /**
-     * Pauses the timer.
+     * Pauses the timer and records the pause start time for accumulation.
      */
     fun onPause() {
+        // C5 FIX: Record pause start time
+        pauseStartNanos = nanoClock.nanoTime()
         _uiState.update { it.copy(isPaused = true) }
         val state = _uiState.value
         updateTimerService(
@@ -359,9 +390,14 @@ class RoutineRunnerViewModel(
     }
 
     /**
-     * Resumes the timer from paused state.
+     * Resumes the timer from paused state and accumulates paused duration.
      */
     fun onResume() {
+        // C5 FIX: Accumulate paused time
+        if (pauseStartNanos > 0L) {
+            accumulatedPausedMs += (nanoClock.nanoTime() - pauseStartNanos) / 1_000_000
+            pauseStartNanos = 0L
+        }
         _uiState.update { it.copy(isPaused = false) }
         val state = _uiState.value
         updateTimerService(
@@ -375,27 +411,27 @@ class RoutineRunnerViewModel(
     /**
      * Abandons the routine execution.
      * Marks the execution as Abandoned; partial completions are preserved.
+     *
+     * C3 FIX: Accepts a callback to run after the abandon completes,
+     * preventing a race condition where navigation occurs before the
+     * abandon use case finishes.
      */
-    fun onAbandon() {
-        val execId = executionId ?: return
+    fun onAbandon(onAbandoned: () -> Unit) {
+        val execId = executionId ?: run {
+            Timber.w("onAbandon called with null executionId")
+            return
+        }
         timerJob?.cancel()
         stopTimerService()
 
         viewModelScope.launch {
             try {
-                when (val result = abandonRoutineUseCase(execId)) {
-                    is Result.Error -> {
-                        Timber.e("Failed to abandon routine: %s", result.message)
-                    }
-
-                    is Result.Success -> {
-                        // Success
-                    }
-                }
+                abandonRoutineUseCase(execId)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 Timber.e(e, "Unexpected error abandoning routine")
             }
+            onAbandoned()
         }
     }
 
@@ -403,8 +439,8 @@ class RoutineRunnerViewModel(
      * Gets the effective duration in seconds for a step,
      * using the override if present, or the habit's estimated duration.
      */
-    private fun effectiveDuration(step: Pair<RoutineHabit, Habit>): Int =
-        step.first.overrideDurationSeconds ?: step.second.estimatedSeconds
+    private fun effectiveDuration(step: RoutineStep): Int =
+        step.routineHabit.overrideDurationSeconds ?: step.habit.estimatedSeconds
 
     override fun onCleared() {
         timerJob?.cancel()

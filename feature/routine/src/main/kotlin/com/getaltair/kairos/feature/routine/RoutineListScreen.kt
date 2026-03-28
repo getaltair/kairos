@@ -166,16 +166,12 @@ fun RoutineListScreen(
                                 .padding(bottom = 4.dp),
                         )
                     }
-                    items(uiState.routines, key = { it.id }) { routine ->
+                    items(uiState.routines, key = { it.routine.id }) { item ->
                         RoutineCard(
-                            routine = routine,
-                            // Habit count and duration are unknown at list level
-                            // without loading each routine's habits. For now,
-                            // display placeholders. A future enhancement can
-                            // pre-load this data.
-                            habitCount = 0,
-                            estimatedSeconds = 0,
-                            onClick = { onRoutineClick(routine.id) },
+                            routine = item.routine,
+                            habitCount = item.habitCount,
+                            estimatedSeconds = item.estimatedSeconds,
+                            onClick = { onRoutineClick(item.routine.id) },
                         )
                     }
                 }

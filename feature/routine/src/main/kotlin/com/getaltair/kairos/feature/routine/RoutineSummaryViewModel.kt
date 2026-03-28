@@ -20,6 +20,10 @@ import timber.log.Timber
 
 /**
  * Data for a single habit result in the summary.
+ *
+ * @property habitName Display name of the habit
+ * @property wasCompleted Whether this step was processed (done or skipped); see C6 limitation
+ * @property durationSeconds Allocated duration for this step
  */
 data class HabitSummaryItem(val habitName: String, val wasCompleted: Boolean, val durationSeconds: Int,)
 
@@ -96,11 +100,14 @@ class RoutineSummaryViewModel(
                                 val totalSteps = habitsWithDetails.size
                                 val completedSteps = execution.currentStepIndex
 
-                                // Determine how many were completed vs skipped
-                                // Since we don't have per-step results stored on execution,
-                                // we know the total that were processed = currentStepIndex.
-                                // We can't distinguish done vs skipped at summary level
-                                // without additional data. For now, count all processed as done.
+                                // TODO: C6 -- Cannot distinguish done vs skipped without step results
+                                // stored in execution. Track as follow-up: store List<StepResult>
+                                // on RoutineExecution and surface here.
+                                //
+                                // Currently we only know how many steps were processed
+                                // (currentStepIndex) but not which were done vs skipped.
+                                // wasCompleted below means "was processed" (either done or skipped),
+                                // not strictly "completed successfully".
                                 val totalTime = if (execution.completedAt != null) {
                                     Duration.between(
                                         execution.startedAt,

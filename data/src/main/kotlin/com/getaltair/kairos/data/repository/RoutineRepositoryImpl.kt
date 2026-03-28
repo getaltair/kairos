@@ -2,7 +2,6 @@ package com.getaltair.kairos.data.repository
 
 import com.getaltair.kairos.data.converter.HabitCategoryConverter
 import com.getaltair.kairos.data.dao.RoutineDao
-import com.getaltair.kairos.data.dao.RoutineExecutionDao
 import com.getaltair.kairos.data.dao.RoutineHabitDao
 import com.getaltair.kairos.data.dao.RoutineVariantDao
 import com.getaltair.kairos.data.mapper.RoutineEntityMapper
@@ -12,6 +11,7 @@ import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.entity.Routine
 import com.getaltair.kairos.domain.entity.RoutineHabit
 import com.getaltair.kairos.domain.entity.RoutineVariant
+import com.getaltair.kairos.domain.model.RoutineWithHabits
 import com.getaltair.kairos.domain.repository.AuthRepository
 import com.getaltair.kairos.domain.repository.RoutineRepository
 import com.getaltair.kairos.domain.sync.SyncEntityTypes
@@ -27,13 +27,12 @@ import timber.log.Timber
 
 /**
  * Room-backed implementation of [RoutineRepository].
- * Delegates persistence to [RoutineDao], [RoutineHabitDao], [RoutineExecutionDao],
+ * Delegates persistence to [RoutineDao], [RoutineHabitDao],
  * and [RoutineVariantDao]. Maps between entity and domain layers using entity mappers.
  */
 class RoutineRepositoryImpl(
     private val routineDao: RoutineDao,
     private val routineHabitDao: RoutineHabitDao,
-    private val routineExecutionDao: RoutineExecutionDao,
     private val routineVariantDao: RoutineVariantDao,
     private val syncTrigger: SyncTrigger,
     private val authRepository: AuthRepository,
@@ -51,7 +50,7 @@ class RoutineRepositoryImpl(
         Result.Error("Failed to get routine: ${e.message}", cause = e)
     }
 
-    override suspend fun getRoutineWithHabits(id: UUID): Result<Pair<Routine, List<RoutineHabit>>?> = try {
+    override suspend fun getRoutineWithHabits(id: UUID): Result<RoutineWithHabits?> = try {
         val routineEntity = withContext(Dispatchers.IO) { routineDao.getById(id) }
         if (routineEntity == null) {
             Result.Success(null)
@@ -61,7 +60,7 @@ class RoutineRepositoryImpl(
             }
             val routine = RoutineEntityMapper.toDomain(routineEntity)
             val habits = RoutineHabitEntityMapper.toDomainList(habitEntities)
-            Result.Success(Pair(routine, habits))
+            Result.Success(RoutineWithHabits(routine, habits))
         }
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -101,8 +100,7 @@ class RoutineRepositoryImpl(
         val routineHabitEntities = RoutineHabitEntityMapper.toEntityList(routineHabits)
 
         withContext(Dispatchers.IO) {
-            routineDao.insert(routineEntity)
-            routineHabitDao.insertAll(routineHabitEntities)
+            routineDao.insertWithHabits(routineEntity, routineHabitEntities)
         }
 
         triggerSync(SyncEntityTypes.ROUTINE, routine.id.toString(), routine)

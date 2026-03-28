@@ -80,9 +80,9 @@ class StartRoutineUseCaseTest {
         val result = useCase(routineId)
 
         assertTrue(result is Result.Error)
-        assertTrue(
-            (result as Result.Error).message.contains("already has an active execution")
-        )
+        val error = result as Result.Error
+        assertTrue(error.message.contains("already has an active execution"))
+        assertTrue(error.message.contains("In progress"))
         coVerify(exactly = 0) { routineExecutionRepository.insert(any()) }
     }
 
@@ -102,9 +102,29 @@ class StartRoutineUseCaseTest {
         val result = useCase(routineId)
 
         assertTrue(result is Result.Error)
-        assertTrue(
-            (result as Result.Error).message.contains("already has an active execution")
+        val error = result as Result.Error
+        assertTrue(error.message.contains("already has an active execution"))
+        assertTrue(error.message.contains("Paused"))
+        coVerify(exactly = 0) { routineExecutionRepository.insert(any()) }
+    }
+
+    @Test
+    fun `E-1 error message includes routine name`() = runTest {
+        val activeExecution = RoutineExecution(
+            routineId = routineId,
+            status = ExecutionStatus.InProgress,
+            currentStepIndex = 0,
         )
+
+        coEvery { routineRepository.getById(routineId) } returns Result.Success(validRoutine())
+        coEvery {
+            routineExecutionRepository.getActiveForRoutine(routineId)
+        } returns Result.Success(activeExecution)
+
+        val result = useCase(routineId)
+
+        assertTrue(result is Result.Error)
+        assertTrue((result as Result.Error).message.contains("Morning Routine"))
         coVerify(exactly = 0) { routineExecutionRepository.insert(any()) }
     }
 

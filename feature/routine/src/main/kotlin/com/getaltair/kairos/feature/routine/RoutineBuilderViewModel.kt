@@ -8,6 +8,7 @@ import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.usecase.CreateRoutineUseCase
 import com.getaltair.kairos.domain.usecase.GetActiveHabitsUseCase
 import com.getaltair.kairos.domain.usecase.GetRoutineDetailUseCase
+import com.getaltair.kairos.domain.usecase.UpdateRoutineUseCase
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,7 @@ class RoutineBuilderViewModel(
     private val getRoutineDetailUseCase: GetRoutineDetailUseCase,
     private val getActiveHabitsUseCase: GetActiveHabitsUseCase,
     private val createRoutineUseCase: CreateRoutineUseCase,
+    private val updateRoutineUseCase: UpdateRoutineUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -40,6 +42,9 @@ class RoutineBuilderViewModel(
         )
     )
     val uiState: StateFlow<RoutineBuilderUiState> = _uiState.asStateFlow()
+
+    /** Cached routine entity for edit mode, used when calling updateRoutineUseCase. */
+    private var existingRoutine: com.getaltair.kairos.domain.entity.Routine? = null
 
     init {
         loadData()
@@ -78,14 +83,15 @@ class RoutineBuilderViewModel(
                     when (val detailResult = getRoutineDetailUseCase(parsedId)) {
                         is Result.Success -> {
                             val (routine, habitsWithDetails) = detailResult.value
-                            val selectedPairs = habitsWithDetails.map { (routineHabit, habit) ->
-                                Pair(habit, routineHabit.overrideDurationSeconds)
+                            existingRoutine = routine
+                            val selected = habitsWithDetails.map { (routineHabit, habit) ->
+                                SelectedHabit(habit, routineHabit.overrideDurationSeconds)
                             }
                             _uiState.update {
                                 it.copy(
                                     name = routine.name,
                                     category = routine.category,
-                                    selectedHabits = selectedPairs,
+                                    selectedHabits = selected,
                                     isLoading = false,
                                 )
                             }
@@ -128,11 +134,11 @@ class RoutineBuilderViewModel(
 
     fun addHabit(habit: Habit) {
         _uiState.update { state ->
-            if (state.selectedHabits.any { it.first.id == habit.id }) {
+            if (state.selectedHabits.any { it.habit.id == habit.id }) {
                 state // Already selected
             } else {
                 state.copy(
-                    selectedHabits = state.selectedHabits + Pair(habit, null),
+                    selectedHabits = state.selectedHabits + SelectedHabit(habit, null),
                     error = null,
                 )
             }
@@ -142,7 +148,7 @@ class RoutineBuilderViewModel(
     fun removeHabit(habitId: UUID) {
         _uiState.update { state ->
             state.copy(
-                selectedHabits = state.selectedHabits.filter { it.first.id != habitId },
+                selectedHabits = state.selectedHabits.filter { it.habit.id != habitId },
             )
         }
     }
@@ -161,8 +167,12 @@ class RoutineBuilderViewModel(
     fun setDurationOverride(habitId: UUID, seconds: Int?) {
         _uiState.update { state ->
             state.copy(
-                selectedHabits = state.selectedHabits.map { (habit, duration) ->
-                    if (habit.id == habitId) Pair(habit, seconds) else Pair(habit, duration)
+                selectedHabits = state.selectedHabits.map { selected ->
+                    if (selected.habit.id == habitId) {
+                        selected.copy(overrideDurationSeconds = seconds)
+                    } else {
+                        selected
+                    }
                 },
             )
         }
@@ -186,36 +196,79 @@ class RoutineBuilderViewModel(
 
         viewModelScope.launch {
             try {
-                val habitIds = state.selectedHabits.map { it.first.id }
-                val durations = state.selectedHabits
-                    .filter { it.second != null }
-                    .associate { it.first.id to it.second }
-
-                when (
-                    val result = createRoutineUseCase(
-                        name = state.name,
-                        category = state.category,
-                        habitIds = habitIds,
-                        durations = durations,
-                    )
-                ) {
-                    is Result.Success -> {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                isSaved = true,
-                                savedRoutineId = result.value.id.toString(),
-                            )
-                        }
-                    }
-
-                    is Result.Error -> {
-                        Timber.e(result.cause, "Failed to save routine: %s", result.message)
+                if (state.isEditMode) {
+                    // C1 FIX: Edit mode calls updateRoutineUseCase
+                    val routine = existingRoutine
+                    if (routine == null) {
+                        Timber.e("Edit mode but existingRoutine is null")
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 error = "Something went wrong. Please try again.",
                             )
+                        }
+                        return@launch
+                    }
+
+                    val updatedRoutine = routine.copy(
+                        name = state.name,
+                        category = state.category,
+                    )
+
+                    when (val result = updateRoutineUseCase(updatedRoutine)) {
+                        is Result.Success -> {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isSaved = true,
+                                    savedRoutineId = result.value.id.toString(),
+                                )
+                            }
+                        }
+
+                        is Result.Error -> {
+                            Timber.e(result.cause, "Failed to update routine: %s", result.message)
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = "Something went wrong. Please try again.",
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Create mode
+                    val habitIds = state.selectedHabits.map { it.habit.id }
+                    val durations = state.selectedHabits
+                        .filter { it.overrideDurationSeconds != null }
+                        .associate { it.habit.id to it.overrideDurationSeconds }
+
+                    when (
+                        val result = createRoutineUseCase(
+                            name = state.name,
+                            category = state.category,
+                            habitIds = habitIds,
+                            durations = durations,
+                        )
+                    ) {
+                        is Result.Success -> {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isSaved = true,
+                                    savedRoutineId = result.value.id.toString(),
+                                )
+                            }
+                        }
+
+                        is Result.Error -> {
+                            Timber.e(result.cause, "Failed to save routine: %s", result.message)
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = "Something went wrong. Please try again.",
+                                )
+                            }
                         }
                     }
                 }

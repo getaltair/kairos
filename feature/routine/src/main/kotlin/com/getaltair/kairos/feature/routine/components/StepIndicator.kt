@@ -23,8 +23,8 @@ import com.getaltair.kairos.feature.routine.StepResultType
  *
  * - Completed steps: filled circle with checkmark (primary color)
  * - Skipped steps: filled circle with skip icon (secondary color)
- * - Current step: highlighted ring (primary color, larger)
- * - Upcoming steps: unfilled outline circle
+ * - Current step: filled circle with translucent primary background (primary color, larger)
+ * - Upcoming steps: filled circle with surfaceContainerHigh color
  *
  * @param currentIndex Zero-based index of the current step
  * @param stepResults Results for each step

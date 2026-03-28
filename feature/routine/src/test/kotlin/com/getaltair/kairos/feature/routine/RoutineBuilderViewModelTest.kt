@@ -3,12 +3,15 @@ package com.getaltair.kairos.feature.routine
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.entity.Routine
+import com.getaltair.kairos.domain.entity.RoutineHabit
 import com.getaltair.kairos.domain.enums.AnchorType
 import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.enums.HabitFrequency
+import com.getaltair.kairos.domain.model.RoutineStep
 import com.getaltair.kairos.domain.usecase.CreateRoutineUseCase
 import com.getaltair.kairos.domain.usecase.GetActiveHabitsUseCase
 import com.getaltair.kairos.domain.usecase.GetRoutineDetailUseCase
+import com.getaltair.kairos.domain.usecase.UpdateRoutineUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -36,6 +39,7 @@ class RoutineBuilderViewModelTest {
     private val getRoutineDetailUseCase: GetRoutineDetailUseCase = mockk()
     private val getActiveHabitsUseCase: GetActiveHabitsUseCase = mockk()
     private val createRoutineUseCase: CreateRoutineUseCase = mockk()
+    private val updateRoutineUseCase: UpdateRoutineUseCase = mockk(relaxed = true)
 
     @Before
     fun setUp() {
@@ -58,6 +62,7 @@ class RoutineBuilderViewModelTest {
             getRoutineDetailUseCase = getRoutineDetailUseCase,
             getActiveHabitsUseCase = getActiveHabitsUseCase,
             createRoutineUseCase = createRoutineUseCase,
+            updateRoutineUseCase = updateRoutineUseCase,
         )
     }
 
@@ -150,8 +155,8 @@ class RoutineBuilderViewModelTest {
 
         val selected = viewModel.uiState.value.selectedHabits
         assertEquals(1, selected.size)
-        assertEquals("Meditate", selected[0].first.name)
-        assertNull(selected[0].second) // No duration override
+        assertEquals("Meditate", selected[0].habit.name)
+        assertNull(selected[0].overrideDurationSeconds) // No duration override
     }
 
     @Test
@@ -199,7 +204,7 @@ class RoutineBuilderViewModelTest {
 
         val selected = viewModel.uiState.value.selectedHabits
         assertEquals(1, selected.size)
-        assertEquals("Journal", selected[0].first.name)
+        assertEquals("Journal", selected[0].habit.name)
     }
 
     @Test
@@ -234,9 +239,9 @@ class RoutineBuilderViewModelTest {
         viewModel.reorderHabits(0, 2)
 
         val selected = viewModel.uiState.value.selectedHabits
-        assertEquals("Journal", selected[0].first.name)
-        assertEquals("Exercise", selected[1].first.name)
-        assertEquals("Meditate", selected[2].first.name)
+        assertEquals("Journal", selected[0].habit.name)
+        assertEquals("Exercise", selected[1].habit.name)
+        assertEquals("Meditate", selected[2].habit.name)
     }
 
     @Test
@@ -253,8 +258,8 @@ class RoutineBuilderViewModelTest {
         viewModel.reorderHabits(-1, 5)
 
         val selected = viewModel.uiState.value.selectedHabits
-        assertEquals("Meditate", selected[0].first.name)
-        assertEquals("Journal", selected[1].first.name)
+        assertEquals("Meditate", selected[0].habit.name)
+        assertEquals("Journal", selected[1].habit.name)
     }
 
     // -------------------------------------------------------------------------
@@ -271,7 +276,7 @@ class RoutineBuilderViewModelTest {
         viewModel.setDurationOverride(habit.id, 120)
 
         val selected = viewModel.uiState.value.selectedHabits
-        assertEquals(120, selected[0].second)
+        assertEquals(120, selected[0].overrideDurationSeconds)
     }
 
     @Test
@@ -282,10 +287,10 @@ class RoutineBuilderViewModelTest {
 
         viewModel.addHabit(habit)
         viewModel.setDurationOverride(habit.id, 120)
-        assertEquals(120, viewModel.uiState.value.selectedHabits[0].second)
+        assertEquals(120, viewModel.uiState.value.selectedHabits[0].overrideDurationSeconds)
 
         viewModel.setDurationOverride(habit.id, null)
-        assertNull(viewModel.uiState.value.selectedHabits[0].second)
+        assertNull(viewModel.uiState.value.selectedHabits[0].overrideDurationSeconds)
     }
 
     // -------------------------------------------------------------------------
@@ -486,6 +491,7 @@ class RoutineBuilderViewModelTest {
             getRoutineDetailUseCase = getRoutineDetailUseCase,
             getActiveHabitsUseCase = getActiveHabitsUseCase,
             createRoutineUseCase = createRoutineUseCase,
+            updateRoutineUseCase = updateRoutineUseCase,
         )
         advanceUntilIdle()
 
@@ -528,6 +534,102 @@ class RoutineBuilderViewModelTest {
                 category = HabitCategory.Morning,
                 habitIds = listOf(habit1.id, habit2.id),
                 durations = mapOf(habit1.id to 60),
+            )
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 17. Edit-mode save calls UpdateRoutineUseCase (C1 fix)
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `save in edit mode calls UpdateRoutineUseCase`() = runTest {
+        val editRoutineId = UUID.randomUUID()
+        val habit1 = mockHabit(name = "Meditate")
+        val habit2 = mockHabit(name = "Journal")
+
+        val existingRoutine = Routine(
+            id = editRoutineId,
+            name = "Morning Routine",
+            category = HabitCategory.Morning,
+        )
+        val rh1 = RoutineHabit(
+            routineId = editRoutineId,
+            habitId = habit1.id,
+            orderIndex = 0,
+        )
+        val rh2 = RoutineHabit(
+            routineId = editRoutineId,
+            habitId = habit2.id,
+            orderIndex = 1,
+        )
+
+        coEvery { getActiveHabitsUseCase() } returns Result.Success(listOf(habit1, habit2))
+        coEvery { getRoutineDetailUseCase(editRoutineId) } returns Result.Success(
+            Pair(existingRoutine, listOf(RoutineStep(rh1, habit1), RoutineStep(rh2, habit2))),
+        )
+
+        val updatedRoutine = existingRoutine.copy(name = "Morning Routine")
+        coEvery { updateRoutineUseCase(any()) } returns Result.Success(updatedRoutine)
+
+        val viewModel = RoutineBuilderViewModel(
+            routineId = editRoutineId.toString(),
+            getRoutineDetailUseCase = getRoutineDetailUseCase,
+            getActiveHabitsUseCase = getActiveHabitsUseCase,
+            createRoutineUseCase = createRoutineUseCase,
+            updateRoutineUseCase = updateRoutineUseCase,
+        )
+        advanceUntilIdle()
+
+        // Verify edit mode was activated and data loaded
+        assertTrue(viewModel.uiState.value.isEditMode)
+        assertEquals("Morning Routine", viewModel.uiState.value.name)
+        assertEquals(2, viewModel.uiState.value.selectedHabits.size)
+
+        viewModel.save()
+        advanceUntilIdle()
+
+        // C1 FIX: Edit mode calls updateRoutineUseCase, NOT createRoutineUseCase
+        coVerify(exactly = 1) { updateRoutineUseCase(any()) }
+        coVerify(exactly = 0) {
+            createRoutineUseCase(
+                name = any(),
+                category = any(),
+                habitIds = any(),
+                durations = any(),
+            )
+        }
+        assertTrue(viewModel.uiState.value.isSaved)
+    }
+
+    // -------------------------------------------------------------------------
+    // 18. Save with blank name does not call create or update use cases
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `save with blank name does not call create use case`() = runTest {
+        val habit1 = mockHabit(name = "Meditate")
+        val habit2 = mockHabit(name = "Journal")
+        val viewModel = createViewModel(listOf(habit1, habit2))
+        advanceUntilIdle()
+
+        // Add enough habits to pass the habit count validation
+        viewModel.addHabit(habit1)
+        viewModel.addHabit(habit2)
+        // Leave name blank
+        viewModel.save()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertNotNull(state.error)
+        assertFalse(state.isSaved)
+
+        coVerify(exactly = 0) {
+            createRoutineUseCase(
+                name = any(),
+                category = any(),
+                habitIds = any(),
+                durations = any(),
             )
         }
     }

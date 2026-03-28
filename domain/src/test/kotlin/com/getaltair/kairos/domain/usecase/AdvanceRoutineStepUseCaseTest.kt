@@ -226,6 +226,52 @@ class AdvanceRoutineStepUseCaseTest {
     }
 
     @Test
+    fun `returns failure when execution is Abandoned`() = runTest {
+        val abandonedExecution = RoutineExecution(
+            id = executionId,
+            routineId = routineId,
+            status = ExecutionStatus.Abandoned,
+            currentStepIndex = 1,
+        )
+
+        coEvery {
+            routineExecutionRepository.getById(executionId)
+        } returns Result.Success(abandonedExecution)
+
+        val result = useCase(executionId, StepResult.Completed, habitId)
+
+        assertTrue(result is Result.Error)
+        val error = result as Result.Error
+        assertTrue(error.message.contains("Cannot advance step"))
+        assertTrue(error.message.contains("Abandoned"))
+        coVerify(exactly = 0) { completionRepository.insert(any()) }
+        coVerify(exactly = 0) { routineExecutionRepository.update(any()) }
+    }
+
+    @Test
+    fun `returns failure when execution is NotStarted`() = runTest {
+        val notStartedExecution = RoutineExecution(
+            id = executionId,
+            routineId = routineId,
+            status = ExecutionStatus.NotStarted,
+            currentStepIndex = 0,
+        )
+
+        coEvery {
+            routineExecutionRepository.getById(executionId)
+        } returns Result.Success(notStartedExecution)
+
+        val result = useCase(executionId, StepResult.Completed, habitId)
+
+        assertTrue(result is Result.Error)
+        val error = result as Result.Error
+        assertTrue(error.message.contains("Cannot advance step"))
+        assertTrue(error.message.contains("Not started"))
+        coVerify(exactly = 0) { completionRepository.insert(any()) }
+        coVerify(exactly = 0) { routineExecutionRepository.update(any()) }
+    }
+
+    @Test
     fun `returns failure when completion insert fails`() = runTest {
         val execution = inProgressExecution(stepIndex = 0)
         coEvery {

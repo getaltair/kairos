@@ -67,6 +67,39 @@ class RoutineValidatorTest {
         assertTrue(result is Result.Success)
     }
 
+    @Test
+    fun `validateCreate rejects tab-only name`() {
+        val habitIds = listOf(UUID.randomUUID(), UUID.randomUUID())
+        val result = RoutineValidator.validateCreate("\t\t", habitIds)
+        assertTrue(result is Result.Error)
+        assertEquals(
+            "Routine name must not be blank",
+            (result as Result.Error).message
+        )
+    }
+
+    @Test
+    fun `validateCreate rejects newline-only name`() {
+        val habitIds = listOf(UUID.randomUUID(), UUID.randomUUID())
+        val result = RoutineValidator.validateCreate("\n\n", habitIds)
+        assertTrue(result is Result.Error)
+        assertEquals(
+            "Routine name must not be blank",
+            (result as Result.Error).message
+        )
+    }
+
+    @Test
+    fun `validateCreate rejects name at 49 spaces plus 2 real characters totaling 51`() {
+        val habitIds = listOf(UUID.randomUUID(), UUID.randomUUID())
+        val name = "A".repeat(51)
+        val result = RoutineValidator.validateCreate(name, habitIds)
+        assertTrue(result is Result.Error)
+        assertTrue(
+            (result as Result.Error).message.contains("50 characters")
+        )
+    }
+
     // --- validateCreate: R-1 minimum habit count ---
 
     @Test
@@ -172,6 +205,17 @@ class RoutineValidatorTest {
     @Test
     fun `R-2 validateOrderIndices accepts single habit at index 0`() {
         val habits = listOf(routineHabit(0))
+        val result = RoutineValidator.validateOrderIndices(habits)
+        assertTrue(result is Result.Success)
+    }
+
+    @Test
+    fun `R-2 validateOrderIndices accepts out-of-order but valid indices`() {
+        val habits = listOf(
+            routineHabit(2),
+            routineHabit(0),
+            routineHabit(1),
+        )
         val result = RoutineValidator.validateOrderIndices(habits)
         assertTrue(result is Result.Success)
     }

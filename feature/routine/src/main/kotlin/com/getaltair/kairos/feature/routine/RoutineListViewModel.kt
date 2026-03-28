@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.usecase.GetActiveRoutinesUseCase
+import com.getaltair.kairos.domain.usecase.GetRoutineDetailUseCase
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,10 @@ import timber.log.Timber
  * Loads all active routines on initialization and exposes them
  * via [uiState]. Supports refresh and retry on error.
  */
-class RoutineListViewModel(private val getActiveRoutinesUseCase: GetActiveRoutinesUseCase,) : ViewModel() {
+class RoutineListViewModel(
+    private val getActiveRoutinesUseCase: GetActiveRoutinesUseCase,
+    private val getRoutineDetailUseCase: GetRoutineDetailUseCase,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RoutineListUiState(isLoading = true))
     val uiState: StateFlow<RoutineListUiState> = _uiState.asStateFlow()
@@ -32,9 +36,36 @@ class RoutineListViewModel(private val getActiveRoutinesUseCase: GetActiveRoutin
             try {
                 when (val result = getActiveRoutinesUseCase()) {
                     is Result.Success -> {
+                        val enrichedRoutines = result.value.map { routine ->
+                            when (val detailResult = getRoutineDetailUseCase(routine.id)) {
+                                is Result.Success -> {
+                                    val (_, habitsWithDetails) = detailResult.value
+                                    RoutineListItem(
+                                        routine = routine,
+                                        habitCount = habitsWithDetails.size,
+                                        estimatedSeconds = habitsWithDetails.sumOf { (rh, habit) ->
+                                            rh.overrideDurationSeconds ?: habit.estimatedSeconds
+                                        },
+                                    )
+                                }
+
+                                is Result.Error -> {
+                                    Timber.w(
+                                        "Failed to load detail for routine %s: %s",
+                                        routine.id,
+                                        detailResult.message
+                                    )
+                                    RoutineListItem(
+                                        routine = routine,
+                                        habitCount = 0,
+                                        estimatedSeconds = 0,
+                                    )
+                                }
+                            }
+                        }
                         _uiState.update {
                             it.copy(
-                                routines = result.value,
+                                routines = enrichedRoutines,
                                 isLoading = false,
                                 error = null,
                             )
@@ -61,7 +92,9 @@ class RoutineListViewModel(private val getActiveRoutinesUseCase: GetActiveRoutin
         }
     }
 
+    /** Refreshes the routine list, showing a loading indicator while fetching. */
     fun refresh() {
+        _uiState.update { it.copy(isLoading = true, error = null) }
         loadRoutines()
     }
 
