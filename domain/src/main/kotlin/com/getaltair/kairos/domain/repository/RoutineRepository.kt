@@ -2,10 +2,9 @@ package com.getaltair.kairos.domain.repository
 
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.entity.Routine
-import com.getaltair.kairos.domain.entity.RoutineExecution
 import com.getaltair.kairos.domain.entity.RoutineHabit
 import com.getaltair.kairos.domain.entity.RoutineVariant
-import com.getaltair.kairos.domain.enums.RoutineStatus
+import com.getaltair.kairos.domain.model.RoutineWithHabits
 import java.util.UUID
 
 /**
@@ -14,7 +13,7 @@ import java.util.UUID
  */
 interface RoutineRepository {
     /**
-     * Gets a routine by its ID with associated habits.
+     * Gets a routine by its ID.
      */
     suspend fun getById(id: UUID): Result<Routine?>
 
@@ -22,7 +21,7 @@ interface RoutineRepository {
      * Gets a routine with its associated habits.
      * Returns routine and list of RoutineHabit associations.
      */
-    suspend fun getRoutineWithHabits(id: UUID): Result<Pair<Routine, List<RoutineHabit>>?>
+    suspend fun getRoutineWithHabits(id: UUID): Result<RoutineWithHabits?>
 
     /**
      * Gets all active routines.

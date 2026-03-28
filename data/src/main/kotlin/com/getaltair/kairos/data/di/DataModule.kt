@@ -9,11 +9,15 @@ import com.getaltair.kairos.data.repository.CompletionRepositoryImpl
 import com.getaltair.kairos.data.repository.HabitRepositoryImpl
 import com.getaltair.kairos.data.repository.PreferencesRepositoryImpl
 import com.getaltair.kairos.data.repository.RecoveryRepositoryImpl
+import com.getaltair.kairos.data.repository.RoutineExecutionRepositoryImpl
+import com.getaltair.kairos.data.repository.RoutineRepositoryImpl
 import com.getaltair.kairos.domain.repository.AuthRepository
 import com.getaltair.kairos.domain.repository.CompletionRepository
 import com.getaltair.kairos.domain.repository.HabitRepository
 import com.getaltair.kairos.domain.repository.PreferencesRepository
 import com.getaltair.kairos.domain.repository.RecoveryRepository
+import com.getaltair.kairos.domain.repository.RoutineExecutionRepository
+import com.getaltair.kairos.domain.repository.RoutineRepository
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.CoroutineScope
@@ -78,6 +82,24 @@ val dataModule = module {
     single<RecoveryRepository> {
         RecoveryRepositoryImpl(
             dao = get(),
+            syncTrigger = get(),
+            authRepository = get(),
+            syncScope = get(named("syncScope")),
+        )
+    }
+    single<RoutineRepository> {
+        RoutineRepositoryImpl(
+            routineDao = get(),
+            routineHabitDao = get(),
+            routineVariantDao = get(),
+            syncTrigger = get(),
+            authRepository = get(),
+            syncScope = get(named("syncScope")),
+        )
+    }
+    single<RoutineExecutionRepository> {
+        RoutineExecutionRepositoryImpl(
+            routineExecutionDao = get(),
             syncTrigger = get(),
             authRepository = get(),
             syncScope = get(named("syncScope")),

@@ -19,6 +19,10 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                     sourceCompatibility = org.gradle.api.JavaVersion.VERSION_21
                     targetCompatibility = org.gradle.api.JavaVersion.VERSION_21
                 }
+
+                testOptions {
+                    unitTests.isReturnDefaultValues = true
+                }
             }
         }
     }

@@ -43,6 +43,9 @@ data class RoutineExecution(
         require(totalPausedSeconds >= 0) {
             "totalPausedSeconds must be >= 0"
         }
+        require(completedAt == null || status == ExecutionStatus.Completed || status == ExecutionStatus.Abandoned) {
+            "completedAt may only be set for terminal executions"
+        }
     }
 
     /**
@@ -73,7 +76,13 @@ data class RoutineExecution(
      * Checks if the execution is currently active.
      */
     val isActive: Boolean
-        get() = status == ExecutionStatus.InProgress
+        get() = status == ExecutionStatus.InProgress || status == ExecutionStatus.Paused
+
+    /**
+     * Checks if the execution has reached a terminal state.
+     */
+    val isTerminal: Boolean
+        get() = status == ExecutionStatus.Completed || status == ExecutionStatus.Abandoned
 
     /**
      * Checks if the execution is complete.

@@ -30,6 +30,11 @@ data class Routine(
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now()
 ) {
+    init {
+        require(name.isNotBlank()) { "Routine name must not be blank" }
+        require(name.length <= 50) { "Routine name must be 50 characters or fewer" }
+    }
+
     /**
      * Creates a copy of this routine with the specified changes.
      */

@@ -12,6 +12,10 @@ import com.getaltair.kairos.feature.habit.CreateHabitScreen
 import com.getaltair.kairos.feature.habit.EditHabitScreen
 import com.getaltair.kairos.feature.habit.HabitDetailScreen
 import com.getaltair.kairos.feature.recovery.RecoverySessionScreen
+import com.getaltair.kairos.feature.routine.RoutineBuilderScreen
+import com.getaltair.kairos.feature.routine.RoutineListScreen
+import com.getaltair.kairos.feature.routine.RoutineRunnerScreen
+import com.getaltair.kairos.feature.routine.RoutineSummaryScreen
 import com.getaltair.kairos.feature.settings.NotificationSettingsScreen
 import com.getaltair.kairos.feature.settings.SettingsScreen
 import com.getaltair.kairos.feature.today.TodayScreen
@@ -29,7 +33,8 @@ fun KairosNavGraph() {
             TodayScreen(
                 onAddHabit = { navController.navigate("createHabit") },
                 onHabitClick = { habitId -> navController.navigate("habitDetail/$habitId") },
-                onNavigateToSettings = { navController.navigate("settings") }
+                onNavigateToSettings = { navController.navigate("settings") },
+                onNavigateToRoutines = { navController.navigate("routines") },
             )
         }
         composable("createHabit") {
@@ -84,6 +89,71 @@ fun KairosNavGraph() {
             RecoverySessionScreen(
                 habitId = habitId,
                 onComplete = { navController.popBackStack() }
+            )
+        }
+        composable("routines") {
+            RoutineListScreen(
+                onCreateRoutine = { navController.navigate("createRoutine") },
+                onRoutineClick = { routineId ->
+                    navController.navigate("routineRunner/$routineId")
+                },
+            )
+        }
+        composable("createRoutine") {
+            RoutineBuilderScreen(
+                routineId = null,
+                onNavigateBack = { navController.popBackStack() },
+                onRoutineSaved = { routineId ->
+                    navController.navigate("routineRunner/$routineId") {
+                        popUpTo("createRoutine") { inclusive = true }
+                    }
+                },
+            )
+        }
+        composable("editRoutine/{routineId}") { backStackEntry ->
+            val routineId = backStackEntry.arguments?.getString("routineId")
+            if (routineId == null) {
+                Timber.w("editRoutine route: routineId argument is null")
+                navController.popBackStack()
+                return@composable
+            }
+            RoutineBuilderScreen(
+                routineId = routineId,
+                onNavigateBack = { navController.popBackStack() },
+                onRoutineSaved = { navController.popBackStack() },
+            )
+        }
+        composable("routineRunner/{routineId}") { backStackEntry ->
+            val routineId = backStackEntry.arguments?.getString("routineId")
+            if (routineId == null) {
+                Timber.w("routineRunner route: routineId argument is null")
+                navController.popBackStack()
+                return@composable
+            }
+            RoutineRunnerScreen(
+                routineId = routineId,
+                onComplete = { executionId ->
+                    navController.navigate("routineSummary/$executionId") {
+                        popUpTo("routineRunner/{routineId}") { inclusive = true }
+                    }
+                },
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable("routineSummary/{executionId}") { backStackEntry ->
+            val executionId = backStackEntry.arguments?.getString("executionId")
+            if (executionId == null) {
+                Timber.w("routineSummary route: executionId argument is null")
+                navController.popBackStack()
+                return@composable
+            }
+            RoutineSummaryScreen(
+                executionId = executionId,
+                onDone = {
+                    navController.navigate("routines") {
+                        popUpTo("routines") { inclusive = true }
+                    }
+                },
             )
         }
         composable("settings") {
