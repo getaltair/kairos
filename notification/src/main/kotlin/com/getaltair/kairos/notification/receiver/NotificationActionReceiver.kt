@@ -8,6 +8,7 @@ import com.getaltair.kairos.core.usecase.CompleteHabitUseCase
 import com.getaltair.kairos.core.usecase.SkipHabitUseCase
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.enums.CompletionType
+import com.getaltair.kairos.feature.widget.WidgetUpdateHelper
 import com.getaltair.kairos.notification.HabitReminderBuilder
 import com.getaltair.kairos.notification.NotificationConstants
 import com.getaltair.kairos.notification.NotificationIdStrategy
@@ -59,6 +60,7 @@ class NotificationActionReceiver :
                         when (val result = completeHabitUseCase(habitId, CompletionType.Full)) {
                             is Result.Success -> {
                                 cancelNotificationAndFollowUps(notifManager, habitId)
+                                WidgetUpdateHelper.updateAll(context)
                             }
 
                             is Result.Error -> {
@@ -79,6 +81,7 @@ class NotificationActionReceiver :
                         when (val result = skipHabitUseCase(habitId)) {
                             is Result.Success -> {
                                 cancelNotificationAndFollowUps(notifManager, habitId)
+                                WidgetUpdateHelper.updateAll(context)
                             }
 
                             is Result.Error -> {

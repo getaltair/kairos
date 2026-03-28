@@ -1,5 +1,6 @@
 package com.getaltair.kairos.feature.today
 
+import android.app.Application
 import com.getaltair.kairos.core.usecase.CompleteHabitUseCase
 import com.getaltair.kairos.core.usecase.GetTodayHabitsUseCase
 import com.getaltair.kairos.core.usecase.SkipHabitUseCase
@@ -36,6 +37,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class TodayViewModelTest {
 
+    private lateinit var application: Application
     private lateinit var getTodayHabitsUseCase: GetTodayHabitsUseCase
     private lateinit var completeHabitUseCase: CompleteHabitUseCase
     private lateinit var skipHabitUseCase: SkipHabitUseCase
@@ -48,6 +50,7 @@ class TodayViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        application = mockk(relaxed = true)
         getTodayHabitsUseCase = mockk()
         completeHabitUseCase = mockk()
         skipHabitUseCase = mockk()
@@ -62,8 +65,13 @@ class TodayViewModelTest {
     /**
      * Must set up getTodayHabitsUseCase mock BEFORE creating VM because init calls loadTodayHabits.
      */
-    private fun createViewModel(): TodayViewModel =
-        TodayViewModel(getTodayHabitsUseCase, completeHabitUseCase, skipHabitUseCase, undoCompletionUseCase)
+    private fun createViewModel(): TodayViewModel = TodayViewModel(
+        application,
+        getTodayHabitsUseCase,
+        completeHabitUseCase,
+        skipHabitUseCase,
+        undoCompletionUseCase
+    )
 
     private fun makeHabit(
         id: UUID = UUID.randomUUID(),

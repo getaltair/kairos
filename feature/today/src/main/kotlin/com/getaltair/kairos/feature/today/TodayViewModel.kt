@@ -1,5 +1,6 @@
 package com.getaltair.kairos.feature.today
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.getaltair.kairos.core.usecase.CompleteHabitUseCase
@@ -11,6 +12,7 @@ import com.getaltair.kairos.domain.enums.CompletionType
 import com.getaltair.kairos.domain.enums.HabitCategory
 import com.getaltair.kairos.domain.enums.SkipReason
 import com.getaltair.kairos.domain.model.HabitWithStatus
+import com.getaltair.kairos.feature.widget.WidgetUpdateHelper
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -23,6 +25,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class TodayViewModel(
+    private val application: Application,
     private val getTodayHabitsUseCase: GetTodayHabitsUseCase,
     private val completeHabitUseCase: CompleteHabitUseCase,
     private val skipHabitUseCase: SkipHabitUseCase,
@@ -99,6 +102,7 @@ class TodayViewModel(
                         }
                         startUndoTimer(result.value.id, habitName, actionType)
                         loadTodayHabits()
+                        refreshWidget()
                     }
 
                     is Result.Error -> {
@@ -127,6 +131,7 @@ class TodayViewModel(
                         val habitName = findHabitName(habitId)
                         startUndoTimer(result.value.id, habitName, UndoActionType.SKIP)
                         loadTodayHabits()
+                        refreshWidget()
                     }
 
                     is Result.Error -> {
@@ -155,6 +160,7 @@ class TodayViewModel(
                 is Result.Success -> {
                     _uiState.update { it.copy(undoState = null) }
                     loadTodayHabits()
+                    refreshWidget()
                 }
 
                 is Result.Error -> {
@@ -189,6 +195,17 @@ class TodayViewModel(
         .flatten()
         .find { it.habit.id == habitId }
         ?.habit?.name ?: "Habit"
+
+    private fun refreshWidget() {
+        viewModelScope.launch {
+            try {
+                WidgetUpdateHelper.updateAll(application)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "Failed to refresh widget")
+            }
+        }
+    }
 
     private fun startUndoTimer(completionId: UUID, habitName: String, actionType: UndoActionType) {
         undoTimerJob?.cancel()

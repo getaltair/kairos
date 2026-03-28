@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":data"))
     implementation(project(":core"))
+    implementation(project(":feature:widget"))
 
     // Android Core
     implementation(libs.androidx.core.ktx)
