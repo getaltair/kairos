@@ -27,6 +27,10 @@ dependencies {
     implementation(libs.ktor.server.status.pages)
     implementation(libs.kotlinx.serialization.json)
 
+    // QR Code generation (ZXing)
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.javase)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
 

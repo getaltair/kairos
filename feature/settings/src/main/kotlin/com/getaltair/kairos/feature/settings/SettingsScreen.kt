@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PersonOff
@@ -54,6 +55,7 @@ import org.koin.androidx.compose.koinViewModel
 fun SettingsScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToNotificationSettings: () -> Unit = {},
+    onNavigateToDashboardScan: () -> Unit = {},
     onBack: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
@@ -98,6 +100,7 @@ fun SettingsScreen(
             AccountSection(
                 uiState = uiState,
                 onNavigateToLogin = onNavigateToLogin,
+                onNavigateToDashboardScan = onNavigateToDashboardScan,
                 onSignOutRequest = viewModel::onSignOutRequest,
                 onDeleteAccountRequest = viewModel::onDeleteAccountRequest,
             )
@@ -168,6 +171,7 @@ fun SettingsScreen(
 private fun AccountSection(
     uiState: SettingsUiState,
     onNavigateToLogin: () -> Unit,
+    onNavigateToDashboardScan: () -> Unit,
     onSignOutRequest: () -> Unit,
     onDeleteAccountRequest: () -> Unit,
 ) {
@@ -195,6 +199,42 @@ private fun AccountSection(
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
+
+                    // Link Dashboard row
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onNavigateToDashboardScan),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Devices,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp),
+                            )
+                            Text(
+                                text = "Link Dashboard",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Navigate",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                    }
 
                     Button(
                         onClick = onSignOutRequest,

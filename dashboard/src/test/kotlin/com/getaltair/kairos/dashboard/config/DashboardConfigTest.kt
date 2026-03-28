@@ -2,6 +2,7 @@ package com.getaltair.kairos.dashboard.config
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -28,14 +29,11 @@ class DashboardConfigTest {
         assertEquals(1920, config.width)
         assertEquals(1080, config.height)
         assertEquals(8888, config.serverPort)
+        assertEquals("0.0.0.0", config.serverHost)
     }
 
     @Test
     fun defaultsApplyForOptionalProperties() {
-        // DashboardConfig has no default values in the primary constructor,
-        // but load() applies defaults for fullscreen (true), width (1920),
-        // height (1080), and serverPort (8888). Here we verify the load()
-        // defaults by loading from a test properties file.
         val config = DashboardConfig(
             firebaseServiceAccountPath = "/opt/sa.json",
             firebaseUserId = "uid-456",
@@ -49,6 +47,7 @@ class DashboardConfigTest {
         assertEquals(480, config.height)
         assertEquals(9090, config.serverPort)
         assertFalse(config.fullscreen)
+        assertEquals("0.0.0.0", config.serverHost)
     }
 
     @Test
@@ -75,6 +74,83 @@ class DashboardConfigTest {
     }
 
     // -----------------------------------------------------------------------
+    // firebaseUserId is optional (nullable)
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun nullUserId_isAccepted() {
+        val config = DashboardConfig(
+            firebaseServiceAccountPath = "/sa.json",
+            firebaseUserId = null,
+            fullscreen = true,
+            width = 1920,
+            height = 1080,
+            serverPort = 8888,
+        )
+        assertNull(config.firebaseUserId)
+    }
+
+    @Test
+    fun blankUserId_isPassedThrough() {
+        // The constructor no longer rejects blank -- load() normalises blanks to null.
+        // A blank string passed directly to the constructor is still a valid String?.
+        val config = DashboardConfig(
+            firebaseServiceAccountPath = "/sa.json",
+            firebaseUserId = "",
+            fullscreen = true,
+            width = 1920,
+            height = 1080,
+            serverPort = 8888,
+        )
+        assertEquals("", config.firebaseUserId)
+    }
+
+    // -----------------------------------------------------------------------
+    // serverHost property
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun defaultServerHost_isAllInterfaces() {
+        val config = DashboardConfig(
+            firebaseServiceAccountPath = "/sa.json",
+            firebaseUserId = "uid",
+            fullscreen = true,
+            width = 1920,
+            height = 1080,
+            serverPort = 8888,
+        )
+        assertEquals("0.0.0.0", config.serverHost)
+    }
+
+    @Test
+    fun customServerHost_isPreserved() {
+        val config = DashboardConfig(
+            firebaseServiceAccountPath = "/sa.json",
+            firebaseUserId = "uid",
+            fullscreen = true,
+            width = 1920,
+            height = 1080,
+            serverPort = 8888,
+            serverHost = "192.168.1.100",
+        )
+        assertEquals("192.168.1.100", config.serverHost)
+    }
+
+    @Test
+    fun localhostServerHost_isAccepted() {
+        val config = DashboardConfig(
+            firebaseServiceAccountPath = "/sa.json",
+            firebaseUserId = "uid",
+            fullscreen = true,
+            width = 1920,
+            height = 1080,
+            serverPort = 8888,
+            serverHost = "127.0.0.1",
+        )
+        assertEquals("127.0.0.1", config.serverHost)
+    }
+
+    // -----------------------------------------------------------------------
     // firebaseServiceAccountPath validation
     // -----------------------------------------------------------------------
 
@@ -95,22 +171,6 @@ class DashboardConfigTest {
         DashboardConfig(
             firebaseServiceAccountPath = "",
             firebaseUserId = "uid",
-            fullscreen = true,
-            width = 1920,
-            height = 1080,
-            serverPort = 8888,
-        )
-    }
-
-    // -----------------------------------------------------------------------
-    // firebaseUserId validation
-    // -----------------------------------------------------------------------
-
-    @Test(expected = IllegalArgumentException::class)
-    fun blankUserId_fails() {
-        DashboardConfig(
-            firebaseServiceAccountPath = "/sa.json",
-            firebaseUserId = "  ",
             fullscreen = true,
             width = 1920,
             height = 1080,
@@ -220,7 +280,6 @@ class DashboardConfigTest {
 
     @Test
     fun missingRequiredProperty_throwsWithPropertyName() {
-        // Test the init block validation directly -- blank required string throws
         try {
             DashboardConfig(
                 firebaseServiceAccountPath = "",
@@ -242,12 +301,6 @@ class DashboardConfigTest {
 
     @Test
     fun invalidIntegerWidth_throwsWithPropertyName() {
-        // Construct a properties-backed test indirectly: create a config with
-        // invalid values through the constructor and verify the init block
-        // rejects them. The load() path for non-numeric width is tested
-        // by verifying DashboardConfig.load() calls toIntOrNull, which
-        // returns null and triggers error() with the property name.
-        // Here we can only verify constructor-level validation.
         try {
             DashboardConfig(
                 firebaseServiceAccountPath = "/sa.json",

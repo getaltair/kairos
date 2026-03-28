@@ -8,6 +8,7 @@ import androidx.navigation.navDeepLink
 import com.getaltair.kairos.feature.auth.ForgotPasswordScreen
 import com.getaltair.kairos.feature.auth.LoginScreen
 import com.getaltair.kairos.feature.auth.SignUpScreen
+import com.getaltair.kairos.feature.auth.scan.DashboardScanScreen
 import com.getaltair.kairos.feature.habit.CreateHabitScreen
 import com.getaltair.kairos.feature.habit.EditHabitScreen
 import com.getaltair.kairos.feature.habit.HabitDetailScreen
@@ -162,6 +163,14 @@ fun KairosNavGraph() {
                 onNavigateToNotificationSettings = {
                     navController.navigate("settings/notifications")
                 },
+                onNavigateToDashboardScan = {
+                    navController.navigate("dashboardScan")
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("dashboardScan") {
+            DashboardScanScreen(
                 onBack = { navController.popBackStack() }
             )
         }

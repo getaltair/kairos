@@ -1,7 +1,10 @@
 package com.getaltair.kairos.dashboard.server
 
+import com.getaltair.kairos.dashboard.auth.AuthSessionManager
+import com.getaltair.kairos.dashboard.auth.DashboardAuthState
 import com.getaltair.kairos.dashboard.state.DashboardStateHolder
 import com.getaltair.kairos.dashboard.state.DisplayMode
+import com.google.firebase.auth.FirebaseAuth
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
@@ -41,12 +44,30 @@ data class ModeResponse(val status: String, val mode: String)
 @Serializable
 data class ErrorResponse(val status: String = "error", val error: String)
 
-class StatusServer(private val port: Int, private val stateHolder: DashboardStateHolder) {
+@Serializable
+data class AuthConfirmRequest(val sessionToken: String, val firebaseIdToken: String)
+
+@Serializable
+data class AuthConfirmResponse(val userId: String, val email: String? = null)
+
+@Serializable
+data class AuthStatusResponse(val authenticated: Boolean, val userId: String? = null)
+
+class StatusServer(
+    private val port: Int,
+    private val host: String = "0.0.0.0",
+    stateHolder: DashboardStateHolder? = null,
+    private val authSessionManager: AuthSessionManager? = null,
+) {
     private val logger = LoggerFactory.getLogger(StatusServer::class.java)
     private var server: EmbeddedServer<*, *>? = null
 
+    /** Mutable so Main can update the reference after QR authentication. */
+    @Volatile
+    var stateHolder: DashboardStateHolder? = stateHolder
+
     fun start() {
-        server = embeddedServer(Netty, port = port, host = "0.0.0.0") {
+        server = embeddedServer(Netty, port = port, host = host) {
             install(ContentNegotiation) {
                 json()
             }
@@ -64,7 +85,15 @@ class StatusServer(private val port: Int, private val stateHolder: DashboardStat
                     call.respond(HealthResponse(status = "ok"))
                 }
                 get("/api/status") {
-                    val state = stateHolder.state.value
+                    val holder = stateHolder
+                    if (holder == null) {
+                        call.respond(
+                            HttpStatusCode.ServiceUnavailable,
+                            ErrorResponse(error = "Dashboard not yet authenticated"),
+                        )
+                        return@get
+                    }
+                    val state = holder.state.value
                     call.respond(
                         StatusResponse(
                             totalHabits = state.totalHabits,
@@ -76,6 +105,14 @@ class StatusServer(private val port: Int, private val stateHolder: DashboardStat
                     )
                 }
                 post("/mode") {
+                    val holder = stateHolder
+                    if (holder == null) {
+                        call.respond(
+                            HttpStatusCode.ServiceUnavailable,
+                            ErrorResponse(error = "Dashboard not yet authenticated"),
+                        )
+                        return@post
+                    }
                     val request = try {
                         call.receive<ModeRequest>()
                     } catch (e: Exception) {
@@ -101,13 +138,75 @@ class StatusServer(private val port: Int, private val stateHolder: DashboardStat
                             )
                             return@post
                         }
-                    stateHolder.setDisplayMode(displayMode)
+                    holder.setDisplayMode(displayMode)
                     call.respond(ModeResponse(status = "ok", mode = request.mode.lowercase()))
+                }
+
+                // ----- Auth endpoints --------------------------------------------------
+
+                post("/auth/confirm") {
+                    val manager = authSessionManager
+                    if (manager == null) {
+                        call.respond(
+                            HttpStatusCode.ServiceUnavailable,
+                            ErrorResponse(error = "Auth not configured"),
+                        )
+                        return@post
+                    }
+                    val request = try {
+                        call.receive<AuthConfirmRequest>()
+                    } catch (e: Exception) {
+                        logger.warn("Malformed /auth/confirm request: {}", e.message)
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ErrorResponse(error = "Invalid request body"),
+                        )
+                        return@post
+                    }
+
+                    val result = manager.confirmSession(
+                        sessionToken = request.sessionToken,
+                        firebaseIdToken = request.firebaseIdToken,
+                        firebaseAuth = FirebaseAuth.getInstance(),
+                    )
+
+                    result.fold(
+                        onSuccess = { session ->
+                            call.respond(
+                                HttpStatusCode.OK,
+                                AuthConfirmResponse(userId = session.userId, email = session.email),
+                            )
+                        },
+                        onFailure = { error ->
+                            call.respond(
+                                HttpStatusCode.Unauthorized,
+                                ErrorResponse(error = error.message ?: "Authentication failed"),
+                            )
+                        },
+                    )
+                }
+
+                get("/auth/status") {
+                    val manager = authSessionManager
+                    if (manager == null) {
+                        call.respond(AuthStatusResponse(authenticated = false))
+                        return@get
+                    }
+                    val state = manager.authState.value
+                    when (state) {
+                        is DashboardAuthState.Authenticated -> call.respond(
+                            AuthStatusResponse(authenticated = true, userId = state.userId),
+                        )
+
+                        else -> call.respond(
+                            AuthStatusResponse(authenticated = false),
+                        )
+                    }
                 }
             }
         }
         server?.start(wait = false)
-        logger.info("StatusServer started on port $port")
+        logger.info("StatusServer started on {}:{}", host, port)
     }
 
     fun stop() {

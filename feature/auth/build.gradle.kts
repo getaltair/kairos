@@ -31,6 +31,16 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // Google Code Scanner (ML Kit barcode scanning)
+    implementation(libs.play.services.code.scanner)
+
+    // Firebase Auth (for ID token retrieval during dashboard linking)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+
+    // Coroutines Play Services (for .await() on Firebase/GMS Task objects)
+    implementation(libs.kotlinx.coroutines.play.services)
+
     // Logging
     implementation(libs.timber)
 
