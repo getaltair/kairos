@@ -27,6 +27,10 @@ dependencies {
     implementation(libs.ktor.server.status.pages)
     implementation(libs.kotlinx.serialization.json)
 
+    // QR Code generation (ZXing)
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.javase)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
 
@@ -37,6 +41,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk.jvm)
 }
 
 compose.desktop {
