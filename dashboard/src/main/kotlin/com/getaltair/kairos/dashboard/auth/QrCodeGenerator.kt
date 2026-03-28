@@ -17,7 +17,7 @@ fun buildQrDataString(host: String, port: Int, sessionToken: String): String =
     "kairos://link-dashboard?host=$host&port=$port&session=$sessionToken"
 
 /**
- * Generates a QR code as a [BufferedImage] with inverted colours (white
+ * Generates a QR code as a [BufferedImage] with inverted colours (teal
  * modules on a dark background) to match the kiosk dark theme.
  *
  * @param data the payload to encode

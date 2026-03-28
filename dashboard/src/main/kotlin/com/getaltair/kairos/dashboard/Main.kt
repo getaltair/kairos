@@ -1,5 +1,6 @@
 package com.getaltair.kairos.dashboard
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -89,9 +90,11 @@ fun main() {
     }
 
     application {
+        val activeHolder = remember { mutableStateOf(stateHolder) }
+
         Window(
             onCloseRequest = {
-                runCatching { stateHolder?.close() }
+                runCatching { activeHolder.value?.close() }
                     .onFailure { logger.warn("Error closing state holder", it) }
                 runCatching { statusServer.stop() }
                     .onFailure { logger.warn("Error stopping status server", it) }
@@ -103,12 +106,10 @@ fun main() {
         ) {
             DashboardTheme {
                 val authState by authSessionManager.authState.collectAsState()
-                // Track the active state holder; a new one is created on first auth
-                val activeHolder = remember { mutableStateOf(stateHolder) }
 
                 when (val auth = authState) {
                     is DashboardAuthState.Checking -> {
-                        // Brief loading state, nothing to render
+                        // Defensive branch -- checkPersistedSession() resolves before the window opens
                     }
 
                     is DashboardAuthState.Unauthenticated -> {
@@ -134,12 +135,14 @@ fun main() {
 
                     is DashboardAuthState.Authenticated -> {
                         // Lazily create the state holder on first authentication
-                        if (activeHolder.value == null) {
-                            val newHolder = DashboardStateHolder(firebaseClient, auth.userId)
-                            newHolder.start()
-                            activeHolder.value = newHolder
-                            statusServer.stateHolder = newHolder
-                            logger.info("State holder created after QR auth for user {}", auth.userId)
+                        LaunchedEffect(auth.userId) {
+                            if (activeHolder.value == null) {
+                                val newHolder = DashboardStateHolder(firebaseClient, auth.userId)
+                                newHolder.start()
+                                activeHolder.value = newHolder
+                                statusServer.stateHolder = newHolder
+                                logger.info("State holder created after QR auth for user {}", auth.userId)
+                            }
                         }
                         val holder = activeHolder.value
                         if (holder != null) {

@@ -1,5 +1,8 @@
 package com.getaltair.kairos.dashboard.server
 
+import com.getaltair.kairos.dashboard.auth.AuthSessionManager
+import com.getaltair.kairos.dashboard.auth.DashboardAuthState
+import com.getaltair.kairos.dashboard.auth.PersistedSession
 import com.getaltair.kairos.dashboard.config.DashboardConfig
 import com.getaltair.kairos.dashboard.data.FirebaseAdminClient
 import com.getaltair.kairos.dashboard.state.DashboardStateHolder
@@ -23,8 +26,12 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -221,5 +228,297 @@ class StatusServerTest {
             json.containsKey("displayMode"),
         )
         assertEquals("standby", json["displayMode"]?.jsonPrimitive?.content)
+    }
+
+    // =======================================================================
+    // Auth endpoint tests
+    // =======================================================================
+
+    /**
+     * Creates a test application that mirrors the full [StatusServer] routing
+     * including auth endpoints. Accepts an optional [AuthSessionManager] and
+     * an optional [DashboardStateHolder] so individual tests can control what
+     * is available.
+     */
+    private fun authTestApp(
+        authManager: AuthSessionManager? = null,
+        holder: DashboardStateHolder? = stateHolder,
+        block: suspend io.ktor.server.testing.ApplicationTestBuilder.() -> Unit,
+    ) = testApplication {
+        application {
+            install(ContentNegotiation) {
+                json()
+            }
+            install(StatusPages) {
+                exception<ContentTransformationException> { call, cause ->
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(error = cause.message ?: "Invalid request body"),
+                    )
+                }
+            }
+            routing {
+                get("/health") {
+                    call.respond(HealthResponse(status = "ok"))
+                }
+                get("/api/status") {
+                    val h = holder
+                    if (h == null) {
+                        call.respond(
+                            HttpStatusCode.ServiceUnavailable,
+                            ErrorResponse(error = "Dashboard not yet authenticated"),
+                        )
+                        return@get
+                    }
+                    val state = h.state.value
+                    call.respond(
+                        StatusResponse(
+                            totalHabits = state.totalHabits,
+                            completedHabits = state.completedCount,
+                            connectionStatus = state.connectionStatus.name,
+                            isStale = state.isStale,
+                            displayMode = state.displayMode.name.lowercase(),
+                        ),
+                    )
+                }
+                post("/mode") {
+                    val h = holder
+                    if (h == null) {
+                        call.respond(
+                            HttpStatusCode.ServiceUnavailable,
+                            ErrorResponse(error = "Dashboard not yet authenticated"),
+                        )
+                        return@post
+                    }
+                    val request = try {
+                        call.receive<ModeRequest>()
+                    } catch (e: Exception) {
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ErrorResponse(
+                                error = "Invalid request body. Expected JSON: {\"mode\": \"active|standby\"}",
+                            ),
+                        )
+                        return@post
+                    }
+                    val displayMode = DisplayMode.fromString(request.mode)
+                        ?: run {
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ErrorResponse(error = "Invalid mode. Use 'active' or 'standby'."),
+                            )
+                            return@post
+                        }
+                    h.setDisplayMode(displayMode)
+                    call.respond(ModeResponse(status = "ok", mode = request.mode.lowercase()))
+                }
+
+                // Auth endpoints
+                post("/auth/confirm") {
+                    val manager = authManager
+                    if (manager == null) {
+                        call.respond(
+                            HttpStatusCode.ServiceUnavailable,
+                            ErrorResponse(error = "Auth not configured"),
+                        )
+                        return@post
+                    }
+                    val request = try {
+                        call.receive<AuthConfirmRequest>()
+                    } catch (e: Exception) {
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ErrorResponse(error = "Invalid request body"),
+                        )
+                        return@post
+                    }
+
+                    val result = manager.confirmSession(
+                        sessionToken = request.sessionToken,
+                        firebaseIdToken = request.firebaseIdToken,
+                    )
+
+                    result.fold(
+                        onSuccess = { session ->
+                            call.respond(
+                                HttpStatusCode.OK,
+                                AuthConfirmResponse(success = true, message = session.userId),
+                            )
+                        },
+                        onFailure = { error ->
+                            when (error) {
+                                is IllegalArgumentException -> call.respond(
+                                    HttpStatusCode.Unauthorized,
+                                    AuthConfirmResponse(false, error.message ?: "Authentication failed"),
+                                )
+
+                                is IllegalStateException -> call.respond(
+                                    HttpStatusCode.Gone,
+                                    AuthConfirmResponse(false, error.message ?: "Session expired"),
+                                )
+
+                                is java.io.IOException -> call.respond(
+                                    HttpStatusCode.InternalServerError,
+                                    AuthConfirmResponse(false, "Internal server error"),
+                                )
+
+                                else -> call.respond(
+                                    HttpStatusCode.Unauthorized,
+                                    AuthConfirmResponse(false, "Authentication failed"),
+                                )
+                            }
+                        },
+                    )
+                }
+
+                get("/auth/status") {
+                    val manager = authManager
+                    if (manager == null) {
+                        call.respond(AuthStatusResponse(authenticated = false))
+                        return@get
+                    }
+                    val state = manager.authState.value
+                    when (state) {
+                        is DashboardAuthState.Authenticated -> call.respond(
+                            AuthStatusResponse(authenticated = true, userId = state.userId),
+                        )
+
+                        else -> call.respond(
+                            AuthStatusResponse(authenticated = false),
+                        )
+                    }
+                }
+            }
+        }
+        block()
+    }
+
+    // -- POST /auth/confirm ---------------------------------------------------
+
+    @Test
+    fun postAuthConfirm_validRequest_returns200() {
+        val mockManager = mockk<AuthSessionManager>()
+        val persisted = PersistedSession(
+            userId = "user-abc",
+            email = "user@test.com",
+            authenticatedAt = java.time.Instant.parse("2026-03-28T12:00:00Z"),
+        )
+        every {
+            mockManager.confirmSession(
+                sessionToken = "valid-token",
+                firebaseIdToken = "valid-firebase-token",
+            )
+        } returns Result.success(persisted)
+
+        authTestApp(authManager = mockManager) {
+            val response = client.post("/auth/confirm") {
+                contentType(ContentType.Application.Json)
+                setBody("""{"sessionToken":"valid-token","firebaseIdToken":"valid-firebase-token"}""")
+            }
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            val json = Json.parseToJsonElement(response.bodyAsText()) as JsonObject
+            assertEquals("true", json["success"]?.jsonPrimitive?.content)
+            assertEquals("user-abc", json["message"]?.jsonPrimitive?.content)
+        }
+    }
+
+    @Test
+    fun postAuthConfirm_malformedJson_returns400() {
+        val mockManager = mockk<AuthSessionManager>()
+
+        authTestApp(authManager = mockManager) {
+            val response = client.post("/auth/confirm") {
+                contentType(ContentType.Application.Json)
+                setBody("{this is not valid json!!!")
+            }
+
+            assertEquals(
+                "Malformed JSON should return 400",
+                HttpStatusCode.BadRequest,
+                response.status,
+            )
+        }
+    }
+
+    @Test
+    fun postAuthConfirm_noAuthManager_returns503() {
+        authTestApp(authManager = null) {
+            val response = client.post("/auth/confirm") {
+                contentType(ContentType.Application.Json)
+                setBody("""{"sessionToken":"t","firebaseIdToken":"f"}""")
+            }
+
+            assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
+            val json = Json.parseToJsonElement(response.bodyAsText()) as JsonObject
+            assertTrue(
+                "Error response should mention auth not configured",
+                json["error"]?.jsonPrimitive?.content?.contains("Auth not configured") == true,
+            )
+        }
+    }
+
+    // -- GET /auth/status -----------------------------------------------------
+
+    @Test
+    fun getAuthStatus_authenticated_returnsTrueWithUserId() {
+        val mockManager = mockk<AuthSessionManager>()
+        val authState = MutableStateFlow<DashboardAuthState>(
+            DashboardAuthState.Authenticated("user-xyz", "xyz@test.com"),
+        )
+        every { mockManager.authState } returns authState
+
+        authTestApp(authManager = mockManager) {
+            val response = client.get("/auth/status")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            val json = Json.parseToJsonElement(response.bodyAsText()) as JsonObject
+            assertEquals(true, json["authenticated"]?.jsonPrimitive?.boolean)
+            assertEquals("user-xyz", json["userId"]?.jsonPrimitive?.content)
+        }
+    }
+
+    @Test
+    fun getAuthStatus_unauthenticated_returnsFalse() {
+        val mockManager = mockk<AuthSessionManager>()
+        val authState = MutableStateFlow<DashboardAuthState>(
+            DashboardAuthState.Unauthenticated,
+        )
+        every { mockManager.authState } returns authState
+
+        authTestApp(authManager = mockManager) {
+            val response = client.get("/auth/status")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            val json = Json.parseToJsonElement(response.bodyAsText()) as JsonObject
+            assertEquals(false, json["authenticated"]?.jsonPrimitive?.boolean)
+        }
+    }
+
+    // -- Null stateHolder tests -----------------------------------------------
+
+    @Test
+    fun getApiStatus_nullStateHolder_returns503() {
+        authTestApp(authManager = null, holder = null) {
+            val response = client.get("/api/status")
+
+            assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
+            val json = Json.parseToJsonElement(response.bodyAsText()) as JsonObject
+            assertNotNull("Should have an error field", json["error"])
+        }
+    }
+
+    @Test
+    fun postMode_nullStateHolder_returns503() {
+        authTestApp(authManager = null, holder = null) {
+            val response = client.post("/mode") {
+                contentType(ContentType.Application.Json)
+                setBody("""{"mode":"active"}""")
+            }
+
+            assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
+            val json = Json.parseToJsonElement(response.bodyAsText()) as JsonObject
+            assertNotNull("Should have an error field", json["error"])
+        }
     }
 }

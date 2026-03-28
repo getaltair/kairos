@@ -24,7 +24,7 @@ class DashboardAuthClient {
      * Posts the Firebase ID token to the dashboard's auth confirmation endpoint.
      *
      * @param host the dashboard host address (e.g. 192.168.1.10)
-     * @param port the dashboard HTTP server port (e.g. 8080)
+     * @param port the dashboard HTTP server port (e.g. 8888)
      * @param sessionToken the session token from the QR code
      * @param firebaseIdToken the current user's Firebase ID token
      * @return [Result] containing [DashboardAuthResponse] on success
@@ -35,10 +35,17 @@ class DashboardAuthClient {
         sessionToken: String,
         firebaseIdToken: String,
     ): Result<DashboardAuthResponse> = withContext(Dispatchers.IO) {
-        try {
-            val url = URL("http://$host:$port/auth/confirm")
-            val connection = url.openConnection() as HttpURLConnection
+        require(host.isNotBlank()) { "host must not be blank" }
+        require(port in 1..65535) { "port must be valid" }
+        require(sessionToken.isNotBlank()) { "sessionToken must not be blank" }
+        require(firebaseIdToken.isNotBlank()) { "firebaseIdToken must not be blank" }
 
+        // Uses plain HTTP because the dashboard runs on the local network without TLS certificates.
+        // The Firebase ID token has a short lifetime and is verified server-side, limiting replay window.
+        val url = URL("http://$host:$port/auth/confirm")
+        val connection = url.openConnection() as HttpURLConnection
+
+        try {
             connection.apply {
                 requestMethod = "POST"
                 connectTimeout = CONNECT_TIMEOUT_MS
@@ -71,20 +78,30 @@ class DashboardAuthClient {
                 )
             }
 
-            val responseText = connection.inputStream.bufferedReader().readText()
+            val responseText = connection.inputStream.bufferedReader().use { it.readText() }
             val json = JSONObject(responseText)
 
+            if (!json.optBoolean("success", false)) {
+                val msg = json.optString("message", "Authentication failed")
+                return@withContext Result.failure(IOException("Dashboard auth rejected: $msg"))
+            }
+
             val response = DashboardAuthResponse(
-                userId = json.getString("userId"),
-                email = json.optString("email", null),
+                userId = json.getString("message"),
+                email = null,
             )
             Result.success(response)
+        } catch (e: org.json.JSONException) {
+            Timber.e(e, "Failed to parse dashboard response; possible API version mismatch")
+            Result.failure(e)
         } catch (e: IOException) {
             Timber.e(e, "Network error during dashboard auth confirmation")
             Result.failure(e)
         } catch (e: Exception) {
             Timber.e(e, "Unexpected error during dashboard auth confirmation")
             Result.failure(e)
+        } finally {
+            connection.disconnect()
         }
     }
 

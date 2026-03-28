@@ -43,13 +43,11 @@ fun DashboardScanScreen(onBack: () -> Unit, viewModel: DashboardScanViewModel = 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // Launch scanner on initial entry
     LaunchedEffect(Unit) {
         launchScanner(context, viewModel)
     }
 
-    // Auto-navigate back after success
-    if (uiState.scanStatus == ScanStatus.Success) {
+    if (uiState is DashboardScanUiState.Success) {
         LaunchedEffect(Unit) {
             delay(AUTO_NAVIGATE_DELAY_MS)
             onBack()
@@ -79,16 +77,15 @@ fun DashboardScanScreen(onBack: () -> Unit, viewModel: DashboardScanViewModel = 
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            when (uiState.scanStatus) {
-                ScanStatus.Idle,
-                ScanStatus.Scanning -> ScanningContent()
+            when (val state = uiState) {
+                is DashboardScanUiState.Idle -> ScanningContent()
 
-                ScanStatus.Confirming -> ConfirmingContent()
+                is DashboardScanUiState.Confirming -> ConfirmingContent()
 
-                ScanStatus.Success -> SuccessContent()
+                is DashboardScanUiState.Success -> SuccessContent()
 
-                ScanStatus.Error -> ErrorContent(
-                    errorMessage = uiState.errorMessage,
+                is DashboardScanUiState.Error -> ErrorContent(
+                    errorMessage = state.message,
                     onTryAgain = {
                         viewModel.resetState()
                         launchScanner(context, viewModel)
@@ -187,16 +184,16 @@ private fun launchScanner(context: android.content.Context, viewModel: Dashboard
                 viewModel.onQrCodeScanned(rawValue)
             } else {
                 Timber.w("Barcode scanned but rawValue was null")
-                viewModel.resetState()
+                viewModel.onScanFailed("QR code could not be read. Please try again.")
             }
         }
         .addOnFailureListener { exception ->
             Timber.e(exception, "QR code scan failed")
-            viewModel.resetState()
+            viewModel.onScanFailed("Could not open the scanner. Please try again.")
         }
         .addOnCanceledListener {
             Timber.d("QR code scan cancelled by user")
-            viewModel.resetState()
+            viewModel.onScanCancelled()
         }
 }
 

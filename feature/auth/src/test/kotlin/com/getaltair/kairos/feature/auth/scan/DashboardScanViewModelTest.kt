@@ -20,7 +20,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -104,8 +104,7 @@ class DashboardScanViewModelTest {
         viewModel.onQrCodeScanned("kairos://link-dashboard?host=192.168.1.10&port=8080&session=abc123")
         advanceUntilIdle()
 
-        assertEquals(ScanStatus.Success, viewModel.uiState.value.scanStatus)
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertTrue(viewModel.uiState.value is DashboardScanUiState.Success)
     }
 
     // -------------------------------------------------------------------------
@@ -124,8 +123,9 @@ class DashboardScanViewModelTest {
         viewModel.onQrCodeScanned("https://link-dashboard?host=x&port=8080&session=y")
         advanceUntilIdle()
 
-        assertEquals(ScanStatus.Error, viewModel.uiState.value.scanStatus)
-        assertEquals("Not a valid Kairos dashboard QR code", viewModel.uiState.value.errorMessage)
+        val state = viewModel.uiState.value
+        assertTrue(state is DashboardScanUiState.Error)
+        assertEquals("Not a valid Kairos dashboard QR code", (state as DashboardScanUiState.Error).message)
     }
 
     // -------------------------------------------------------------------------
@@ -144,8 +144,9 @@ class DashboardScanViewModelTest {
         viewModel.onQrCodeScanned("kairos://other-feature?host=x&port=8080&session=y")
         advanceUntilIdle()
 
-        assertEquals(ScanStatus.Error, viewModel.uiState.value.scanStatus)
-        assertEquals("Not a valid Kairos dashboard QR code", viewModel.uiState.value.errorMessage)
+        val state = viewModel.uiState.value
+        assertTrue(state is DashboardScanUiState.Error)
+        assertEquals("Not a valid Kairos dashboard QR code", (state as DashboardScanUiState.Error).message)
     }
 
     // -------------------------------------------------------------------------
@@ -167,8 +168,9 @@ class DashboardScanViewModelTest {
         viewModel.onQrCodeScanned("kairos://link-dashboard?port=8080&session=abc123")
         advanceUntilIdle()
 
-        assertEquals(ScanStatus.Error, viewModel.uiState.value.scanStatus)
-        assertEquals("Not a valid Kairos dashboard QR code", viewModel.uiState.value.errorMessage)
+        val state = viewModel.uiState.value
+        assertTrue(state is DashboardScanUiState.Error)
+        assertEquals("Not a valid Kairos dashboard QR code", (state as DashboardScanUiState.Error).message)
     }
 
     @Test
@@ -186,8 +188,9 @@ class DashboardScanViewModelTest {
         viewModel.onQrCodeScanned("kairos://link-dashboard?host=192.168.1.10&port=8080")
         advanceUntilIdle()
 
-        assertEquals(ScanStatus.Error, viewModel.uiState.value.scanStatus)
-        assertEquals("Not a valid Kairos dashboard QR code", viewModel.uiState.value.errorMessage)
+        val state = viewModel.uiState.value
+        assertTrue(state is DashboardScanUiState.Error)
+        assertEquals("Not a valid Kairos dashboard QR code", (state as DashboardScanUiState.Error).message)
     }
 
     // -------------------------------------------------------------------------
@@ -209,8 +212,9 @@ class DashboardScanViewModelTest {
         viewModel.onQrCodeScanned("kairos://link-dashboard?host=192.168.1.10&port=not-a-number&session=abc123")
         advanceUntilIdle()
 
-        assertEquals(ScanStatus.Error, viewModel.uiState.value.scanStatus)
-        assertEquals("Not a valid Kairos dashboard QR code", viewModel.uiState.value.errorMessage)
+        val state = viewModel.uiState.value
+        assertTrue(state is DashboardScanUiState.Error)
+        assertEquals("Not a valid Kairos dashboard QR code", (state as DashboardScanUiState.Error).message)
     }
 
     // -------------------------------------------------------------------------
@@ -233,8 +237,9 @@ class DashboardScanViewModelTest {
         viewModel.onQrCodeScanned("kairos://link-dashboard?host=192.168.1.10&port=8080&session=abc123")
         advanceUntilIdle()
 
-        assertEquals(ScanStatus.Error, viewModel.uiState.value.scanStatus)
-        assertEquals("Please sign in first", viewModel.uiState.value.errorMessage)
+        val state = viewModel.uiState.value
+        assertTrue(state is DashboardScanUiState.Error)
+        assertEquals("Please sign in first", (state as DashboardScanUiState.Error).message)
     }
 
     // -------------------------------------------------------------------------
@@ -274,10 +279,11 @@ class DashboardScanViewModelTest {
         viewModel.onQrCodeScanned("kairos://link-dashboard?host=192.168.1.10&port=8080&session=abc123")
         advanceUntilIdle()
 
-        assertEquals(ScanStatus.Error, viewModel.uiState.value.scanStatus)
+        val state = viewModel.uiState.value
+        assertTrue(state is DashboardScanUiState.Error)
         assertEquals(
             "Unable to link dashboard. Make sure you are on the same network.",
-            viewModel.uiState.value.errorMessage,
+            (state as DashboardScanUiState.Error).message,
         )
     }
 
@@ -297,11 +303,92 @@ class DashboardScanViewModelTest {
         viewModel.onQrCodeScanned("https://not-kairos")
         advanceUntilIdle()
 
-        assertEquals(ScanStatus.Error, viewModel.uiState.value.scanStatus)
+        assertTrue(viewModel.uiState.value is DashboardScanUiState.Error)
 
         viewModel.resetState()
 
-        assertEquals(ScanStatus.Idle, viewModel.uiState.value.scanStatus)
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertTrue(viewModel.uiState.value is DashboardScanUiState.Idle)
+    }
+
+    // -------------------------------------------------------------------------
+    // 9. Null ID token sets error
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `onQrCodeScanned null id token sets error`() = runTest {
+        val uri = mockUri(
+            scheme = "kairos",
+            host = "link-dashboard",
+            hostParam = "192.168.1.10",
+            portParam = "8080",
+            sessionParam = "abc123",
+        )
+        every { Uri.parse(any()) } returns uri
+
+        val user = mockk<FirebaseUser>()
+        every { auth.currentUser } returns user
+        every { user.uid } returns "test-user-id"
+
+        val tokenResult = mockk<GetTokenResult>()
+        every { tokenResult.token } returns null
+        val tokenTask = mockk<Task<GetTokenResult>>()
+        every { user.getIdToken(true) } returns tokenTask
+        coEvery { tokenTask.await() } returns tokenResult
+
+        val viewModel = createViewModel()
+        viewModel.onQrCodeScanned("kairos://link-dashboard?host=192.168.1.10&port=8080&session=abc123")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is DashboardScanUiState.Error)
+        assertEquals(
+            "Unable to verify your identity. Please try again.",
+            (state as DashboardScanUiState.Error).message,
+        )
+    }
+
+    // -------------------------------------------------------------------------
+    // 10. Unexpected exception during confirmAuth sets error
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `onQrCodeScanned unexpected exception sets error`() = runTest {
+        val uri = mockUri(
+            scheme = "kairos",
+            host = "link-dashboard",
+            hostParam = "192.168.1.10",
+            portParam = "8080",
+            sessionParam = "abc123",
+        )
+        every { Uri.parse(any()) } returns uri
+
+        val user = mockk<FirebaseUser>()
+        every { auth.currentUser } returns user
+
+        val tokenResult = mockk<GetTokenResult>()
+        every { tokenResult.token } returns "firebase-id-token-123"
+        val tokenTask = mockk<Task<GetTokenResult>>()
+        every { user.getIdToken(true) } returns tokenTask
+        coEvery { tokenTask.await() } returns tokenResult
+
+        coEvery {
+            dashboardAuthClient.confirmAuth(
+                host = "192.168.1.10",
+                port = 8080,
+                sessionToken = "abc123",
+                firebaseIdToken = "firebase-id-token-123",
+            )
+        } throws RuntimeException("Unexpected failure")
+
+        val viewModel = createViewModel()
+        viewModel.onQrCodeScanned("kairos://link-dashboard?host=192.168.1.10&port=8080&session=abc123")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is DashboardScanUiState.Error)
+        assertEquals(
+            "Something went wrong. Please try again.",
+            (state as DashboardScanUiState.Error).message,
+        )
     }
 }

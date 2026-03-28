@@ -10,7 +10,7 @@ import java.util.Properties
  * - `firebase.user_id` -- the Firestore user document ID to observe (optional with QR auth)
  * - `dashboard.fullscreen` -- whether the window opens fullscreen
  * - `dashboard.width` / `dashboard.height` -- windowed dimensions
- * - `server.port` -- Ktor HTTP server port for Home Assistant integration
+ * - `server.port` -- Ktor HTTP server port (status API, auth endpoints)
  * - `server.host` -- bind address for the Ktor server (default `0.0.0.0`)
  */
 data class DashboardConfig(

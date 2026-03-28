@@ -2,6 +2,8 @@ package com.getaltair.kairos.dashboard.auth
 
 import com.google.firebase.auth.FirebaseAuth
 import java.nio.file.Path
+import java.nio.file.attribute.PosixFilePermissions
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.time.Instant
 import kotlin.io.path.createDirectories
@@ -17,7 +19,6 @@ import org.slf4j.LoggerFactory
 
 private const val SESSION_FILE = "session.json"
 private const val TOKEN_BYTE_LENGTH = 32
-private const val SESSION_TTL_SECONDS = 120L
 
 /**
  * Manages the dashboard authentication lifecycle:
@@ -26,7 +27,11 @@ private const val SESSION_TTL_SECONDS = 120L
  * 3. Confirm the session when the mobile app sends a Firebase ID token.
  * 4. Persist the confirmed session to disk for future restarts.
  */
-class AuthSessionManager(private val sessionDir: Path = Path.of(System.getProperty("user.home"), ".kairos"),) {
+class AuthSessionManager(
+    private val sessionDir: Path = Path.of(System.getProperty("user.home"), ".kairos"),
+    firebaseAuth: FirebaseAuth? = null,
+) {
+    private val firebaseAuth: FirebaseAuth by lazy { firebaseAuth ?: FirebaseAuth.getInstance() }
     private val log = LoggerFactory.getLogger(AuthSessionManager::class.java)
     private val json = Json {
         prettyPrint = true
@@ -65,7 +70,10 @@ class AuthSessionManager(private val sessionDir: Path = Path.of(System.getProper
                 return
             }
         } catch (e: Exception) {
-            log.warn("Failed to read persisted session, treating as unauthenticated: {}", e.message)
+            log.warn("Failed to read persisted session, treating as unauthenticated", e)
+            if (e is SecurityException) {
+                log.error("Security exception reading session file -- possible tampering", e)
+            }
         }
         _authState.value = DashboardAuthState.Unauthenticated
     }
@@ -73,11 +81,9 @@ class AuthSessionManager(private val sessionDir: Path = Path.of(System.getProper
     /**
      * Creates a cryptographically random pending session for QR-code login.
      *
-     * @param host the dashboard's local IP address
-     * @param port the Ktor server port
      * @return the [PendingSession] whose token is encoded in the QR payload
      */
-    fun createPendingSession(host: String, port: Int): PendingSession {
+    fun createPendingSession(): PendingSession {
         val tokenBytes = ByteArray(TOKEN_BYTE_LENGTH)
         random.nextBytes(tokenBytes)
         val token = tokenBytes.joinToString("") { "%02x".format(it) }
@@ -98,21 +104,19 @@ class AuthSessionManager(private val sessionDir: Path = Path.of(System.getProper
      *
      * @param sessionToken the token from the QR code
      * @param firebaseIdToken the Firebase ID token obtained by the mobile app
-     * @param firebaseAuth the Firebase Admin SDK [FirebaseAuth] instance
      * @return [Result.success] with the persisted session, or [Result.failure]
      */
-    fun confirmSession(
-        sessionToken: String,
-        firebaseIdToken: String,
-        firebaseAuth: FirebaseAuth,
-    ): Result<PersistedSession> {
-        // Validate the pending session token
+    @Synchronized
+    fun confirmSession(sessionToken: String, firebaseIdToken: String,): Result<PersistedSession> {
+        // Validate the pending session token (constant-time comparison)
         val pending = pendingSession
-        if (pending == null || pending.sessionToken != sessionToken) {
+        if (pending == null ||
+            !MessageDigest.isEqual(pending.sessionToken.toByteArray(), sessionToken.toByteArray())
+        ) {
             log.warn("Session token mismatch or no pending session")
             return Result.failure(IllegalArgumentException("Invalid or unknown session token"))
         }
-        if (Instant.now().isAfter(pending.expiresAt)) {
+        if (pending.isExpired) {
             log.warn("Pending session expired at {}", pending.expiresAt)
             pendingSession = null
             return Result.failure(IllegalStateException("Session token has expired"))
@@ -122,11 +126,15 @@ class AuthSessionManager(private val sessionDir: Path = Path.of(System.getProper
         val firebaseToken = try {
             firebaseAuth.verifyIdToken(firebaseIdToken)
         } catch (e: Exception) {
-            log.error("Firebase ID token verification failed: {}", e.message)
+            log.error("Firebase ID token verification failed: {}", e.message, e)
             return Result.failure(e)
         }
 
         val uid = firebaseToken.uid
+        if (uid.isNullOrBlank()) {
+            log.error("Firebase token verified but UID was blank")
+            return Result.failure(IllegalStateException("Firebase token contained no user ID"))
+        }
         val email = firebaseToken.email
 
         val persisted = PersistedSession(
@@ -139,9 +147,16 @@ class AuthSessionManager(private val sessionDir: Path = Path.of(System.getProper
         try {
             sessionDir.createDirectories()
             sessionFile.writeText(json.encodeToString(PersistedSession.serializer(), persisted))
+            try {
+                java.nio.file.Files.setPosixFilePermissions(
+                    sessionFile,
+                    PosixFilePermissions.fromString("rw-------"),
+                )
+            } catch (_: UnsupportedOperationException) {
+            }
             log.info("Persisted session for user {} to {}", uid, sessionFile)
         } catch (e: Exception) {
-            log.error("Failed to persist session: {}", e.message)
+            log.error("Failed to persist session: {}", e.message, e)
             return Result.failure(e)
         }
 

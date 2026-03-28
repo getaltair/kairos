@@ -27,7 +27,9 @@ playServicesCodeScanner = "16.1.0"
 playServicesWearable = "19.0.0"
 horologist = "0.7.15"
 
+okhttp = "4.12.0"
 zxing = "3.5.3"
+json = "20250107"
 
 # Convention plugin dependencies
 androidTools = "32.1.0"
@@ -152,6 +154,9 @@ zxing-javase = { group = "com.google.zxing", name = "javase", version.ref = "zxi
 # === Testing ===
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+mockk-jvm = { group = "io.mockk", name = "mockk-jvm", version.ref = "mockk" }
+okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttp" }
+json = { group = "org.json", name = "json", version.ref = "json" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

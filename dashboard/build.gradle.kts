@@ -41,6 +41,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk.jvm)
 }
 
 compose.desktop {

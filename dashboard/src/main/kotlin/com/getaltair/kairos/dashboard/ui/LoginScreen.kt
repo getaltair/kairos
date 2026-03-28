@@ -27,6 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.getaltair.kairos.dashboard.auth.AuthSessionManager
+import com.getaltair.kairos.dashboard.auth.SESSION_TTL_SECONDS
 import com.getaltair.kairos.dashboard.auth.buildQrDataString
 import com.getaltair.kairos.dashboard.auth.generateQrBitmap
 import com.getaltair.kairos.dashboard.auth.getLocalIpAddress
@@ -34,10 +35,11 @@ import com.getaltair.kairos.dashboard.ui.theme.OnSurfaceVariant
 import com.getaltair.kairos.dashboard.ui.theme.Primary
 import com.getaltair.kairos.dashboard.ui.theme.SurfaceVariant
 import kotlinx.coroutines.delay
+import org.slf4j.LoggerFactory
 
+private val log = LoggerFactory.getLogger("com.getaltair.kairos.dashboard.ui.LoginScreen")
 private const val REFRESH_INTERVAL_MS = 120_000L
 private const val COUNTDOWN_TICK_MS = 1_000L
-private const val SESSION_TTL_SECONDS = 120L
 
 /**
  * Full-screen login composable that displays a QR code for the mobile
@@ -48,17 +50,32 @@ private const val SESSION_TTL_SECONDS = 120L
  */
 @Composable
 fun LoginScreen(authSessionManager: AuthSessionManager, serverPort: Int, modifier: Modifier = Modifier,) {
-    val localIp = remember { getLocalIpAddress() ?: "unknown" }
+    var localIp by remember { mutableStateOf(getLocalIpAddress() ?: "unknown") }
 
     var qrBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    var qrError by remember { mutableStateOf<String?>(null) }
     var secondsRemaining by remember { mutableLongStateOf(SESSION_TTL_SECONDS) }
 
     // Generate (or regenerate) the QR code and reset the countdown
     fun refreshQr() {
-        val session = authSessionManager.createPendingSession(localIp, serverPort)
-        val data = buildQrDataString(localIp, serverPort, session.sessionToken)
-        qrBitmap = generateQrBitmap(data)
-        secondsRemaining = SESSION_TTL_SECONDS
+        try {
+            localIp = getLocalIpAddress() ?: run {
+                qrBitmap = null
+                qrError = "No network connection detected"
+                secondsRemaining = SESSION_TTL_SECONDS
+                return
+            }
+            qrError = null
+            val session = authSessionManager.createPendingSession()
+            val data = buildQrDataString(localIp, serverPort, session.sessionToken)
+            qrBitmap = generateQrBitmap(data)
+            secondsRemaining = SESSION_TTL_SECONDS
+        } catch (e: Exception) {
+            log.error("Failed to generate QR code", e)
+            qrBitmap = null
+            qrError = "Unable to generate QR code. Retrying..."
+            secondsRemaining = SESSION_TTL_SECONDS
+        }
     }
 
     // Initial generation + periodic refresh
@@ -91,7 +108,6 @@ fun LoginScreen(authSessionManager: AuthSessionManager, serverPort: Int, modifie
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            // App name
             Text(
                 text = "Kairos",
                 style = MaterialTheme.typography.displaySmall,
@@ -100,7 +116,6 @@ fun LoginScreen(authSessionManager: AuthSessionManager, serverPort: Int, modifie
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // QR code
             qrBitmap?.let { bitmap ->
                 Image(
                     bitmap = bitmap,
@@ -112,9 +127,17 @@ fun LoginScreen(authSessionManager: AuthSessionManager, serverPort: Int, modifie
                 )
             }
 
+            if (qrBitmap == null && qrError != null) {
+                Text(
+                    text = qrError!!,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Instructions
             Text(
                 text = "Scan with Kairos app to sign in",
                 style = MaterialTheme.typography.titleSmall,
@@ -124,7 +147,6 @@ fun LoginScreen(authSessionManager: AuthSessionManager, serverPort: Int, modifie
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Countdown
             val minutes = secondsRemaining / 60
             val seconds = secondsRemaining % 60
             Text(
