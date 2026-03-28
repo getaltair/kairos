@@ -1,5 +1,6 @@
 package com.getaltair.kairos.dashboard.data
 
+import com.getaltair.kairos.domain.entity.Completion
 import com.getaltair.kairos.domain.enums.AnchorType
 import com.getaltair.kairos.domain.enums.CompletionType
 import com.getaltair.kairos.domain.enums.HabitCategory
@@ -10,6 +11,7 @@ import com.getaltair.kairos.domain.enums.SkipReason
 import com.google.cloud.Timestamp
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -576,5 +578,189 @@ class AdminFirestoreMapperTest {
         assertEquals(CompletionType.Missed, completion.type)
         assertNull(completion.partialPercent)
         assertNull(completion.skipReason)
+    }
+
+    // -----------------------------------------------------------------------
+    // completionToMap tests
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun completionToMap_fullCompletion_producesAllRequiredFields() {
+        val completionId = UUID.randomUUID()
+        val habitId = UUID.randomUUID()
+        val date = LocalDate.of(2025, 6, 15)
+        val completion = Completion(
+            id = completionId,
+            habitId = habitId,
+            date = date,
+            completedAt = now,
+            type = CompletionType.Full,
+            partialPercent = null,
+            skipReason = null,
+            energyLevel = null,
+            note = null,
+            createdAt = now,
+            updatedAt = later,
+        )
+
+        val map = AdminFirestoreMapper.completionToMap(completionId.toString(), completion)
+
+        assertEquals(completionId.toString(), map["id"])
+        assertEquals(habitId.toString(), map["habitId"])
+        assertEquals("2025-06-15", map["date"])
+        assertNotNull(map["completedAt"])
+        assertTrue(map["completedAt"] is Timestamp)
+        assertEquals("FULL", map["type"])
+        assertNull(map["partialPercent"])
+        assertNull(map["skipReason"])
+        assertNull(map["energyLevel"])
+        assertNull(map["note"])
+        assertNotNull(map["createdAt"])
+        assertTrue(map["createdAt"] is Timestamp)
+        assertNotNull(map["updatedAt"])
+        assertTrue(map["updatedAt"] is Timestamp)
+        assertNotNull(map["version"])
+        assertTrue(map["version"] is Long)
+    }
+
+    @Test
+    fun completionToMap_fullType_mapsToFullString() {
+        val completionId = UUID.randomUUID()
+        val habitId = UUID.randomUUID()
+        val completion = Completion(
+            id = completionId,
+            habitId = habitId,
+            date = LocalDate.of(2025, 6, 15),
+            completedAt = now,
+            type = CompletionType.Full,
+            createdAt = now,
+            updatedAt = now,
+        )
+
+        val map = AdminFirestoreMapper.completionToMap(completionId.toString(), completion)
+
+        assertEquals("FULL", map["type"])
+    }
+
+    @Test
+    fun completionToMap_partialType_mapsToPartialString() {
+        val completionId = UUID.randomUUID()
+        val habitId = UUID.randomUUID()
+        val completion = Completion(
+            id = completionId,
+            habitId = habitId,
+            date = LocalDate.of(2025, 6, 15),
+            completedAt = now,
+            type = CompletionType.Partial,
+            partialPercent = 42,
+            createdAt = now,
+            updatedAt = now,
+        )
+
+        val map = AdminFirestoreMapper.completionToMap(completionId.toString(), completion)
+
+        assertEquals("PARTIAL", map["type"])
+        assertEquals(42, map["partialPercent"])
+    }
+
+    @Test
+    fun completionToMap_skippedType_mapsSkipReason() {
+        val completionId = UUID.randomUUID()
+        val habitId = UUID.randomUUID()
+        val completion = Completion(
+            id = completionId,
+            habitId = habitId,
+            date = LocalDate.of(2025, 6, 15),
+            completedAt = now,
+            type = CompletionType.Skipped,
+            skipReason = SkipReason.Traveling,
+            createdAt = now,
+            updatedAt = now,
+        )
+
+        val map = AdminFirestoreMapper.completionToMap(completionId.toString(), completion)
+
+        assertEquals("SKIPPED", map["type"])
+        assertEquals("TRAVELING", map["skipReason"])
+    }
+
+    @Test
+    fun completionToMap_missedType_mapsMissedString() {
+        val completionId = UUID.randomUUID()
+        val habitId = UUID.randomUUID()
+        val completion = Completion(
+            id = completionId,
+            habitId = habitId,
+            date = LocalDate.of(2025, 6, 15),
+            completedAt = now,
+            type = CompletionType.Missed,
+            createdAt = now,
+            updatedAt = now,
+        )
+
+        val map = AdminFirestoreMapper.completionToMap(completionId.toString(), completion)
+
+        assertEquals("MISSED", map["type"])
+        assertNull(map["partialPercent"])
+        assertNull(map["skipReason"])
+    }
+
+    @Test
+    fun completionToMap_roundTrip_preservesFields() {
+        val completionId = UUID.randomUUID()
+        val habitId = UUID.randomUUID()
+        val date = LocalDate.of(2025, 6, 15)
+        val original = Completion(
+            id = completionId,
+            habitId = habitId,
+            date = date,
+            completedAt = now,
+            type = CompletionType.Full,
+            partialPercent = null,
+            skipReason = null,
+            energyLevel = 3,
+            note = "Round-trip test",
+            createdAt = now,
+            updatedAt = later,
+        )
+
+        val map = AdminFirestoreMapper.completionToMap(completionId.toString(), original)
+        val reconstructed = AdminFirestoreMapper.completionFromMap(completionId.toString(), map)
+
+        assertEquals(original.id, reconstructed.id)
+        assertEquals(original.habitId, reconstructed.habitId)
+        assertEquals(original.date, reconstructed.date)
+        assertEquals(original.completedAt, reconstructed.completedAt)
+        assertEquals(original.type, reconstructed.type)
+        assertEquals(original.partialPercent, reconstructed.partialPercent)
+        assertEquals(original.skipReason, reconstructed.skipReason)
+        assertEquals(original.energyLevel, reconstructed.energyLevel)
+        assertEquals(original.note, reconstructed.note)
+        assertEquals(original.createdAt, reconstructed.createdAt)
+        // updatedAt is not round-tripped (completionFromMap defaults it to Instant.now())
+    }
+
+    @Test
+    fun completionToMap_timestampsRoundTrip() {
+        val completionId = UUID.randomUUID()
+        val habitId = UUID.randomUUID()
+        val completion = Completion(
+            id = completionId,
+            habitId = habitId,
+            date = LocalDate.of(2025, 6, 15),
+            completedAt = now,
+            type = CompletionType.Full,
+            createdAt = now,
+            updatedAt = later,
+        )
+
+        val map = AdminFirestoreMapper.completionToMap(completionId.toString(), completion)
+
+        val completedAtTs = map["completedAt"] as Timestamp
+        assertEquals(now.epochSecond, completedAtTs.seconds)
+        val createdAtTs = map["createdAt"] as Timestamp
+        assertEquals(now.epochSecond, createdAtTs.seconds)
+        val updatedAtTs = map["updatedAt"] as Timestamp
+        assertEquals(later.epochSecond, updatedAtTs.seconds)
     }
 }

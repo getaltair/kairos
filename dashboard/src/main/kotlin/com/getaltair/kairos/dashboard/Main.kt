@@ -78,7 +78,11 @@ fun main() {
             DashboardTheme {
                 val state by stateHolder.state.collectAsState()
                 val offset = rememberScreenSaverOffset()
-                DashboardScreen(state = state, offset = offset)
+                DashboardScreen(
+                    state = state,
+                    onComplete = stateHolder::completeHabit,
+                    offset = offset,
+                )
             }
         }
     }

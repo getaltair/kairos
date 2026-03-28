@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
  * given user.  Collection paths: `users/{userId}/habits` and
  * `users/{userId}/completions`.
  */
-class FirebaseAdminClient(private val config: DashboardConfig) {
+open class FirebaseAdminClient(private val config: DashboardConfig) {
 
     private val log = LoggerFactory.getLogger(FirebaseAdminClient::class.java)
 
@@ -36,16 +36,26 @@ class FirebaseAdminClient(private val config: DashboardConfig) {
      * Safe to call multiple times -- skips initialisation if an app already exists.
      */
     fun initialize() {
-        val serviceAccount = FileInputStream(config.firebaseServiceAccountPath)
-        val credentials = GoogleCredentials.fromStream(serviceAccount)
-        val options = FirebaseOptions.builder()
-            .setCredentials(credentials)
-            .build()
+        val options = if (config.useEmulator) {
+            log.info(
+                "Emulator mode: connecting to FIRESTORE_EMULATOR_HOST={}",
+                System.getenv("FIRESTORE_EMULATOR_HOST")
+            )
+            FirebaseOptions.builder()
+                .setProjectId("demo-kairos")
+                .build()
+        } else {
+            val serviceAccount = FileInputStream(config.firebaseServiceAccountPath)
+            val credentials = GoogleCredentials.fromStream(serviceAccount)
+            FirebaseOptions.builder()
+                .setCredentials(credentials)
+                .build()
+        }
         if (FirebaseApp.getApps().isEmpty()) {
             FirebaseApp.initializeApp(options)
         }
         firestore = FirestoreClient.getFirestore()
-        log.info("Firebase Admin SDK initialised")
+        log.info("Firebase Admin SDK initialised (emulator={})", config.useEmulator)
     }
 
     /**
@@ -110,6 +120,40 @@ class FirebaseAdminClient(private val config: DashboardConfig) {
             }
         }
         awaitClose { registration.remove() }
+    }
+
+    /**
+     * Writes a completion document to Firestore at
+     * `users/{userId}/completions/{completionId}`.
+     *
+     * @param userId the user document ID
+     * @param completionId the completion document ID
+     * @param data the Firestore-compatible map produced by [AdminFirestoreMapper.completionToMap]
+     * @return [Result.success] on successful write, [Result.failure] on error
+     */
+    open fun writeCompletion(userId: String, completionId: String, data: Map<String, Any?>): Result<Unit> {
+        log.info("Writing completion {} for user {}", completionId, userId)
+        return try {
+            db().collection("users").document(userId)
+                .collection("completions").document(completionId)
+                .set(data).get()
+            log.info("Completion {} written successfully", completionId)
+            Result.success(Unit)
+        } catch (e: java.util.concurrent.ExecutionException) {
+            val cause = e.cause ?: e
+            log.error(
+                "Firestore write failed for completion {} user {}: {}",
+                completionId,
+                userId,
+                cause.message,
+                cause,
+            )
+            Result.failure(cause)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            log.error("Interrupted writing completion {} for user {}", completionId, userId, e)
+            Result.failure(e)
+        }
     }
 
     /** Cleans up resources when the dashboard shuts down. */

@@ -1,5 +1,7 @@
 package com.getaltair.kairos.dashboard.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -31,7 +34,8 @@ import java.util.UUID
  *
  * Each category section has a header with the category emoji and name,
  * followed by habit rows with completion circles. A summary line at the
- * bottom shows progress.
+ * bottom shows progress. Each habit row is tappable; tapping an
+ * incomplete habit invokes [onComplete].
  */
 @Composable
 fun HabitsPanel(
@@ -39,6 +43,7 @@ fun HabitsPanel(
     completedHabitIds: Set<UUID>,
     completedCount: Int,
     totalHabits: Int,
+    onComplete: (UUID) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -81,6 +86,7 @@ fun HabitsPanel(
                             category = category,
                             habits = habits,
                             completedHabitIds = completedHabitIds,
+                            onComplete = onComplete,
                         )
                     }
                 }
@@ -92,6 +98,7 @@ fun HabitsPanel(
                             category = category,
                             habits = habits,
                             completedHabitIds = completedHabitIds,
+                            onComplete = onComplete,
                         )
                     }
                 }
@@ -110,7 +117,12 @@ fun HabitsPanel(
 }
 
 @Composable
-private fun CategorySection(category: HabitCategory, habits: List<Habit>, completedHabitIds: Set<UUID>,) {
+private fun CategorySection(
+    category: HabitCategory,
+    habits: List<Habit>,
+    completedHabitIds: Set<UUID>,
+    onComplete: (UUID) -> Unit,
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -123,31 +135,42 @@ private fun CategorySection(category: HabitCategory, habits: List<Habit>, comple
         habits.forEach { habit ->
             val isCompleted = habit.id in completedHabitIds
             HabitRow(
+                habitId = habit.id,
                 name = habit.name,
                 isCompleted = isCompleted,
+                onComplete = onComplete,
             )
         }
     }
 }
 
 @Composable
-private fun HabitRow(name: String, isCompleted: Boolean,) {
-    val iconColor = if (isCompleted) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
+private fun HabitRow(habitId: UUID, name: String, isCompleted: Boolean, onComplete: (UUID) -> Unit,) {
+    val iconColor by animateColorAsState(
+        targetValue = if (isCompleted) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        label = "habitRowIconColor",
+    )
 
-    val textColor = if (isCompleted) {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    } else {
-        MaterialTheme.colorScheme.onBackground
-    }
+    val textColor by animateColorAsState(
+        targetValue = if (isCompleted) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.onBackground
+        },
+        label = "habitRowTextColor",
+    )
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.padding(start = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !isCompleted) { onComplete(habitId) }
+            .padding(start = 8.dp),
     ) {
         Icon(
             imageVector = if (isCompleted) Icons.Filled.CheckCircle else Icons.Outlined.Circle,

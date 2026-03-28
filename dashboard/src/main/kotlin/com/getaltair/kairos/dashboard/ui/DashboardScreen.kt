@@ -1,5 +1,6 @@
 package com.getaltair.kairos.dashboard.ui
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,16 +16,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.getaltair.kairos.dashboard.state.DashboardState
+import com.getaltair.kairos.dashboard.state.DisplayMode
 import com.getaltair.kairos.dashboard.ui.components.ComingUpBar
 import com.getaltair.kairos.dashboard.ui.components.DeparturePanel
 import com.getaltair.kairos.dashboard.ui.components.HabitsPanel
 import com.getaltair.kairos.dashboard.ui.components.HeaderBar
+import com.getaltair.kairos.dashboard.ui.components.StandbyScreen
 import com.getaltair.kairos.dashboard.ui.components.StatusIndicator
+import java.util.UUID
 
 /**
- * Root dashboard layout.
+ * Root dashboard layout with Active/Standby mode switching.
  *
- * Three-zone design:
+ * In **Active** mode the three-zone habit-tracking layout is shown:
  * ```
  * +---------------------------------------------------+
  * |  HeaderBar (full width, ~80dp)                     |
@@ -36,13 +40,43 @@ import com.getaltair.kairos.dashboard.ui.components.StatusIndicator
  * +---------------------------------------------------+
  * ```
  *
+ * In **Standby** mode a minimal clock screen is displayed to prevent
+ * burn-in during idle periods.
+ *
+ * Tapping a habit row or departure item invokes [onComplete] with the
+ * habit's UUID to record a completion.
+ *
  * The optional [offset] parameter is driven by the screen-saver utility
  * to shift the entire layout by a few pixels and prevent burn-in.
  */
 @Composable
-fun DashboardScreen(state: DashboardState, offset: DpOffset = DpOffset.Zero, modifier: Modifier = Modifier,) {
+fun DashboardScreen(
+    state: DashboardState,
+    onComplete: (UUID) -> Unit,
+    offset: DpOffset = DpOffset.Zero,
+    modifier: Modifier = Modifier,
+) {
+    Crossfade(
+        targetState = state.displayMode,
+        modifier = modifier.fillMaxSize(),
+        label = "dashboardMode",
+    ) { mode ->
+        when (mode) {
+            DisplayMode.Standby -> StandbyScreen(offset = offset)
+
+            DisplayMode.Active -> ActiveDashboard(
+                state = state,
+                onComplete = onComplete,
+                offset = offset,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActiveDashboard(state: DashboardState, onComplete: (UUID) -> Unit, offset: DpOffset,) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .offset(offset.x, offset.y),
@@ -68,6 +102,7 @@ fun DashboardScreen(state: DashboardState, offset: DpOffset = DpOffset.Zero, mod
             DeparturePanel(
                 departureHabits = state.departureHabits,
                 completedHabitIds = state.completedHabitIds,
+                onComplete = onComplete,
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(0.35f)
@@ -79,6 +114,7 @@ fun DashboardScreen(state: DashboardState, offset: DpOffset = DpOffset.Zero, mod
                 completedHabitIds = state.completedHabitIds,
                 completedCount = state.completedCount,
                 totalHabits = state.totalHabits,
+                onComplete = onComplete,
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(0.65f)

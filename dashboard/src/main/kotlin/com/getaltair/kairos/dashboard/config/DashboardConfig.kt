@@ -20,8 +20,16 @@ data class DashboardConfig(
     val height: Int,
     val serverPort: Int,
 ) {
+    /** True when `FIRESTORE_EMULATOR_HOST` is set, skipping real credential loading. */
+    val useEmulator: Boolean
+        get() = !System.getenv("FIRESTORE_EMULATOR_HOST").isNullOrBlank()
+
     init {
-        require(firebaseServiceAccountPath.isNotBlank()) { "firebaseServiceAccountPath must not be blank" }
+        if (!useEmulator) {
+            require(firebaseServiceAccountPath.isNotBlank()) {
+                "firebaseServiceAccountPath must not be blank (set FIRESTORE_EMULATOR_HOST to skip)"
+            }
+        }
         require(firebaseUserId.isNotBlank()) { "firebaseUserId must not be blank" }
         require(serverPort in 1..65535) { "serverPort must be in 1..65535, was $serverPort" }
         require(width > 0) { "width must be positive, was $width" }
@@ -36,8 +44,7 @@ data class DashboardConfig(
                 ?: error("dashboard.properties not found on classpath")
             stream.use { props.load(it) }
             return DashboardConfig(
-                firebaseServiceAccountPath = props.getProperty("firebase.service_account_path")
-                    ?: error("Required property 'firebase.service_account_path' missing from dashboard.properties"),
+                firebaseServiceAccountPath = props.getProperty("firebase.service_account_path", ""),
                 firebaseUserId = props.getProperty("firebase.user_id")
                     ?: error("Required property 'firebase.user_id' missing from dashboard.properties"),
                 fullscreen = props.getProperty("dashboard.fullscreen", "true").toBoolean(),

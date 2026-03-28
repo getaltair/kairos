@@ -1,5 +1,7 @@
 package com.getaltair.kairos.dashboard.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
@@ -30,10 +33,16 @@ import java.util.UUID
  * "Don't Forget" panel showing departure-category habits as a checklist.
  *
  * Completed habits display with a filled checkbox and strikethrough text;
- * pending habits show an empty checkbox at full brightness.
+ * pending habits show an empty checkbox at full brightness. Tapping a
+ * pending item records a full completion via [onComplete].
  */
 @Composable
-fun DeparturePanel(departureHabits: List<Habit>, completedHabitIds: Set<UUID>, modifier: Modifier = Modifier,) {
+fun DeparturePanel(
+    departureHabits: List<Habit>,
+    completedHabitIds: Set<UUID>,
+    onComplete: (UUID) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surface,
@@ -61,8 +70,10 @@ fun DeparturePanel(departureHabits: List<Habit>, completedHabitIds: Set<UUID>, m
                 departureHabits.forEach { habit ->
                     val isCompleted = habit.id in completedHabitIds
                     DepartureItem(
+                        habitId = habit.id,
                         name = habit.name,
                         isCompleted = isCompleted,
+                        onComplete = onComplete,
                     )
                 }
 
@@ -79,22 +90,31 @@ fun DeparturePanel(departureHabits: List<Habit>, completedHabitIds: Set<UUID>, m
 }
 
 @Composable
-private fun DepartureItem(name: String, isCompleted: Boolean,) {
-    val textColor = if (isCompleted) {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    } else {
-        MaterialTheme.colorScheme.onBackground
-    }
+private fun DepartureItem(habitId: UUID, name: String, isCompleted: Boolean, onComplete: (UUID) -> Unit,) {
+    val textColor by animateColorAsState(
+        targetValue = if (isCompleted) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.onBackground
+        },
+        label = "departureItemTextColor",
+    )
 
-    val iconColor = if (isCompleted) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val iconColor by animateColorAsState(
+        targetValue = if (isCompleted) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        label = "departureItemIconColor",
+    )
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !isCompleted) { onComplete(habitId) },
     ) {
         Icon(
             imageVector = if (isCompleted) Icons.Filled.CheckBox else Icons.Filled.CheckBoxOutlineBlank,

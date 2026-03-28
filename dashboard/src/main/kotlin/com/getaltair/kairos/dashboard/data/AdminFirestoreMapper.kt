@@ -149,14 +149,39 @@ private fun skipReasonFromTag(tag: String): SkipReason = when (tag) {
 }
 
 // ---------------------------------------------------------------------------
-// Timestamp helper  (Admin SDK uses com.google.cloud.Timestamp)
+// Timestamp helpers  (Admin SDK uses com.google.cloud.Timestamp)
 // ---------------------------------------------------------------------------
 
 /** Converts a Cloud [Timestamp] to a [java.time.Instant]. */
 private fun Timestamp.toInstant(): java.time.Instant = java.time.Instant.ofEpochSecond(seconds, nanos.toLong())
 
+/** Converts a [java.time.Instant] to a Cloud [Timestamp]. */
+private fun java.time.Instant.toCloudTimestamp(): Timestamp = Timestamp.ofTimeSecondsAndNanos(epochSecond, nano)
+
 // ---------------------------------------------------------------------------
-// Firestore Map -> Domain Entity
+// Domain -> Tag conversions  (for writing back to Firestore)
+// ---------------------------------------------------------------------------
+
+/** Converts a [CompletionType] to its Firestore UPPER_SNAKE_CASE tag. */
+private fun completionTypeToTag(type: CompletionType): String = when (type) {
+    is CompletionType.Full -> "FULL"
+    is CompletionType.Partial -> "PARTIAL"
+    is CompletionType.Skipped -> "SKIPPED"
+    is CompletionType.Missed -> "MISSED"
+}
+
+/** Converts a [SkipReason] to its Firestore UPPER_SNAKE_CASE tag. */
+private fun skipReasonToTag(reason: SkipReason): String = when (reason) {
+    is SkipReason.TooTired -> "TOO_TIRED"
+    is SkipReason.NoTime -> "NO_TIME"
+    is SkipReason.NotFeelingWell -> "NOT_FEELING_WELL"
+    is SkipReason.Traveling -> "TRAVELING"
+    is SkipReason.TookDayOff -> "TOOK_DAY_OFF"
+    is SkipReason.Other -> "OTHER"
+}
+
+// ---------------------------------------------------------------------------
+// Firestore Map <-> Domain Entity
 // ---------------------------------------------------------------------------
 
 /**
@@ -167,8 +192,8 @@ private fun Timestamp.toInstant(): java.time.Instant = java.time.Instant.ofEpoch
  * instead of `com.google.firebase.Timestamp` (Android SDK).
  *
  * Unlike the sync mapper, unknown enum tags fall back to sensible defaults
- * rather than throwing, because the dashboard is a read-only display that
- * should never crash on unexpected data.
+ * rather than throwing, because the dashboard prioritizes resilience over strictness and
+ * should degrade gracefully on unexpected data.
  */
 object AdminFirestoreMapper {
 
@@ -216,6 +241,31 @@ object AdminFirestoreMapper {
     }
 
     /**
+     * Converts a [Completion] to a Firestore-compatible [Map].
+     *
+     * Produces the same Firestore document schema as `Completion.toFirestoreMap()` in
+     * the sync module, but uses `com.google.cloud.Timestamp` (Admin SDK)
+     * instead of `com.google.firebase.Timestamp` (Android SDK).
+     *
+     * @param id the document ID (completion UUID as string)
+     * @param completion the domain completion entity
+     */
+    fun completionToMap(id: String, completion: Completion): Map<String, Any?> = mapOf(
+        "id" to id,
+        "habitId" to completion.habitId.toString(),
+        "date" to completion.date.toString(), // YYYY-MM-DD
+        "completedAt" to completion.completedAt.toCloudTimestamp(),
+        "type" to completionTypeToTag(completion.type),
+        "partialPercent" to completion.partialPercent,
+        "skipReason" to completion.skipReason?.let { skipReasonToTag(it) },
+        "energyLevel" to completion.energyLevel,
+        "note" to completion.note,
+        "createdAt" to completion.createdAt.toCloudTimestamp(),
+        "updatedAt" to completion.updatedAt.toCloudTimestamp(),
+        "version" to completion.updatedAt.toEpochMilli(),
+    )
+
+    /**
      * Reconstructs a [Completion] from a Firestore document [Map].
      *
      * @param id the document ID (used as the completion UUID)
@@ -225,7 +275,7 @@ object AdminFirestoreMapper {
         val typeTag = map["type"] as? String ?: "FULL"
         val type = completionTypeFromTag(typeTag)
 
-        // updatedAt intentionally omitted -- not displayed on dashboard
+        // updatedAt defaults to Instant.now() -- not parsed from the document since it is not displayed on dashboard
         return Completion(
             id = UUID.fromString(id),
             habitId = UUID.fromString(
