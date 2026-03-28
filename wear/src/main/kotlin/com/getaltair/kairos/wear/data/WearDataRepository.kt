@@ -2,11 +2,13 @@ package com.getaltair.kairos.wear.data
 
 import com.getaltair.kairos.domain.wear.WearAction
 import com.getaltair.kairos.domain.wear.WearCompletionData
+import com.getaltair.kairos.domain.wear.WearDataPaths
 import com.getaltair.kairos.domain.wear.WearHabitData
 import com.getaltair.kairos.domain.wear.WearRoutineData
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.MessageClient
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +16,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 
+/**
+ * Central data coordinator for the watch app. Exposes reactive streams of
+ * habit/completion/routine data from LocalCache, and dispatches user actions
+ * to the phone via the Data Layer message API. When the phone is unreachable,
+ * actions are buffered in ActionQueue and flushed on reconnection.
+ */
 class WearDataRepository(
     private val dataClient: DataClient,
     private val messageClient: MessageClient,
@@ -48,18 +56,35 @@ class WearDataRepository(
         sendAction(WearAction.AdvanceRoutineStep(executionId))
     }
 
+    suspend fun skipRoutineStep(executionId: String) {
+        sendAction(WearAction.SkipRoutineStep(executionId))
+    }
+
     suspend fun pauseRoutine(executionId: String) {
         sendAction(WearAction.PauseRoutine(executionId))
     }
 
     suspend fun flushQueue() {
-        if (actionQueue.isEmpty()) return
-        val pending = actionQueue.dequeueAll()
-        val nodeId = getPhoneNodeId() ?: return
-        for (action in pending) {
-            sendMessage(nodeId, action)
+        val nodeId = getPhoneNodeId() ?: run {
+            Timber.d("WearDataRepository: phone not reachable, leaving queue intact")
+            return
         }
-        Timber.d("Flushed ${pending.size} queued actions to phone")
+        val actions = actionQueue.dequeueAll()
+        if (actions.isEmpty()) return
+        val failed = mutableListOf<WearAction>()
+        for (action in actions) {
+            try {
+                sendMessage(nodeId, action)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "WearDataRepository: failed to send queued action, re-enqueueing")
+                failed.add(action)
+            }
+        }
+        for (action in failed) {
+            actionQueue.enqueue(action)
+        }
+        Timber.d("Flushed %d queued actions to phone (%d re-enqueued)", actions.size, failed.size)
     }
 
     private suspend fun sendAction(action: WearAction) {
@@ -81,6 +106,7 @@ class WearDataRepository(
             is WearAction.StartRoutine -> WearDataPaths.MESSAGE_ROUTINE_STARTED
             is WearAction.AdvanceRoutineStep -> WearDataPaths.MESSAGE_ROUTINE_STEP_DONE
             is WearAction.PauseRoutine -> WearDataPaths.MESSAGE_ROUTINE_PAUSED
+            is WearAction.SkipRoutineStep -> WearDataPaths.MESSAGE_ROUTINE_STEP_SKIPPED
         }
         try {
             messageClient.sendMessage(
@@ -100,6 +126,7 @@ class WearDataRepository(
             .await()
         capability.nodes.firstOrNull()?.id
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         Timber.e(e, "Failed to get phone node ID")
         null
     }

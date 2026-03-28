@@ -10,6 +10,7 @@ import com.getaltair.kairos.domain.usecase.AbandonRoutineUseCase
 import com.getaltair.kairos.domain.usecase.AdvanceRoutineStepUseCase
 import com.getaltair.kairos.domain.usecase.StartRoutineUseCase
 import com.getaltair.kairos.domain.wear.WearAction
+import com.getaltair.kairos.domain.wear.WearDataPaths
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 import java.util.UUID
@@ -72,10 +73,20 @@ class WearMessageListenerService : WearableListenerService() {
 
         when (path) {
             WearDataPaths.MESSAGE_HABIT_COMPLETED -> handleHabitCompleted(action)
+
             WearDataPaths.MESSAGE_HABIT_SKIPPED -> handleHabitSkipped(action)
+
             WearDataPaths.MESSAGE_ROUTINE_STARTED -> handleRoutineStarted(action)
+
             WearDataPaths.MESSAGE_ROUTINE_STEP_DONE -> handleRoutineStepDone(action)
+
+            WearDataPaths.MESSAGE_ROUTINE_STEP_SKIPPED -> {
+                val skipAction = action as? WearAction.SkipRoutineStep ?: return
+                handleRoutineStepSkipped(skipAction.executionId)
+            }
+
             WearDataPaths.MESSAGE_ROUTINE_PAUSED -> handleRoutinePaused(action)
+
             else -> Timber.w("Unknown message path: %s", path)
         }
     }
@@ -227,6 +238,71 @@ class WearMessageListenerService : WearableListenerService() {
         }
     }
 
+    private fun handleRoutineStepSkipped(executionId: String) {
+        serviceScope.launch {
+            try {
+                val execUuid = UUID.fromString(executionId)
+
+                val execResult = routineExecutionRepository.getById(execUuid)
+                if (execResult is Result.Error) {
+                    Timber.w("Wear: execution not found %s: %s", executionId, execResult.message)
+                    return@launch
+                }
+                val execution = (execResult as Result.Success).value
+                if (execution == null) {
+                    Timber.w("Wear: execution %s is null", executionId)
+                    return@launch
+                }
+
+                val routineWithHabitsResult = routineRepository.getRoutineWithHabits(execution.routineId)
+                if (routineWithHabitsResult is Result.Error) {
+                    Timber.w(
+                        "Wear: failed to load routine habits for %s: %s",
+                        execution.routineId,
+                        routineWithHabitsResult.message,
+                    )
+                    return@launch
+                }
+                val routineWithHabits = (routineWithHabitsResult as Result.Success).value
+                if (routineWithHabits == null) {
+                    Timber.w("Wear: routine %s not found", execution.routineId)
+                    return@launch
+                }
+
+                val sortedHabits = routineWithHabits.habits.sortedBy { it.orderIndex }
+                val currentHabit = sortedHabits.getOrNull(execution.currentStepIndex)
+                if (currentHabit == null) {
+                    Timber.w(
+                        "Wear: no habit at step index %d for routine %s",
+                        execution.currentStepIndex,
+                        execution.routineId,
+                    )
+                    return@launch
+                }
+
+                val result = advanceRoutineStepUseCase(
+                    executionId = execUuid,
+                    stepResult = StepResult.Skipped,
+                    habitId = currentHabit.habitId,
+                )
+                when (result) {
+                    is Result.Success -> Timber.d("Wear: routine step skipped for execution %s", executionId)
+
+                    is Result.Error -> Timber.w(
+                        "Wear: failed to skip routine step %s: %s",
+                        executionId,
+                        result.message,
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Wear: error handling routine step skip for %s", executionId)
+            }
+        }
+    }
+
+    // WearOS 'pause' maps to abandon because the watch lacks UI to resume a partially-completed routine.
     private fun handleRoutinePaused(action: WearAction) {
         val data = action as? WearAction.PauseRoutine ?: run {
             Timber.w("Expected PauseRoutine action but got %s", action::class.simpleName)
@@ -258,14 +334,20 @@ class WearMessageListenerService : WearableListenerService() {
     // Enum parsing helpers
     // ------------------------------------------------------------------
 
-    private fun parseCompletionType(type: String): CompletionType = when (type.uppercase()) {
+    internal fun parseCompletionType(type: String): CompletionType = when (type.uppercase()) {
         "FULL", "DONE" -> CompletionType.Full
+
         "PARTIAL" -> CompletionType.Partial
+
         "SKIPPED" -> CompletionType.Skipped
-        else -> CompletionType.Full
+
+        else -> {
+            Timber.w("Unknown completion type from watch: '%s', defaulting to Full", type)
+            CompletionType.Full
+        }
     }
 
-    private fun parseSkipReason(reason: String): SkipReason? = when (reason.lowercase()) {
+    internal fun parseSkipReason(reason: String): SkipReason? = when (reason.lowercase()) {
         "too tired", "too_tired" -> SkipReason.TooTired
         "no time", "no_time" -> SkipReason.NoTime
         "not feeling well", "not_feeling_well" -> SkipReason.NotFeelingWell

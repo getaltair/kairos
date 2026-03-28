@@ -3,12 +3,14 @@ package com.getaltair.kairos.wear.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.getaltair.kairos.wear.data.WearDataRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * UI state for the routine runner screen on the watch.
@@ -66,23 +68,47 @@ class RoutineRunnerViewModel(private val routineId: String, private val reposito
     }
 
     fun onDone() {
-        val execId = currentExecutionId ?: routineId
         viewModelScope.launch {
-            repository.advanceRoutineStep(execId)
+            val execId = currentExecutionId ?: run {
+                Timber.w("RoutineRunnerViewModel: executionId is null, ignoring action")
+                return@launch
+            }
+            try {
+                repository.advanceRoutineStep(execId)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "RoutineRunnerViewModel: error advancing routine step")
+            }
         }
     }
 
     fun onSkip() {
-        val execId = currentExecutionId ?: routineId
         viewModelScope.launch {
-            repository.advanceRoutineStep(execId)
+            val execId = currentExecutionId ?: run {
+                Timber.w("RoutineRunnerViewModel: executionId is null, ignoring action")
+                return@launch
+            }
+            try {
+                repository.skipRoutineStep(execId)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "RoutineRunnerViewModel: error skipping routine step")
+            }
         }
     }
 
     fun onPause() {
-        val execId = currentExecutionId ?: routineId
         viewModelScope.launch {
-            repository.pauseRoutine(execId)
+            val execId = currentExecutionId ?: run {
+                Timber.w("RoutineRunnerViewModel: executionId is null, ignoring action")
+                return@launch
+            }
+            try {
+                repository.pauseRoutine(execId)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "RoutineRunnerViewModel: error pausing routine")
+            }
         }
     }
 

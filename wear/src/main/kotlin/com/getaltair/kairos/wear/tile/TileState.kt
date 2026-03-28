@@ -7,19 +7,22 @@ sealed class TileState {
     object Loading : TileState()
     object Empty : TileState()
     object AllDone : TileState()
-    data class HasHabits(
-        val habits: List<WearHabitData>,
-        val completions: List<WearCompletionData>,
-        val completedCount: Int,
-        val totalCount: Int,
-    ) : TileState() {
-        val progress: Float
-            get() = if (totalCount == 0) 0f else completedCount.toFloat() / totalCount
+    data class Error(val message: String) : TileState()
+    data class HasHabits(val habits: List<WearHabitData>, val completions: List<WearCompletionData>,) : TileState() {
+        private val completedIds: Set<String>
+            get() = completions.map { it.habitId }.toSet()
+
+        val completedHabits: List<WearHabitData>
+            get() = habits.filter { it.id in completedIds }
 
         val pendingHabits: List<WearHabitData>
-            get() {
-                val completedIds = completions.map { it.habitId }.toSet()
-                return habits.filter { it.id !in completedIds }
-            }
+            get() = habits.filter { it.id !in completedIds }
+
+        val completedCount: Int get() = completedHabits.size
+
+        val totalCount: Int get() = habits.size
+
+        val progress: Float
+            get() = if (totalCount == 0) 0f else completedCount.toFloat() / totalCount
     }
 }

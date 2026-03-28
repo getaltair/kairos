@@ -24,7 +24,7 @@ import org.koin.core.parameter.parametersOf
 /**
  * Routine runner screen for the watch.
  * Shows the current step with a countdown timer, progress indicator,
- * and controls to mark done, skip, or pause the routine.
+ * and controls to mark the current step done or skip it.
  */
 @Composable
 fun RoutineRunnerScreen(

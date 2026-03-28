@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.getaltair.kairos.domain.wear.WearHabitData
 import com.getaltair.kairos.wear.data.WearDataRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * UI state for the habit detail screen on the watch.
@@ -29,13 +31,23 @@ class HabitDetailViewModel(private val habitId: String, private val repository: 
 
     fun completeHabit(type: String = "FULL", partialPercent: Int? = null) {
         viewModelScope.launch {
-            repository.completeHabit(habitId, type, partialPercent)
+            try {
+                repository.completeHabit(habitId, type, partialPercent)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "HabitDetailViewModel: error completing habit %s", habitId)
+            }
         }
     }
 
     fun skipHabit(reason: String? = null) {
         viewModelScope.launch {
-            repository.skipHabit(habitId, reason)
+            try {
+                repository.skipHabit(habitId, reason)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "HabitDetailViewModel: error skipping habit %s", habitId)
+            }
         }
     }
 }

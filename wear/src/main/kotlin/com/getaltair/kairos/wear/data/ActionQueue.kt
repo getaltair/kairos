@@ -7,30 +7,48 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.getaltair.kairos.domain.wear.WearAction
+import com.getaltair.kairos.domain.wear.splitJsonObjects
+import java.io.IOException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 
 private val Context.actionQueueDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "wear_action_queue",
 )
 
+/**
+ * Persists pending WearAction items in DataStore so they survive process death.
+ * When the phone reconnects, WearDataRepository.flushQueue() drains this queue
+ * and sends all buffered actions.
+ */
 class ActionQueue(private val context: Context) {
     private val queueKey = stringPreferencesKey("pending_actions")
 
     suspend fun enqueue(action: WearAction) {
-        context.actionQueueDataStore.edit { prefs ->
-            val existing = prefs[queueKey] ?: "[]"
-            val trimmed = existing.trim().removePrefix("[").removeSuffix("]")
-            val newEntry = action.toJson()
-            prefs[queueKey] = if (trimmed.isBlank()) "[$newEntry]" else "[$trimmed,$newEntry]"
+        try {
+            context.actionQueueDataStore.edit { prefs ->
+                val existing = prefs[queueKey] ?: "[]"
+                val trimmed = existing.trim().removePrefix("[").removeSuffix("]")
+                val newEntry = action.toJson()
+                prefs[queueKey] = if (trimmed.isBlank()) "[$newEntry]" else "[$trimmed,$newEntry]"
+            }
+        } catch (e: IOException) {
+            Timber.e(e, "ActionQueue: failed to enqueue action")
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "ActionQueue: failed to enqueue action")
+            throw IOException("Failed to enqueue action", e)
         }
     }
 
     suspend fun dequeueAll(): List<WearAction> {
-        val json = context.actionQueueDataStore.data.map { it[queueKey] ?: "[]" }.first()
-        val actions = parseActionList(json)
-        context.actionQueueDataStore.edit { it[queueKey] = "[]" }
-        return actions
+        var captured = "[]"
+        context.actionQueueDataStore.edit { prefs ->
+            captured = prefs[queueKey] ?: "[]"
+            prefs[queueKey] = "[]"
+        }
+        return parseActionList(captured)
     }
 
     suspend fun isEmpty(): Boolean {
@@ -42,26 +60,12 @@ class ActionQueue(private val context: Context) {
         if (json.isBlank() || json == "[]") return emptyList()
         val trimmed = json.trim().removePrefix("[").removeSuffix("]").trim()
         if (trimmed.isEmpty()) return emptyList()
-        return splitJsonObjects(trimmed).mapNotNull { WearAction.fromJson(it) }
-    }
-
-    private fun splitJsonObjects(s: String): List<String> {
-        val result = mutableListOf<String>()
-        var depth = 0
-        var start = 0
-        for (i in s.indices) {
-            when (s[i]) {
-                '{' -> depth++
-
-                '}' -> {
-                    depth--
-                    if (depth == 0) {
-                        result.add(s.substring(start, i + 1))
-                        start = i + 2
-                    }
+        return splitJsonObjects(trimmed).mapNotNull { obj ->
+            WearAction.fromJson(obj).also { action ->
+                if (action == null) {
+                    Timber.w("ActionQueue: dropping unrecognized action: %s", obj)
                 }
             }
         }
-        return result
     }
 }

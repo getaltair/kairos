@@ -27,6 +27,7 @@ class HabitListViewModel(private val repository: WearDataRepository) : ViewModel
         repository.todayHabits,
         repository.todayCompletions,
     ) { habits, completions ->
+        // DEPARTURE habits are device-specific triggers, not meant for manual tracking on the watch
         val filtered = habits.filter { it.category != "DEPARTURE" }
         val completedIds = completions.map { it.habitId }.toSet()
         val grouped = filtered.groupBy { it.category }

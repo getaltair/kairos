@@ -17,34 +17,57 @@ data class WearRoutineData(
     val remainingSeconds: Int,
 ) {
     fun toJson(): String = buildString {
-        val stepsJson = "[${steps.joinToString(",") { "\"${it.replace("\"", "\\\"")}\"" }}]"
+        val stepsJson = "[${steps.joinToString(",") { "\"${escapeJson(it)}\"" }}]"
         append("{")
-        append("\"routineId\":\"$routineId\",")
-        append("\"executionId\":\"$executionId\",")
-        append("\"name\":\"${name.replace("\"", "\\\"")}\",")
+        append("\"routineId\":\"${escapeJson(routineId)}\",")
+        append("\"executionId\":\"${escapeJson(executionId)}\",")
+        append("\"name\":\"${escapeJson(name)}\",")
         append("\"steps\":$stepsJson,")
         append("\"currentStepIndex\":$currentStepIndex,")
-        append("\"status\":\"$status\",")
+        append("\"status\":\"${escapeJson(status)}\",")
         append("\"remainingSeconds\":$remainingSeconds")
         append("}")
     }
 
     companion object {
-        fun fromJson(json: String): WearRoutineData {
+        fun fromJson(json: String): WearRoutineData? {
             fun extract(key: String): String? = Regex("\"$key\":\"([^\"]*)\"").find(json)?.groupValues?.get(1)
 
             fun extractInt(key: String): Int = Regex("\"$key\":(\\d+)").find(json)?.groupValues?.get(1)?.toInt() ?: 0
+
+            val routineId = extract("routineId")
+            val executionId = extract("executionId")
+            if (routineId.isNullOrBlank() || executionId.isNullOrBlank()) return null
 
             val stepsMatch = Regex("\"steps\":\\[([^\\]]*)\\]").find(json)?.groupValues?.get(1) ?: ""
             val steps = if (stepsMatch.isBlank()) {
                 emptyList()
             } else {
-                stepsMatch.split(",").map { it.trim().removePrefix("\"").removeSuffix("\"") }
+                // Parse quoted strings properly instead of naive split(",") which
+                // breaks for step names containing commas.
+                val stepList = mutableListOf<String>()
+                var inQuote = false
+                var current = StringBuilder()
+                for (ch in stepsMatch) {
+                    when {
+                        ch == '"' && !inQuote -> inQuote = true
+
+                        ch == '"' && inQuote -> {
+                            stepList.add(current.toString())
+                            current = StringBuilder()
+                            inQuote = false
+                        }
+
+                        inQuote -> current.append(ch)
+                        // Skip commas and whitespace outside quotes
+                    }
+                }
+                stepList
             }
 
             return WearRoutineData(
-                routineId = extract("routineId") ?: "",
-                executionId = extract("executionId") ?: "",
+                routineId = routineId,
+                executionId = executionId,
                 name = extract("name") ?: "",
                 steps = steps,
                 currentStepIndex = extractInt("currentStepIndex"),

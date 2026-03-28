@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
+import timber.log.Timber
 
 const val ROUTE_HABIT_LIST = "habit_list"
 const val ROUTE_HABIT_DETAIL = "habit_detail/{habitId}"
@@ -37,7 +38,10 @@ fun WearNavGraph(navController: NavHostController) {
             )
         }
         composable(ROUTE_HABIT_DETAIL) { backStackEntry ->
-            val habitId = backStackEntry.arguments?.getString("habitId") ?: return@composable
+            val habitId = backStackEntry.arguments?.getString("habitId") ?: run {
+                Timber.w("HabitDetailScreen: missing habitId argument")
+                return@composable
+            }
             HabitDetailScreen(
                 habitId = habitId,
                 onActionComplete = { navController.popBackStack() },
@@ -51,7 +55,10 @@ fun WearNavGraph(navController: NavHostController) {
             )
         }
         composable(ROUTE_ROUTINE_RUNNER) { backStackEntry ->
-            val routineId = backStackEntry.arguments?.getString("routineId") ?: return@composable
+            val routineId = backStackEntry.arguments?.getString("routineId") ?: run {
+                Timber.w("RoutineRunnerScreen: missing routineId argument")
+                return@composable
+            }
             RoutineRunnerScreen(
                 routineId = routineId,
                 onFinished = { navController.popBackStack() },

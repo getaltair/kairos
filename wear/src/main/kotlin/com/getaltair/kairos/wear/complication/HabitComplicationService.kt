@@ -16,6 +16,7 @@ import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import com.getaltair.kairos.wear.data.WearDataRepository
 import com.getaltair.kairos.wear.presentation.WearMainActivity
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.koin.android.ext.android.inject
 import timber.log.Timber
@@ -32,6 +33,7 @@ class HabitComplicationService : SuspendingComplicationDataSourceService() {
     }
 
     override suspend fun onComplicationRequest(request: ComplicationRequest,): ComplicationData? = try {
+        // DEPARTURE habits are device-specific triggers, not meant for manual tracking on the watch
         val habits = repository.todayHabits.first()
             .filter { it.category != "DEPARTURE" }
         val completions = repository.todayCompletions.first()
@@ -67,8 +69,16 @@ class HabitComplicationService : SuspendingComplicationDataSourceService() {
             else -> null
         }
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         Timber.e(e, "Error computing complication data")
-        null
+        // Return a minimal fallback complication so the slot isn't blank on error
+        when (request.complicationType) {
+            ComplicationType.SHORT_TEXT -> shortText("---")
+            ComplicationType.LONG_TEXT -> longText("---")
+            ComplicationType.RANGED_VALUE -> rangedValue(0f)
+            ComplicationType.SMALL_IMAGE -> smallImage()
+            else -> null
+        }
     }
 
     private fun tapIntent(): PendingIntent? {

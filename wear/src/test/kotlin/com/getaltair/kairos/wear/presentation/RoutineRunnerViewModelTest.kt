@@ -41,18 +41,23 @@ class RoutineRunnerViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private fun makeRoutine(routineId: String = "routine-1", executionId: String = "exec-1",) = WearRoutineData(
+        routineId = routineId,
+        executionId = executionId,
+        name = "Morning Routine",
+        steps = listOf("Step 1", "Step 2"),
+        currentStepIndex = 0,
+        status = "RUNNING",
+        remainingSeconds = 60,
+    )
+
+    // ------------------------------------------------------------------
+    // onDone
+    // ------------------------------------------------------------------
+
     @Test
     fun `onDone calls repository advanceRoutineStep with executionId`() = runTest(testDispatcher) {
-        val routine = WearRoutineData(
-            routineId = "routine-1",
-            executionId = "exec-1",
-            name = "Morning Routine",
-            steps = listOf("Step 1", "Step 2"),
-            currentStepIndex = 0,
-            status = "RUNNING",
-            remainingSeconds = 60,
-        )
-        routineFlow.value = routine
+        routineFlow.value = makeRoutine()
 
         val viewModel = RoutineRunnerViewModel("routine-1", repository)
         advanceUntilIdle()
@@ -64,17 +69,24 @@ class RoutineRunnerViewModelTest {
     }
 
     @Test
-    fun `onSkip calls repository advanceRoutineStep`() = runTest(testDispatcher) {
-        val routine = WearRoutineData(
-            routineId = "routine-1",
-            executionId = "exec-1",
-            name = "Morning Routine",
-            steps = listOf("Step 1", "Step 2"),
-            currentStepIndex = 0,
-            status = "RUNNING",
-            remainingSeconds = 60,
-        )
-        routineFlow.value = routine
+    fun `onDone returns early when executionId is null`() = runTest(testDispatcher) {
+        // No routine emitted, so currentExecutionId stays null
+        val viewModel = RoutineRunnerViewModel("routine-1", repository)
+        advanceUntilIdle()
+
+        viewModel.onDone()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.advanceRoutineStep(any()) }
+    }
+
+    // ------------------------------------------------------------------
+    // onSkip
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `onSkip calls repository skipRoutineStep with executionId`() = runTest(testDispatcher) {
+        routineFlow.value = makeRoutine()
 
         val viewModel = RoutineRunnerViewModel("routine-1", repository)
         advanceUntilIdle()
@@ -82,21 +94,28 @@ class RoutineRunnerViewModelTest {
         viewModel.onSkip()
         advanceUntilIdle()
 
-        coVerify { repository.advanceRoutineStep("exec-1") }
+        coVerify { repository.skipRoutineStep("exec-1") }
     }
 
     @Test
+    fun `onSkip returns early when executionId is null`() = runTest(testDispatcher) {
+        // No routine emitted, so currentExecutionId stays null
+        val viewModel = RoutineRunnerViewModel("routine-1", repository)
+        advanceUntilIdle()
+
+        viewModel.onSkip()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.skipRoutineStep(any()) }
+    }
+
+    // ------------------------------------------------------------------
+    // onPause
+    // ------------------------------------------------------------------
+
+    @Test
     fun `onPause calls repository pauseRoutine with executionId`() = runTest(testDispatcher) {
-        val routine = WearRoutineData(
-            routineId = "routine-1",
-            executionId = "exec-1",
-            name = "Morning Routine",
-            steps = listOf("Step 1", "Step 2"),
-            currentStepIndex = 0,
-            status = "RUNNING",
-            remainingSeconds = 60,
-        )
-        routineFlow.value = routine
+        routineFlow.value = makeRoutine()
 
         val viewModel = RoutineRunnerViewModel("routine-1", repository)
         advanceUntilIdle()
@@ -105,16 +124,5 @@ class RoutineRunnerViewModelTest {
         advanceUntilIdle()
 
         coVerify { repository.pauseRoutine("exec-1") }
-    }
-
-    @Test
-    fun `onDone falls back to routineId when no executionId available`() = runTest(testDispatcher) {
-        val viewModel = RoutineRunnerViewModel("routine-1", repository)
-        advanceUntilIdle()
-
-        viewModel.onDone()
-        advanceUntilIdle()
-
-        coVerify { repository.advanceRoutineStep("routine-1") }
     }
 }

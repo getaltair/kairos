@@ -1,24 +1,16 @@
 package com.getaltair.kairos.wear.data
 
 import com.getaltair.kairos.domain.wear.WearAction
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
-import io.mockk.slot
-import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Tests for [ActionQueue] JSON serialization round-trip logic.
+ * Tests WearAction JSON serialization and deserialization.
  *
- * Since ActionQueue depends on Android DataStore (Context-backed),
- * these tests validate the JSON parsing and splitting helpers
- * indirectly through the domain WearAction serialization contract.
+ * // Note: ActionQueue DataStore operations require an instrumented test environment.
  */
-class ActionQueueTest {
+class WearActionSerializationTest {
 
     @Test
     fun `WearAction CompleteHabit round-trips through JSON`() {

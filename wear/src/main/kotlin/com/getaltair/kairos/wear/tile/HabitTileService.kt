@@ -8,6 +8,7 @@ import androidx.wear.tiles.TileBuilders
 import com.getaltair.kairos.wear.data.WearDataRepository
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.koin.android.ext.android.inject
 import timber.log.Timber
@@ -49,7 +50,7 @@ class HabitTileService : SuspendingTileService() {
         val habits = repository.todayHabits.first()
         val completions = repository.todayCompletions.first()
 
-        // Filter out DEPARTURE category (for Pi dashboard only)
+        // DEPARTURE habits are device-specific triggers, not meant for manual tracking on the watch
         val watchHabits = habits.filter { it.category != "DEPARTURE" }
 
         when {
@@ -59,19 +60,14 @@ class HabitTileService : SuspendingTileService() {
                 completions.any { it.habitId == habit.id }
             } -> TileState.AllDone
 
-            else -> {
-                val completedIds = completions.map { it.habitId }.toSet()
-                val completedCount = watchHabits.count { it.id in completedIds }
-                TileState.HasHabits(
-                    habits = watchHabits,
-                    completions = completions,
-                    completedCount = completedCount,
-                    totalCount = watchHabits.size,
-                )
-            }
+            else -> TileState.HasHabits(
+                habits = watchHabits,
+                completions = completions,
+            )
         }
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         Timber.e(e, "Error computing tile state")
-        TileState.Loading
+        TileState.Error("Could not load habits")
     }
 }

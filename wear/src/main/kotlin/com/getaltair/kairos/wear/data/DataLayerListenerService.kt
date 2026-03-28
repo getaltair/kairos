@@ -1,9 +1,11 @@
 package com.getaltair.kairos.wear.data
 
+import com.getaltair.kairos.domain.wear.WearDataPaths
 import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.WearableListenerService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,6 +37,7 @@ class DataLayerListenerService : WearableListenerService() {
                         else -> Timber.d("Unknown data path: $path")
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Timber.e(e, "Error updating local cache for path: $path")
                 }
             }
@@ -46,7 +49,12 @@ class DataLayerListenerService : WearableListenerService() {
         repository.updatePhoneConnected(connected)
         if (connected) {
             scope.launch {
-                repository.flushQueue()
+                try {
+                    repository.flushQueue()
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    Timber.e(e, "Error flushing action queue on reconnect")
+                }
             }
         }
         Timber.d("Phone connectivity changed: $connected")

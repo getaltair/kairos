@@ -16,23 +16,27 @@ data class WearCompletionData(
 ) {
     fun toJson(): String = buildString {
         append("{")
-        append("\"id\":\"$id\",")
-        append("\"habitId\":\"$habitId\",")
-        append("\"date\":\"$date\",")
-        append("\"type\":\"$type\",")
+        append("\"id\":\"${escapeJson(id)}\",")
+        append("\"habitId\":\"${escapeJson(habitId)}\",")
+        append("\"date\":\"${escapeJson(date)}\",")
+        append("\"type\":\"${escapeJson(type)}\",")
         append("\"partialPercent\":${partialPercent ?: "null"}")
         append("}")
     }
 
     companion object {
-        fun fromJson(json: String): WearCompletionData {
+        fun fromJson(json: String): WearCompletionData? {
             fun extract(key: String): String? = Regex("\"$key\":\"([^\"]*)\"").find(json)?.groupValues?.get(1)
 
             fun extractInt(key: String): Int? = Regex("\"$key\":(\\d+)").find(json)?.groupValues?.get(1)?.toInt()
 
+            val id = extract("id")
+            val habitId = extract("habitId")
+            if (id.isNullOrBlank() || habitId.isNullOrBlank()) return null
+
             return WearCompletionData(
-                id = extract("id") ?: "",
-                habitId = extract("habitId") ?: "",
+                id = id,
+                habitId = habitId,
                 date = extract("date") ?: "",
                 type = extract("type") ?: "",
                 partialPercent = extractInt("partialPercent"),
@@ -43,31 +47,9 @@ data class WearCompletionData(
             if (json.isBlank() || json == "[]") return emptyList()
             val trimmed = json.trim().removePrefix("[").removeSuffix("]").trim()
             if (trimmed.isEmpty()) return emptyList()
-            return splitJsonObjects(trimmed).mapNotNull {
-                runCatching { fromJson(it) }.getOrNull()
-            }
+            return splitJsonObjects(trimmed).mapNotNull { fromJson(it) }
         }
 
         fun listToJson(list: List<WearCompletionData>): String = "[${list.joinToString(",") { it.toJson() }}]"
-
-        private fun splitJsonObjects(s: String): List<String> {
-            val result = mutableListOf<String>()
-            var depth = 0
-            var start = 0
-            for (i in s.indices) {
-                when (s[i]) {
-                    '{' -> depth++
-
-                    '}' -> {
-                        depth--
-                        if (depth == 0) {
-                            result.add(s.substring(start, i + 1))
-                            start = i + 2
-                        }
-                    }
-                }
-            }
-            return result
-        }
     }
 }
