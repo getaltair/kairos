@@ -17,6 +17,17 @@ enum class ConnectionStatus {
 }
 
 /**
+ * Display mode for the dashboard UI.
+ *
+ * [Active] shows the full habit-tracking layout.
+ * [Standby] shows a minimal clock screen to prevent burn-in during idle periods.
+ */
+enum class DisplayMode {
+    Active,
+    Standby,
+}
+
+/**
  * Immutable snapshot of dashboard state.
  *
  * Derived properties are computed on access from the raw [habits] and [completions] lists
@@ -27,7 +38,12 @@ data class DashboardState(
     val completions: List<Completion> = emptyList(),
     val connectionStatus: ConnectionStatus = ConnectionStatus.Connecting,
     val lastUpdated: Instant? = null,
+    val displayMode: DisplayMode = DisplayMode.Active,
 ) {
+    /** True when the dashboard is in standby (clock-only) mode. */
+    val isStandby: Boolean
+        get() = displayMode == DisplayMode.Standby
+
     /** Habits in the Departure category (shown in the "Don't Forget" panel). */
     val departureHabits: List<Habit>
         get() = habits.filter { it.isDeparture }

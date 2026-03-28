@@ -1,12 +1,20 @@
 package com.getaltair.kairos.dashboard.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -15,27 +23,55 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.AnchorType
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import kotlinx.coroutines.delay
 
 /**
- * Bottom bar showing the next pending habits or an "all done" message.
+ * Bottom bar showing the current time and next pending habits.
  *
- * When habits remain, displays "COMING UP: name (anchor context)" for each,
- * separated by a bullet. When everything is complete, shows a celebratory
- * message in the primary color.
+ * Left side: prominent current time updated every second.
+ * Right side: upcoming habit names with anchor context, time windows,
+ * and estimated durations for 3-4 ft readability.
  */
 @Composable
 fun ComingUpBar(comingUpHabits: List<Habit>, modifier: Modifier = Modifier,) {
+    var now by remember { mutableStateOf(LocalDateTime.now()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000L)
+            now = LocalDateTime.now()
+        }
+    }
+
+    val timeFormatter = remember {
+        DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start,
     ) {
+        // Prominent current time on the left
+        Text(
+            text = now.format(timeFormatter),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+
+        Spacer(modifier = Modifier.width(24.dp))
+
         if (comingUpHabits.isEmpty()) {
             Text(
                 text = "\u2713 All habits complete for today!",
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
         } else {
@@ -51,6 +87,12 @@ fun ComingUpBar(comingUpHabits: List<Habit>, modifier: Modifier = Modifier,) {
                             if (context != null) {
                                 append(" ($context)")
                             }
+                            val duration = formatEstimatedDuration(habit)
+                            if (duration != null) {
+                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+                                    append("  $duration")
+                                }
+                            }
                         }
                         if (index < comingUpHabits.lastIndex) {
                             withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
@@ -59,16 +101,25 @@ fun ComingUpBar(comingUpHabits: List<Habit>, modifier: Modifier = Modifier,) {
                         }
                     }
                 },
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleMedium,
             )
         }
     }
 }
 
 /**
- * Builds a short anchor context string like "After brushing teeth" or "At 8:00 AM".
+ * Builds a short anchor context string.
+ *
+ * For AT_TIME habits with a [Habit.timeWindowStart], displays the formatted
+ * time (e.g. "At 9:00 AM"). Otherwise falls back to the anchor behavior
+ * string (e.g. "After brushing teeth").
  */
 private fun formatAnchorContext(habit: Habit): String? {
+    val timeStart = habit.timeWindowStart
+    if (habit.anchorType is AnchorType.AtTime && !timeStart.isNullOrBlank()) {
+        val formatted = formatTimeWindow(timeStart)
+        if (formatted != null) return "At $formatted"
+    }
     val prefix = when (habit.anchorType) {
         is AnchorType.AfterBehavior -> "After"
         is AnchorType.BeforeBehavior -> "Before"
@@ -77,4 +128,26 @@ private fun formatAnchorContext(habit: Habit): String? {
     }
     val anchor = habit.anchorBehavior
     return if (anchor.isNotBlank()) "$prefix $anchor" else null
+}
+
+/**
+ * Formats a "HH:mm" time string to a display-friendly "h:mm a" format.
+ * Returns null if the input is malformed.
+ */
+private fun formatTimeWindow(time: String): String? = try {
+    val parsed = LocalTime.parse(time)
+    val formatter = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
+    parsed.format(formatter)
+} catch (_: Exception) {
+    null
+}
+
+/**
+ * Returns an estimated duration string like "~5 min" or null if not applicable.
+ */
+private fun formatEstimatedDuration(habit: Habit): String? {
+    val seconds = habit.estimatedSeconds
+    if (seconds <= 0) return null
+    val minutes = seconds / 60
+    return if (minutes > 0) "~$minutes min" else null
 }

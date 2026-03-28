@@ -149,11 +149,26 @@ private fun skipReasonFromTag(tag: String): SkipReason = when (tag) {
 }
 
 // ---------------------------------------------------------------------------
-// Timestamp helper  (Admin SDK uses com.google.cloud.Timestamp)
+// Timestamp helpers  (Admin SDK uses com.google.cloud.Timestamp)
 // ---------------------------------------------------------------------------
 
 /** Converts a Cloud [Timestamp] to a [java.time.Instant]. */
 private fun Timestamp.toInstant(): java.time.Instant = java.time.Instant.ofEpochSecond(seconds, nanos.toLong())
+
+/** Converts a [java.time.Instant] to a Cloud [Timestamp]. */
+private fun java.time.Instant.toCloudTimestamp(): Timestamp = Timestamp.ofTimeSecondsAndNanos(epochSecond, nano)
+
+// ---------------------------------------------------------------------------
+// Domain -> Tag conversions  (for writing back to Firestore)
+// ---------------------------------------------------------------------------
+
+/** Converts a [CompletionType] to its Firestore UPPER_SNAKE_CASE tag. */
+private fun completionTypeToTag(type: CompletionType): String = when (type) {
+    is CompletionType.Full -> "FULL"
+    is CompletionType.Partial -> "PARTIAL"
+    is CompletionType.Skipped -> "SKIPPED"
+    is CompletionType.Missed -> "MISSED"
+}
 
 // ---------------------------------------------------------------------------
 // Firestore Map -> Domain Entity
@@ -214,6 +229,31 @@ object AdminFirestoreMapper {
             archivedAt = (map["archivedAt"] as? Timestamp)?.toInstant(),
         )
     }
+
+    /**
+     * Converts a [Completion] to a Firestore-compatible [Map].
+     *
+     * Produces the exact same field set as `Completion.toFirestoreMap()` in
+     * the sync module, but uses `com.google.cloud.Timestamp` (Admin SDK)
+     * instead of `com.google.firebase.Timestamp` (Android SDK).
+     *
+     * @param id the document ID (completion UUID as string)
+     * @param completion the domain completion entity
+     */
+    fun completionToMap(id: String, completion: Completion): Map<String, Any?> = mapOf(
+        "id" to id,
+        "habitId" to completion.habitId.toString(),
+        "date" to completion.date.toString(), // YYYY-MM-DD
+        "completedAt" to completion.completedAt.toCloudTimestamp(),
+        "type" to completionTypeToTag(completion.type),
+        "partialPercent" to completion.partialPercent,
+        "skipReason" to null,
+        "energyLevel" to completion.energyLevel,
+        "note" to completion.note,
+        "createdAt" to completion.createdAt.toCloudTimestamp(),
+        "updatedAt" to completion.updatedAt.toCloudTimestamp(),
+        "version" to System.currentTimeMillis(),
+    )
 
     /**
      * Reconstructs a [Completion] from a Firestore document [Map].

@@ -1,8 +1,12 @@
 package com.getaltair.kairos.dashboard.state
 
+import com.getaltair.kairos.dashboard.data.AdminFirestoreMapper
 import com.getaltair.kairos.dashboard.data.FirebaseAdminClient
+import com.getaltair.kairos.domain.entity.Completion
+import com.getaltair.kairos.domain.enums.CompletionType
 import java.time.Instant
 import java.time.LocalDate
+import java.util.UUID
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -113,6 +117,62 @@ class DashboardStateHolder(private val client: FirebaseAdminClient, private val 
                     // Clear yesterday's completions immediately
                     _state.update { it.copy(completions = emptyList()) }
                     collectCompletions(today)
+                }
+            }
+        }
+    }
+
+    // ----- public actions ---------------------------------------------------
+
+    /** Switches the dashboard between [DisplayMode.Active] and [DisplayMode.Standby]. */
+    fun setDisplayMode(mode: DisplayMode) {
+        _state.update { it.copy(displayMode = mode) }
+        log.info("Display mode changed to: {}", mode)
+    }
+
+    /**
+     * Records a full completion for the given [habitId].
+     *
+     * Applies an optimistic update to the local state immediately, then
+     * writes to Firestore in the background. If the write fails the
+     * optimistic completion is rolled back.
+     */
+    fun completeHabit(habitId: UUID) {
+        // Guard: already completed today
+        if (_state.value.completedHabitIds.contains(habitId)) {
+            log.debug("Habit {} already completed today, ignoring", habitId)
+            return
+        }
+
+        // Build completion
+        val completionId = UUID.randomUUID()
+        val now = Instant.now()
+        val today = LocalDate.now()
+        val completion = Completion(
+            id = completionId,
+            habitId = habitId,
+            date = today,
+            completedAt = now,
+            type = CompletionType.Full,
+            partialPercent = null,
+            skipReason = null,
+            energyLevel = null,
+            note = null,
+            createdAt = now,
+            updatedAt = now,
+        )
+
+        // Optimistic update
+        _state.update { it.copy(completions = it.completions + completion) }
+
+        // Write to Firestore
+        scope.launch(Dispatchers.IO) {
+            val map = AdminFirestoreMapper.completionToMap(completionId.toString(), completion)
+            val result = client.writeCompletion(userId, completionId.toString(), map)
+            result.onFailure { e ->
+                log.error("Failed to write completion for habit {}, rolling back", habitId, e)
+                _state.update { st ->
+                    st.copy(completions = st.completions.filter { c -> c.id != completionId })
                 }
             }
         }

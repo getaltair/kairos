@@ -256,4 +256,50 @@ class DashboardStateTest {
         assertTrue(state.habitsByCategory.isEmpty())
         assertTrue(state.isStale)
     }
+
+    // -----------------------------------------------------------------------
+    // displayMode / isStandby
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun displayMode_defaultIsActive() {
+        val state = DashboardState()
+
+        assertEquals(DisplayMode.Active, state.displayMode)
+        assertFalse(state.isStandby)
+    }
+
+    @Test
+    fun displayMode_standbyMakesIsStandbyTrue() {
+        val state = DashboardState(displayMode = DisplayMode.Standby)
+
+        assertEquals(DisplayMode.Standby, state.displayMode)
+        assertTrue(state.isStandby)
+    }
+
+    @Test
+    fun displayMode_activeAfterStandbyResetsIsStandby() {
+        val standby = DashboardState(displayMode = DisplayMode.Standby)
+        assertTrue(standby.isStandby)
+
+        val active = standby.copy(displayMode = DisplayMode.Active)
+        assertFalse(active.isStandby)
+    }
+
+    @Test
+    fun completeHabit_duplicateCompletionDoesNotAddTwice() {
+        val habitId = UUID.randomUUID()
+        val c1 = makeCompletion(habitId = habitId)
+
+        val state = DashboardState(completions = listOf(c1))
+
+        // Verify the habit is already marked complete
+        assertTrue(state.completedHabitIds.contains(habitId))
+        assertEquals(1, state.completedHabitIds.size)
+
+        // Adding a second completion for the same habit should still yield 1 unique ID
+        val c2 = makeCompletion(habitId = habitId)
+        val state2 = state.copy(completions = state.completions + c2)
+        assertEquals(1, state2.completedHabitIds.size)
+    }
 }

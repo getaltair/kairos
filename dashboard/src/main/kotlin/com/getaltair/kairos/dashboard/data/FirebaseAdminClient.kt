@@ -112,6 +112,29 @@ class FirebaseAdminClient(private val config: DashboardConfig) {
         awaitClose { registration.remove() }
     }
 
+    /**
+     * Writes a completion document to Firestore at
+     * `users/{userId}/completions/{completionId}`.
+     *
+     * @param userId the user document ID
+     * @param completionId the completion document ID
+     * @param data the Firestore-compatible map produced by [AdminFirestoreMapper.completionToMap]
+     * @return [Result.success] on successful write, [Result.failure] on error
+     */
+    fun writeCompletion(userId: String, completionId: String, data: Map<String, Any?>): Result<Unit> {
+        log.info("Writing completion {} for user {}", completionId, userId)
+        return try {
+            db().collection("users").document(userId)
+                .collection("completions").document(completionId)
+                .set(data).get()
+            log.info("Completion {} written successfully", completionId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            log.error("Failed to write completion {}: {}", completionId, e.message, e)
+            Result.failure(e)
+        }
+    }
+
     /** Cleans up resources when the dashboard shuts down. */
     fun close() {
         log.info("Firebase Admin client closing")
