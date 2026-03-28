@@ -4,17 +4,26 @@ import com.getaltair.kairos.core.usecase.CompleteHabitUseCase
 import com.getaltair.kairos.core.usecase.GetTodayHabitsUseCase
 import com.getaltair.kairos.core.usecase.SkipHabitUseCase
 import com.getaltair.kairos.core.usecase.UndoCompletionUseCase
+import com.getaltair.kairos.domain.usecase.AbandonRoutineUseCase
+import com.getaltair.kairos.domain.usecase.AdvanceRoutineStepUseCase
 import com.getaltair.kairos.domain.usecase.ArchiveHabitUseCase
 import com.getaltair.kairos.domain.usecase.BackdateCompletionUseCase
 import com.getaltair.kairos.domain.usecase.CompleteRecoverySessionUseCase
+import com.getaltair.kairos.domain.usecase.CompleteRoutineUseCase
 import com.getaltair.kairos.domain.usecase.CreateHabitUseCase
 import com.getaltair.kairos.domain.usecase.CreateMissedCompletionsUseCase
+import com.getaltair.kairos.domain.usecase.CreateRoutineUseCase
 import com.getaltair.kairos.domain.usecase.DeleteHabitUseCase
+import com.getaltair.kairos.domain.usecase.DeleteRoutineUseCase
 import com.getaltair.kairos.domain.usecase.DetectLapsesUseCase
 import com.getaltair.kairos.domain.usecase.EditHabitUseCase
+import com.getaltair.kairos.domain.usecase.GetActiveHabitsUseCase
+import com.getaltair.kairos.domain.usecase.GetActiveRoutinesUseCase
 import com.getaltair.kairos.domain.usecase.GetHabitDetailUseCase
 import com.getaltair.kairos.domain.usecase.GetHabitUseCase
 import com.getaltair.kairos.domain.usecase.GetPendingRecoveriesUseCase
+import com.getaltair.kairos.domain.usecase.GetRoutineDetailUseCase
+import com.getaltair.kairos.domain.usecase.GetRoutineExecutionUseCase
 import com.getaltair.kairos.domain.usecase.GetWeeklyStatsUseCase
 import com.getaltair.kairos.domain.usecase.ObserveAuthStateUseCase
 import com.getaltair.kairos.domain.usecase.PauseHabitUseCase
@@ -24,6 +33,8 @@ import com.getaltair.kairos.domain.usecase.ResumeHabitUseCase
 import com.getaltair.kairos.domain.usecase.SignInUseCase
 import com.getaltair.kairos.domain.usecase.SignOutUseCase
 import com.getaltair.kairos.domain.usecase.SignUpUseCase
+import com.getaltair.kairos.domain.usecase.StartRoutineUseCase
+import com.getaltair.kairos.domain.usecase.UpdateRoutineUseCase
 import org.koin.dsl.module
 
 /**
@@ -59,4 +70,17 @@ val useCaseModule = module {
     factory { DetectLapsesUseCase(get(), get(), get()) }
     factory { CompleteRecoverySessionUseCase(get(), get()) }
     factory { GetPendingRecoveriesUseCase(get(), get()) }
+
+    // Routine use cases
+    factory { CreateRoutineUseCase(get()) }
+    factory { UpdateRoutineUseCase(get()) }
+    factory { DeleteRoutineUseCase(get()) }
+    factory { GetRoutineDetailUseCase(get(), get()) }
+    factory { GetActiveRoutinesUseCase(get()) }
+    factory { StartRoutineUseCase(get(), get()) }
+    factory { AdvanceRoutineStepUseCase(get(), get()) }
+    factory { CompleteRoutineUseCase(get()) }
+    factory { AbandonRoutineUseCase(get()) }
+    factory { GetRoutineExecutionUseCase(get()) }
+    factory { GetActiveHabitsUseCase(get()) }
 }

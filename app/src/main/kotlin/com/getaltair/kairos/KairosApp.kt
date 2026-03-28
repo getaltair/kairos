@@ -9,6 +9,7 @@ import com.getaltair.kairos.data.di.dataModule
 import com.getaltair.kairos.feature.auth.di.authModule
 import com.getaltair.kairos.feature.habit.di.habitModule
 import com.getaltair.kairos.feature.recovery.di.recoveryModule
+import com.getaltair.kairos.feature.routine.di.routineModule
 import com.getaltair.kairos.feature.settings.di.settingsModule
 import com.getaltair.kairos.feature.today.di.todayModule
 import com.getaltair.kairos.notification.NotificationChannels
@@ -52,6 +53,7 @@ class KairosApp : Application() {
                 habitModule,
                 settingsModule,
                 recoveryModule,
+                routineModule,
             )
         }
 
