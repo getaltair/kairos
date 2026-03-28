@@ -52,6 +52,7 @@ dependencies {
     implementation(project(":feature:auth"))
     implementation(project(":feature:recovery"))
     implementation(project(":feature:routine"))
+    implementation(project(":feature:widget"))
     implementation(project(":sync"))
     implementation(project(":notification"))
 

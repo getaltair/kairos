@@ -6,6 +6,7 @@ import com.getaltair.kairos.core.usecase.CompleteHabitUseCase
 import com.getaltair.kairos.core.usecase.GetTodayHabitsUseCase
 import com.getaltair.kairos.core.usecase.SkipHabitUseCase
 import com.getaltair.kairos.core.usecase.UndoCompletionUseCase
+import com.getaltair.kairos.core.widget.WidgetRefreshNotifier
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.enums.CompletionType
 import com.getaltair.kairos.domain.enums.HabitCategory
@@ -23,6 +24,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class TodayViewModel(
+    private val widgetRefreshNotifier: WidgetRefreshNotifier,
     private val getTodayHabitsUseCase: GetTodayHabitsUseCase,
     private val completeHabitUseCase: CompleteHabitUseCase,
     private val skipHabitUseCase: SkipHabitUseCase,
@@ -99,6 +101,7 @@ class TodayViewModel(
                         }
                         startUndoTimer(result.value.id, habitName, actionType)
                         loadTodayHabits()
+                        refreshWidget()
                     }
 
                     is Result.Error -> {
@@ -127,6 +130,7 @@ class TodayViewModel(
                         val habitName = findHabitName(habitId)
                         startUndoTimer(result.value.id, habitName, UndoActionType.SKIP)
                         loadTodayHabits()
+                        refreshWidget()
                     }
 
                     is Result.Error -> {
@@ -150,18 +154,27 @@ class TodayViewModel(
         val currentUndo = _uiState.value.undoState ?: return
         undoTimerJob?.cancel()
         viewModelScope.launch {
-            val result = undoCompletionUseCase(currentUndo.completionId)
-            when (result) {
-                is Result.Success -> {
-                    _uiState.update { it.copy(undoState = null) }
-                    loadTodayHabits()
-                }
-
-                is Result.Error -> {
-                    Timber.e(result.cause, "Failed to undo completion: %s", result.message)
-                    _uiState.update {
-                        it.copy(undoState = null, error = "Something went wrong. Please try again.")
+            try {
+                val result = undoCompletionUseCase(currentUndo.completionId)
+                when (result) {
+                    is Result.Success -> {
+                        _uiState.update { it.copy(undoState = null) }
+                        loadTodayHabits()
+                        refreshWidget()
                     }
+
+                    is Result.Error -> {
+                        Timber.e(result.cause, "Failed to undo completion: %s", result.message)
+                        _uiState.update {
+                            it.copy(undoState = null, error = "Something went wrong. Please try again.")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "Error undoing completion")
+                _uiState.update {
+                    it.copy(undoState = null, error = "Something went wrong. Please try again.")
                 }
             }
         }
@@ -189,6 +202,17 @@ class TodayViewModel(
         .flatten()
         .find { it.habit.id == habitId }
         ?.habit?.name ?: "Habit"
+
+    private fun refreshWidget() {
+        viewModelScope.launch {
+            try {
+                widgetRefreshNotifier.refreshAll()
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.e(e, "Failed to refresh widget")
+            }
+        }
+    }
 
     private fun startUndoTimer(completionId: UUID, habitName: String, actionType: UndoActionType) {
         undoTimerJob?.cancel()

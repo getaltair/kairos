@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import com.getaltair.kairos.core.usecase.CompleteHabitUseCase
 import com.getaltair.kairos.core.usecase.SkipHabitUseCase
+import com.getaltair.kairos.core.widget.WidgetRefreshNotifier
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.enums.CompletionType
 import com.getaltair.kairos.notification.HabitReminderBuilder
@@ -13,6 +14,7 @@ import com.getaltair.kairos.notification.NotificationConstants
 import com.getaltair.kairos.notification.NotificationIdStrategy
 import com.getaltair.kairos.notification.NotificationScheduler
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,6 +36,7 @@ class NotificationActionReceiver :
     private val completeHabitUseCase: CompleteHabitUseCase by inject()
     private val skipHabitUseCase: SkipHabitUseCase by inject()
     private val notificationScheduler: NotificationScheduler by inject()
+    private val widgetRefreshNotifier: WidgetRefreshNotifier by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
         val habitIdString = intent.getStringExtra(HabitReminderBuilder.EXTRA_HABIT_ID) ?: run {
@@ -59,6 +62,7 @@ class NotificationActionReceiver :
                         when (val result = completeHabitUseCase(habitId, CompletionType.Full)) {
                             is Result.Success -> {
                                 cancelNotificationAndFollowUps(notifManager, habitId)
+                                widgetRefreshNotifier.refreshAll()
                             }
 
                             is Result.Error -> {
@@ -79,6 +83,7 @@ class NotificationActionReceiver :
                         when (val result = skipHabitUseCase(habitId)) {
                             is Result.Success -> {
                                 cancelNotificationAndFollowUps(notifManager, habitId)
+                                widgetRefreshNotifier.refreshAll()
                             }
 
                             is Result.Error -> {
@@ -93,6 +98,7 @@ class NotificationActionReceiver :
                     }
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Timber.e(e, "NotificationActionReceiver: error processing action for %s", habitId)
             } finally {
                 pendingResult.finish()

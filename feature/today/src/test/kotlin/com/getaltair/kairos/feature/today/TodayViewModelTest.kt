@@ -4,6 +4,7 @@ import com.getaltair.kairos.core.usecase.CompleteHabitUseCase
 import com.getaltair.kairos.core.usecase.GetTodayHabitsUseCase
 import com.getaltair.kairos.core.usecase.SkipHabitUseCase
 import com.getaltair.kairos.core.usecase.UndoCompletionUseCase
+import com.getaltair.kairos.core.widget.WidgetRefreshNotifier
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.entity.Completion
 import com.getaltair.kairos.domain.entity.Habit
@@ -36,6 +37,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class TodayViewModelTest {
 
+    private lateinit var widgetRefreshNotifier: WidgetRefreshNotifier
     private lateinit var getTodayHabitsUseCase: GetTodayHabitsUseCase
     private lateinit var completeHabitUseCase: CompleteHabitUseCase
     private lateinit var skipHabitUseCase: SkipHabitUseCase
@@ -48,6 +50,7 @@ class TodayViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        widgetRefreshNotifier = mockk(relaxed = true)
         getTodayHabitsUseCase = mockk()
         completeHabitUseCase = mockk()
         skipHabitUseCase = mockk()
@@ -62,8 +65,13 @@ class TodayViewModelTest {
     /**
      * Must set up getTodayHabitsUseCase mock BEFORE creating VM because init calls loadTodayHabits.
      */
-    private fun createViewModel(): TodayViewModel =
-        TodayViewModel(getTodayHabitsUseCase, completeHabitUseCase, skipHabitUseCase, undoCompletionUseCase)
+    private fun createViewModel(): TodayViewModel = TodayViewModel(
+        widgetRefreshNotifier,
+        getTodayHabitsUseCase,
+        completeHabitUseCase,
+        skipHabitUseCase,
+        undoCompletionUseCase
+    )
 
     private fun makeHabit(
         id: UUID = UUID.randomUUID(),
@@ -422,5 +430,85 @@ class TodayViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
         assertEquals("Something went wrong. Please try again.", state.error)
+    }
+
+    // --- Test 14: onHabitComplete success triggers widget refresh ---
+
+    @Test
+    fun `onHabitComplete success triggers widget refresh`() = runTest {
+        val habitId = UUID.randomUUID()
+        val habit = makeHabit(id = habitId, name = "Meditate")
+        val habits = listOf(makeHabitWithStatus(habit = habit))
+
+        coEvery { getTodayHabitsUseCase() } returns Result.Success(habits)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val completion = makeCompletion(habitId = habitId)
+        coEvery {
+            completeHabitUseCase(habitId, CompletionType.Full, null)
+        } returns Result.Success(completion)
+
+        viewModel.onHabitComplete(habitId, CompletionType.Full)
+        advanceUntilIdle()
+
+        coVerify { widgetRefreshNotifier.refreshAll() }
+    }
+
+    // --- Test 15: onHabitSkip success triggers widget refresh ---
+
+    @Test
+    fun `onHabitSkip success triggers widget refresh`() = runTest {
+        val habitId = UUID.randomUUID()
+        val habit = makeHabit(id = habitId, name = "Exercise")
+        val habits = listOf(makeHabitWithStatus(habit = habit))
+
+        coEvery { getTodayHabitsUseCase() } returns Result.Success(habits)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val completion = makeCompletion(habitId = habitId, type = CompletionType.Skipped)
+        coEvery { skipHabitUseCase(habitId, null) } returns Result.Success(completion)
+
+        viewModel.onHabitSkip(habitId)
+        advanceUntilIdle()
+
+        coVerify { widgetRefreshNotifier.refreshAll() }
+    }
+
+    // --- Test 16: onUndoCompletion success triggers widget refresh ---
+
+    @Test
+    fun `onUndoCompletion success triggers widget refresh`() = runTest(testDispatcher) {
+        val habitId = UUID.randomUUID()
+        val completionId = UUID.randomUUID()
+        val habit = makeHabit(id = habitId, name = "Meditate")
+
+        val completedHabits = listOf(
+            makeHabitWithStatus(
+                habit = habit,
+                todayCompletion = makeCompletion(id = completionId, habitId = habitId)
+            )
+        )
+        coEvery { getTodayHabitsUseCase() } returns Result.Success(completedHabits)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Trigger undo state via completing
+        val newCompletion = makeCompletion(habitId = habitId)
+        coEvery {
+            completeHabitUseCase(habitId, CompletionType.Full, null)
+        } returns Result.Success(newCompletion)
+        viewModel.onHabitComplete(habitId, CompletionType.Full)
+
+        // Now undo
+        coEvery { undoCompletionUseCase(any()) } returns Result.Success(Unit)
+        viewModel.onUndoCompletion()
+        advanceUntilIdle()
+
+        coVerify(atLeast = 2) { widgetRefreshNotifier.refreshAll() }
     }
 }
