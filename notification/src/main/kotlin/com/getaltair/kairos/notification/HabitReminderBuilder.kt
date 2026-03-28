@@ -68,6 +68,15 @@ class HabitReminderBuilder(private val context: Context) {
     private fun baseBuilder(habit: Habit, notificationId: Int): NotificationCompat.Builder {
         val habitId = habit.id
 
+        val completeAction = buildCompleteAction(habitId, notificationId)
+        val snoozeAction = buildSnoozeAction(habitId, notificationId)
+        val skipAction = buildSkipAction(habitId, notificationId)
+
+        val wearableExtender = NotificationCompat.WearableExtender()
+            .addAction(completeAction)
+            .addAction(snoozeAction)
+            .addAction(skipAction)
+
         return NotificationCompat.Builder(context, NotificationChannels.CHANNEL_HABIT_REMINDERS)
             .setSmallIcon(context.applicationInfo.icon)
             .setContentTitle(titleText(habit))
@@ -75,9 +84,10 @@ class HabitReminderBuilder(private val context: Context) {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setContentIntent(buildContentIntent())
-            .addAction(buildCompleteAction(habitId, notificationId))
-            .addAction(buildSnoozeAction(habitId, notificationId))
-            .addAction(buildSkipAction(habitId, notificationId))
+            .addAction(completeAction)
+            .addAction(snoozeAction)
+            .addAction(skipAction)
+            .extend(wearableExtender)
     }
 
     private fun buildContentIntent(): PendingIntent {

@@ -85,11 +85,18 @@ dependencies {
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
 
+    // Lifecycle Service (for WearDataSyncService)
+    implementation(libs.androidx.lifecycle.service)
+
+    // Play Services Wearable (Data Layer for phone-side sync)
+    implementation(libs.play.services.wearable)
+
     // Logging
     implementation(libs.timber)
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
