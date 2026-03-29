@@ -450,4 +450,40 @@ class RoomTypeConvertersTest {
         assertNull(RoomTypeConverters.themeToString(null))
         assertNull(RoomTypeConverters.stringToTheme(null))
     }
+
+    // ==================== Error Path Tests ====================
+
+    @Test
+    fun `RoomTypeConverters malformed JSON returns null for UUID list`() {
+        assertNull(RoomTypeConverters.stringToUuidList("not json"))
+    }
+
+    @Test
+    fun `RoomTypeConverters invalid UUID in valid JSON skips malformed entries`() {
+        val json = """["550e8400-e29b-41d4-a716-446655440000","not-a-uuid"]"""
+        val result = RoomTypeConverters.stringToUuidList(json)
+        assertNotNull(result)
+        assertEquals(1, result!!.size)
+        assertEquals(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), result[0])
+    }
+
+    @Test
+    fun `RoomTypeConverters unknown blocker names are dropped`() {
+        val json = """["NoEnergy","FutureBlocker"]"""
+        val result = RoomTypeConverters.stringToBlockerList(json)
+        assertNotNull(result)
+        assertEquals(listOf(Blocker.NoEnergy), result)
+    }
+
+    @Test
+    fun `RoomTypeConverters blank string returns null for UUID list`() {
+        assertNull(RoomTypeConverters.stringToUuidList(""))
+        assertNull(RoomTypeConverters.stringToUuidList("  "))
+    }
+
+    @Test
+    fun `RoomTypeConverters blank string returns null for blocker list`() {
+        assertNull(RoomTypeConverters.stringToBlockerList(""))
+        assertNull(RoomTypeConverters.stringToBlockerList("  "))
+    }
 }

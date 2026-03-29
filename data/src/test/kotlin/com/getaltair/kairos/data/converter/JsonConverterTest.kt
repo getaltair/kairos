@@ -79,6 +79,27 @@ class JsonConverterTest {
         assertNull(restoredBlank)
     }
 
+    @Test
+    fun `JsonListConverter malformed JSON returns null for UUID list`() {
+        assertNull(jsonListConverter.stringToUuidList("not json at all"))
+    }
+
+    @Test
+    fun `JsonListConverter invalid UUID in valid JSON skips malformed entries`() {
+        val json = """["550e8400-e29b-41d4-a716-446655440000","not-a-uuid"]"""
+        val result = jsonListConverter.stringToUuidList(json)
+        assertNotNull(result)
+        assertEquals(1, result!!.size)
+        assertEquals(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), result[0])
+    }
+
+    @Test
+    fun `JsonListConverter empty JSON array returns empty list for UUIDs`() {
+        val result = jsonListConverter.stringToUuidList("[]")
+        assertNotNull(result)
+        assertEquals(0, result!!.size)
+    }
+
     // ==================== JsonListConverter - String Lists ====================
 
     @Test
@@ -187,6 +208,11 @@ class JsonConverterTest {
         assertNull(restored)
         val restoredBlank = jsonMapConverter.stringToMap("  ")
         assertNull(restoredBlank)
+    }
+
+    @Test
+    fun `JsonMapConverter malformed JSON returns null`() {
+        assertNull(jsonMapConverter.stringToMap("not json"))
     }
 
     // ==================== BlockerConverter ====================
@@ -325,6 +351,19 @@ class JsonConverterTest {
         assertNull(restored)
         val restoredBlank = blockerConverter.stringToBlockerList("  ")
         assertNull(restoredBlank)
+    }
+
+    @Test
+    fun `BlockerConverter malformed JSON returns null`() {
+        assertNull(blockerConverter.stringToBlockerList("garbage"))
+    }
+
+    @Test
+    fun `BlockerConverter unknown blocker names are silently dropped`() {
+        val json = """["NoEnergy","FutureBlocker","Sick"]"""
+        val result = blockerConverter.stringToBlockerList(json)
+        assertNotNull(result)
+        assertEquals(listOf(Blocker.NoEnergy, Blocker.Sick), result)
     }
 
     // ==================== DayOfWeekListConverter ====================

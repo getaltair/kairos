@@ -107,7 +107,14 @@ object RoomTypeConverters {
     fun stringToUuidList(json: String?): List<UUID>? {
         if (json.isNullOrBlank()) return null
         return try {
-            stringListAdapter.fromJson(json)?.map { UUID.fromString(it) }
+            stringListAdapter.fromJson(json)?.mapNotNull { uuidString ->
+                try {
+                    UUID.fromString(uuidString)
+                } catch (e: IllegalArgumentException) {
+                    Timber.w(e, "Skipping malformed UUID: %s", uuidString)
+                    null
+                }
+            }
         } catch (e: Exception) {
             Timber.e(e, "Failed to parse UUID list from JSON: $json")
             null
