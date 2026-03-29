@@ -25,7 +25,9 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.timber)
 
+    testImplementation(testFixtures(project(":domain")))
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
 }

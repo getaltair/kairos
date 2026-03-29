@@ -5,6 +5,7 @@ import com.getaltair.kairos.domain.enums.Blocker
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
+import timber.log.Timber
 
 /**
  * Type converter for [List<Blocker>] sealed class to/from JSON [String].
@@ -39,6 +40,7 @@ class BlockerConverter {
             val names = stringListAdapter.fromJson(json) ?: return null
             names.mapNotNull { blockerFromName(it) }
         } catch (e: Exception) {
+            Timber.e(e, "Failed to parse blocker list from JSON: $json")
             null
         }
     }

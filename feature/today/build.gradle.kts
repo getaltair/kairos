@@ -35,7 +35,9 @@ dependencies {
     implementation(libs.timber)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+    testImplementation(testFixtures(project(":domain")))
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
 }
