@@ -20,16 +20,28 @@ import com.getaltair.kairos.feature.routine.RoutineSummaryScreen
 import com.getaltair.kairos.feature.settings.NotificationSettingsScreen
 import com.getaltair.kairos.feature.settings.SettingsScreen
 import com.getaltair.kairos.feature.today.TodayScreen
+import com.getaltair.kairos.setup.FirebaseSetupScreen
 import java.util.UUID
 import timber.log.Timber
 
 @Composable
-fun KairosNavGraph() {
+fun KairosNavGraph(firebaseReady: Boolean) {
     val navController = rememberNavController()
+    val startDestination = if (firebaseReady) "today" else "firebase_setup"
+
     NavHost(
         navController = navController,
-        startDestination = "today"
+        startDestination = startDestination,
     ) {
+        composable("firebase_setup") {
+            FirebaseSetupScreen(
+                onConfigured = {
+                    navController.navigate("today") {
+                        popUpTo("firebase_setup") { inclusive = true }
+                    }
+                },
+            )
+        }
         composable("today") {
             TodayScreen(
                 onAddHabit = { navController.navigate("createHabit") },

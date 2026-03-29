@@ -24,9 +24,13 @@ dependencies {
     // Moshi for JSON converters
     implementation(libs.moshi)
 
+    // Security (EncryptedSharedPreferences for Firebase config)
+    implementation(libs.androidx.security.crypto)
+
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)

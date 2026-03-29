@@ -1,0 +1,19 @@
+# Kairos Dashboard Configuration
+# Copy this file to /opt/kairos/dashboard.properties and customize
+
+# Firebase service account path
+firebase.service_account_path=/opt/kairos/config/service-account.json
+
+# Firebase user ID (replace with your actual user ID)
+firebase.user_id=REPLACE_WITH_YOUR_FIREBASE_USER_ID
+
+# Dashboard display settings
+dashboard.fullscreen=true
+dashboard.width=1920
+dashboard.height=1080
+
+# Server port for mode switching API
+server.port=8888
+
+# Log level (DEBUG, INFO, WARN, ERROR)
+log.level=INFO

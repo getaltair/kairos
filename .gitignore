@@ -54,3 +54,4 @@ opencode.json*
 .serena/
 dashboard/config/
 .claude/tasks/
+release.jks

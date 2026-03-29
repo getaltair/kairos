@@ -1,3 +1,5 @@
+import java.util.Base64
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -15,8 +17,26 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreBase64 = System.getenv("KAIROS_KEYSTORE_BASE64")
+            if (keystoreBase64 != null) {
+                val keystoreFile = File(rootProject.layout.buildDirectory.asFile.get(), "keystore.jks")
+                keystoreFile.parentFile.mkdirs()
+                keystoreFile.writeBytes(Base64.getDecoder().decode(keystoreBase64))
+                storeFile = keystoreFile
+                storePassword = System.getenv("KAIROS_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KAIROS_KEY_ALIAS")
+                keyPassword = System.getenv("KAIROS_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            val releaseConfig = signingConfigs.findByName("release")
+            signingConfig =
+                if (releaseConfig?.storeFile != null) releaseConfig else signingConfigs.getByName("debug")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
