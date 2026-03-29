@@ -6,9 +6,8 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 /**
- * Koin module for the Firebase setup / onboarding flow.
- * Provides the [FirebaseConfigStore] and [FirebaseSetupViewModel]
- * so the setup screen can persist user-entered credentials.
+ * Provides [FirebaseConfigStore] (which encrypts and persists credentials)
+ * and [FirebaseSetupViewModel] (which orchestrates the setup flow).
  */
 val setupModule = module {
     single { FirebaseConfigStore(get()) }

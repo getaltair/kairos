@@ -94,15 +94,15 @@ flowchart TB
     end
 ```
 
-| Element          | Details                                                                                                                                                                            |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Screen title     | "Configure Firebase"                                                                                                                                                               |
-| Instructions     | Explains what to paste and where to obtain the `google-services.json` file from the Firebase Console                                                                               |
-| Text input       | Multi-line text field accepting raw JSON content                                                                                                                                   |
-| Configure button | Triggers parse, validate, save, and initialize sequence                                                                                                                            |
-| Error state      | Displayed inline when JSON is malformed or missing required fields (`project_id`, `mobilesdk_app_id`, `current_key`, `storage_bucket`, `project_number`). User can edit and retry. |
-| Loading state    | Shown during `FirebaseApp.initializeApp()` and Koin module loading                                                                                                                 |
-| Post-setup note  | Self-hosters must also deploy `firestore.rules` (in the repo root) to their Firebase project for security rules to take effect                                                     |
+| Element          | Details                                                                                                                                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Screen title     | "Configure Firebase"                                                                                                                                                                                                     |
+| Instructions     | Explains what to paste and where to obtain the `google-services.json` file from the Firebase Console                                                                                                                     |
+| Text input       | Multi-line text field accepting raw JSON content                                                                                                                                                                         |
+| Configure button | Triggers parse, validate, save, and initialize sequence                                                                                                                                                                  |
+| Error state      | Displayed inline when JSON is malformed or missing required fields (`project_id`, `mobilesdk_app_id`, `current_key`). Optional fields (`storage_bucket`, `project_number`) are used if present. User can edit and retry. |
+| Loading state    | Shown during `FirebaseApp.initializeApp()` and Koin module loading                                                                                                                                                       |
+| Post-setup note  | Self-hosters must also deploy `firestore.rules` (in the repo root) to their Firebase project for security rules to take effect                                                                                           |
 
 ### Standard Onboarding (After Firebase Is Ready)
 

@@ -384,12 +384,12 @@ flowchart TB
 
 ### Worker Schedule
 
-| Worker                 | Schedule                         | Constraints     |
-| ---------------------- | -------------------------------- | --------------- |
-| MissedCompletionWorker | Daily, midnight                  | None            |
-| LapseDetectionWorker   | Daily, 00:00-06:00               | Battery not low |
-| FreshStartWorker       | Monday 06:00, 1st of month 06:00 | None            |
-| ReminderWorker         | Per-habit schedule               | None            |
+| Worker                 | Schedule           | Constraints |
+| ---------------------- | ------------------ | ----------- |
+| MissedCompletionWorker | Daily, midnight    | None        |
+| LapseDetectionWorker   | Daily, 02:00       | None        |
+| FreshStartWorker       | Daily, 07:00       | None        |
+| ReminderWorker         | Per-habit schedule | None        |
 
 > **Note:** There is no SyncWorker. Firestore SDK handles sync automatically via snapshot listeners and its built-in offline queue. No periodic push/pull needed.
 
@@ -559,7 +559,7 @@ flowchart TB
     SetupModule --> SetupVM
     FirebaseModule --> FireAuth
     FirebaseModule --> FireFS
-    FirebaseModule --> SyncMgr
+    SyncModule["SyncModule<br/>Loaded after Firebase init"] --> SyncMgr
     DatabaseModule --> DB --> DAOs
     AppModule --> Repos
     AppModule --> UseCases
@@ -576,7 +576,7 @@ Koin modules load in two phases to support both standard builds (with `google-se
 
 **Phase 2 -- Conditional, after Firebase is available:**
 
-Once Firebase is initialized, `KairosApp` calls `loadKoinModules()` with `firebaseModule` and all 11 remaining app modules (`dataModule`, `syncModule`, `authModule`, `domainModule`, etc.). The `firebaseModule` must load first because `dataModule`, `syncModule`, and `authModule` inject `FirebaseAuth` and `FirebaseFirestore` from the Koin graph.
+Once Firebase is initialized, `KairosApp` calls `loadKoinModules()` with `firebaseModule` and all 11 remaining app modules (`dataModule`, `syncModule`, `authModule`, `domainModule`, etc.). The `firebaseModule` is listed first in the module list so that `FirebaseAuth` and `FirebaseFirestore` singletons are registered before other modules that may resolve them.
 
 **Three startup paths determine when Phase 2 runs:**
 

@@ -33,8 +33,8 @@ fun FirebaseSetupScreen(onConfigured: () -> Unit, viewModel: FirebaseSetupViewMo
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
+    LaunchedEffect(uiState.status is SetupStatus.Success) {
+        if (uiState.status is SetupStatus.Success) {
             onConfigured()
         }
     }
@@ -92,13 +92,13 @@ fun FirebaseSetupScreen(onConfigured: () -> Unit, viewModel: FirebaseSetupViewMo
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                 ),
-                enabled = !uiState.isLoading,
+                enabled = uiState.status !is SetupStatus.Loading,
             )
 
-            if (uiState.error != null) {
+            if (uiState.status is SetupStatus.Error) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = uiState.error!!,
+                    text = (uiState.status as SetupStatus.Error).message,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -109,10 +109,10 @@ fun FirebaseSetupScreen(onConfigured: () -> Unit, viewModel: FirebaseSetupViewMo
             Button(
                 onClick = { viewModel.onConfigureClicked(context) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = uiState.jsonText.isNotBlank() && !uiState.isLoading,
+                enabled = uiState.jsonText.isNotBlank() && uiState.status !is SetupStatus.Loading,
                 shape = RoundedCornerShape(24.dp),
             ) {
-                if (uiState.isLoading) {
+                if (uiState.status is SetupStatus.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -128,7 +128,6 @@ fun FirebaseSetupScreen(onConfigured: () -> Unit, viewModel: FirebaseSetupViewMo
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Centered secondary help text
             Text(
                 text = "Need help? Visit console.firebase.google.com",
                 style = MaterialTheme.typography.bodySmall,

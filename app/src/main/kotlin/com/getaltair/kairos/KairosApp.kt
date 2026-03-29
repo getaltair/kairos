@@ -65,26 +65,34 @@ class KairosApp : Application() {
         }
 
         // Phase 2: Determine Firebase initialization strategy
-        when {
-            // google-services plugin already initialized Firebase
-            FirebaseApp.getApps(this).isNotEmpty() -> {
-                Timber.d("Firebase auto-initialized via google-services.json")
-                FirebaseInitializer.initializeFromExisting()
-                loadAllAppModules()
-            }
+        try {
+            when {
+                // google-services plugin already initialized Firebase
+                FirebaseApp.getApps(this).isNotEmpty() -> {
+                    Timber.d("Firebase auto-initialized via google-services.json")
+                    FirebaseInitializer.initializeFromExisting()
+                    loadAllAppModules()
+                }
 
-            // User previously configured Firebase at runtime
-            get<FirebaseConfigStore>().isConfigured() -> {
-                val config = get<FirebaseConfigStore>().load()!!
-                Timber.d("Initializing Firebase from stored runtime config")
-                FirebaseInitializer.initialize(this, config)
-                loadAllAppModules()
-            }
+                // User previously configured Firebase at runtime
+                get<FirebaseConfigStore>().isConfigured() -> {
+                    val config = get<FirebaseConfigStore>().load()
+                    if (config != null) {
+                        Timber.d("Initializing Firebase from stored runtime config")
+                        FirebaseInitializer.initialize(this, config)
+                        loadAllAppModules()
+                    } else {
+                        Timber.e("isConfigured() was true but load() returned null; showing setup screen")
+                    }
+                }
 
-            // No Firebase config available -- setup screen will handle it
-            else -> {
-                Timber.d("No Firebase config found; awaiting user setup")
+                // No Firebase config available -- setup screen will handle it
+                else -> {
+                    Timber.d("No Firebase config found; awaiting user setup")
+                }
             }
+        } catch (e: Exception) {
+            Timber.e(e, "Firebase initialization failed; showing setup screen for recovery")
         }
     }
 
@@ -97,13 +105,10 @@ class KairosApp : Application() {
     }
 
     private fun loadAllAppModules() {
+        if (_firebaseReady.value) return
         loadKoinModules(allAppModules)
         _firebaseReady.value = true
-
-        // Recovery system workers
         scheduleRecoveryWorkers()
-
-        // Start Wear Data Layer sync service
         startWearDataSync()
     }
 
@@ -125,7 +130,7 @@ class KairosApp : Application() {
      *
      * - MissedCompletionWorker: runs at midnight to flag missed completions
      * - LapseDetectionWorker: runs at 2 AM to detect lapses/relapses
-     * - FreshStartWorker: runs at 7 AM on Mondays / 1st-of-month for fresh start prompts
+     * - FreshStartWorker: runs daily at 7 AM; the worker internally checks whether a fresh-start prompt is appropriate
      *
      * Uses [ExistingPeriodicWorkPolicy.KEEP] so re-launches do not reset the schedule.
      */

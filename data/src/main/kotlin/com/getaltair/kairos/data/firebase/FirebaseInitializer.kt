@@ -3,8 +3,7 @@ package com.getaltair.kairos.data.firebase
 import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import java.util.concurrent.atomic.AtomicBoolean
 import timber.log.Timber
 
 /**
@@ -12,21 +11,19 @@ import timber.log.Timber
  * or from the bundled `google-services.json` (when the google-services
  * Gradle plugin has already handled initialization).
  *
- * All access to Firebase services should go through the accessors on this
- * object so that the rest of the app is decoupled from how Firebase was
- * bootstrapped.
+ * The rest of the app accesses Firebase services via the Koin DI graph
+ * ([com.getaltair.kairos.di.firebaseModule]), not through this object.
  */
 object FirebaseInitializer {
 
-    @Volatile
-    private var initialized = false
+    private val initialized = AtomicBoolean(false)
 
     /**
      * Initialize Firebase from a user-supplied [FirebaseConfig].
      * Call this when no `google-services.json` is bundled.
      */
     fun initialize(context: Context, config: FirebaseConfig) {
-        if (initialized) {
+        if (!initialized.compareAndSet(false, true)) {
             Timber.d("Firebase already initialized; skipping")
             return
         }
@@ -41,9 +38,13 @@ object FirebaseInitializer {
             }
             .build()
 
-        FirebaseApp.initializeApp(context.applicationContext, options)
-        initialized = true
-        Timber.d("Firebase initialized from runtime config (project=%s)", config.projectId)
+        try {
+            FirebaseApp.initializeApp(context.applicationContext, options)
+            Timber.d("Firebase initialized from runtime config (project=%s)", config.projectId)
+        } catch (e: Exception) {
+            initialized.set(false)
+            throw e
+        }
     }
 
     /**
@@ -51,8 +52,7 @@ object FirebaseInitializer {
      * plugin already handled bootstrapping via `google-services.json`.
      */
     fun initializeFromExisting() {
-        if (initialized) return
-        initialized = true
+        if (!initialized.compareAndSet(false, true)) return
         Timber.d("Firebase marked as initialized from google-services.json")
     }
 
@@ -60,16 +60,11 @@ object FirebaseInitializer {
      * Returns `true` when [FirebaseApp] has been initialized (either
      * from runtime config or from the bundled JSON).
      */
-    fun isInitialized(): Boolean = initialized || try {
+    fun isInitialized(): Boolean = initialized.get() || try {
         FirebaseApp.getInstance()
         true
-    } catch (_: IllegalStateException) {
+    } catch (e: IllegalStateException) {
+        Timber.d(e, "FirebaseApp.getInstance() not available")
         false
     }
-
-    /** Convenience accessor for [FirebaseAuth]. */
-    fun getAuth(): FirebaseAuth = FirebaseAuth.getInstance()
-
-    /** Convenience accessor for [FirebaseFirestore]. */
-    fun getFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
 }

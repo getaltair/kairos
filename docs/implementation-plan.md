@@ -715,7 +715,7 @@ Deploy via `firestore.indexes.json`.
 Enable a single APK to work for both CI-built (pre-configured) and self-hosted (user-configured) scenarios:
 
 - **Conditional google-services plugin**: In `app/build.gradle.kts`, apply the `com.google.gms.google-services` plugin only when `google-services.json` exists in the app module. When absent, the plugin is skipped and Firebase must be initialized manually at runtime.
-- **FirebaseConfigStore**: An `EncryptedSharedPreferences`-backed store (AES256_SIV key encryption, AES256_GCM value encryption) that persists the user-provided `google-services.json` content. Located in the setup feature module.
+- **FirebaseConfigStore**: An `EncryptedSharedPreferences`-backed store (AES256_SIV key encryption, AES256_GCM value encryption) that persists the user-provided `google-services.json` content. Located in the data module (`data/src/main/kotlin/.../firebase/`).
 - **FirebaseInitializer**: Handles two initialization paths:
     1. **Auto-init**: When `google-services.json` is present at build time, the google-services plugin handles Firebase configuration automatically.
     2. **Manual-init**: When no build-time config exists, reads stored credentials from `FirebaseConfigStore`, parses them into `FirebaseOptions`, and calls `FirebaseApp.initializeApp()`.

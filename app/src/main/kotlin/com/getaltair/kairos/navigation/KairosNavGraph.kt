@@ -1,6 +1,7 @@
 package com.getaltair.kairos.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -27,7 +28,7 @@ import timber.log.Timber
 @Composable
 fun KairosNavGraph(firebaseReady: Boolean) {
     val navController = rememberNavController()
-    val startDestination = if (firebaseReady) "today" else "firebase_setup"
+    val startDestination = remember { if (firebaseReady) "today" else "firebase_setup" }
 
     NavHost(
         navController = navController,

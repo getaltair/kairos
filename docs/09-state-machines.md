@@ -336,82 +336,6 @@ stateDiagram-v2
 
 ---
 
-## Firebase Configuration State Machine
-
-Manages the app's Firebase initialization lifecycle, supporting both build-time (`google-services.json` present) and runtime (user-provided credentials) configuration paths.
-
-```mermaid
-stateDiagram-v2
-    [*] --> Configured: google-services.json present<br/>[auto-init]
-    [*] --> Initializing: Stored config found<br/>[manual-init from EncryptedSharedPreferences]
-    [*] --> NotConfigured: No config<br/>[no google-services.json, no stored config]
-
-    state "NOT_CONFIGURED" as NotConfigured
-    state "CONFIGURING" as Configuring
-    state "INITIALIZING" as Initializing
-    state "CONFIGURED" as Configured
-    state "ERROR" as Error
-
-    NotConfigured --> Configuring: User opens setup screen
-    Configuring --> Initializing: User submits credentials
-    Initializing --> Configured: FirebaseApp initialized<br/>[Koin app modules loaded]
-    Initializing --> Error: Invalid config or init failure
-    Error --> Configuring: User retries
-
-    note right of NotConfigured
-        Setup screen shown
-        No Firebase-dependent
-        modules loaded
-    end note
-
-    note right of Configuring
-        User entering or pasting
-        google-services.json content
-    end note
-
-    note right of Initializing
-        FirebaseInitializer running
-        Credentials being validated
-    end note
-
-    note right of Configured
-        Firebase ready
-        All Koin modules loaded
-        Navigation unlocked
-    end note
-
-    note right of Error
-        Invalid JSON, missing fields,
-        or Firebase init exception
-        User can retry
-    end note
-```
-
-### Firebase Configuration States
-
-| State          | Description                                                       | UI                           | Koin Modules Loaded |
-| -------------- | ----------------------------------------------------------------- | ---------------------------- | ------------------- |
-| NOT_CONFIGURED | No `google-services.json` at build time and no stored credentials | Setup screen                 | setupModule only    |
-| CONFIGURING    | User is on the setup screen entering credentials                  | Setup screen (input active)  | setupModule only    |
-| INITIALIZING   | Firebase is being initialized from stored or submitted config     | Setup screen (loading)       | setupModule only    |
-| CONFIGURED     | FirebaseApp initialized, app fully operational                    | Today screen (or normal nav) | All modules         |
-| ERROR          | Configuration or initialization failed                            | Setup screen (error state)   | setupModule only    |
-
-### Firebase Configuration Transition Table
-
-| Current        | Event          | Guard                                       | Next           | Action                                                                         |
-| -------------- | -------------- | ------------------------------------------- | -------------- | ------------------------------------------------------------------------------ |
-| (launch)       | AppStart       | google-services.json exists                 | CONFIGURED     | Auto-init Firebase, load all Koin modules                                      |
-| (launch)       | AppStart       | Stored config in EncryptedSharedPreferences | INITIALIZING   | Begin manual Firebase init                                                     |
-| (launch)       | AppStart       | No config found                             | NOT_CONFIGURED | Show setup screen                                                              |
-| NOT_CONFIGURED | UserOpensSetup | -                                           | CONFIGURING    | Display credential input                                                       |
-| CONFIGURING    | UserSubmits    | Credentials provided                        | INITIALIZING   | Parse and validate JSON, init Firebase                                         |
-| INITIALIZING   | InitSuccess    | FirebaseApp ready                           | CONFIGURED     | Store credentials, load firebaseModule + app modules, set firebaseReady = true |
-| INITIALIZING   | InitFailure    | Exception thrown                            | ERROR          | Display error message                                                          |
-| ERROR          | UserRetries    | -                                           | CONFIGURING    | Clear error, re-display input                                                  |
-
----
-
 ## Combined State Diagram: Habit Complete Lifecycle
 
 ```mermaid
@@ -598,13 +522,13 @@ stateDiagram-v2
 
 ### Transition Table
 
-| Current        | Event             | Guard                                       | Next           | Actions                                                                           |
-| -------------- | ----------------- | ------------------------------------------- | -------------- | --------------------------------------------------------------------------------- |
-| (launch)       | AppStart          | google-services.json exists                 | CONFIGURED     | Auto-init Firebase, load all Koin modules                                         |
-| (launch)       | AppStart          | Stored config in EncryptedSharedPreferences | INITIALIZING   | Read stored config, begin manual init                                             |
-| (launch)       | AppStart          | No config available                         | NOT_CONFIGURED | Show setup screen                                                                 |
-| NOT_CONFIGURED | UserOpensSetup    | -                                           | CONFIGURING    | Display JSON input field                                                          |
-| CONFIGURING    | UserSubmitsConfig | JSON non-empty                              | INITIALIZING   | Parse JSON, store in EncryptedSharedPreferences, call FirebaseApp.initializeApp() |
-| INITIALIZING   | InitSuccess       | FirebaseApp ready                           | CONFIGURED     | Load firebaseModule + all app Koin modules, set firebaseReady = true              |
-| INITIALIZING   | InitFailure       | Exception thrown                            | ERROR          | Display error message, clear invalid stored config                                |
-| ERROR          | UserRetries       | -                                           | CONFIGURING    | Reset input, allow re-entry                                                       |
+| Current        | Event             | Guard                                       | Next           | Actions                                                                                                                              |
+| -------------- | ----------------- | ------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| (launch)       | AppStart          | google-services.json exists                 | CONFIGURED     | Auto-init Firebase, load all Koin modules                                                                                            |
+| (launch)       | AppStart          | Stored config in EncryptedSharedPreferences | CONFIGURED     | Read stored config, init Firebase synchronously, load all Koin modules (INITIALIZING state is transient/imperceptible for this path) |
+| (launch)       | AppStart          | No config available                         | NOT_CONFIGURED | Show setup screen                                                                                                                    |
+| NOT_CONFIGURED | UserOpensSetup    | -                                           | CONFIGURING    | Display JSON input field                                                                                                             |
+| CONFIGURING    | UserSubmitsConfig | JSON non-empty                              | INITIALIZING   | Parse JSON, store in EncryptedSharedPreferences, call FirebaseApp.initializeApp()                                                    |
+| INITIALIZING   | InitSuccess       | FirebaseApp ready                           | CONFIGURED     | Load firebaseModule + all app Koin modules, set firebaseReady = true                                                                 |
+| INITIALIZING   | InitFailure       | Exception thrown                            | ERROR          | Display error message, clear invalid stored config                                                                                   |
+| ERROR          | UserRetries       | -                                           | CONFIGURING    | Reset input, allow re-entry                                                                                                          |

@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import com.getaltair.kairos.core.di.useCaseModule
 import com.getaltair.kairos.data.di.dataModule
+import com.getaltair.kairos.di.setupModule
 import com.getaltair.kairos.feature.auth.di.authModule
 import com.getaltair.kairos.feature.habit.di.habitModule
 import com.getaltair.kairos.feature.recovery.di.recoveryModule
@@ -17,6 +18,7 @@ import com.getaltair.kairos.sync.di.syncModule
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.MessageClient
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import org.junit.Test
@@ -46,6 +48,7 @@ class KoinModuleCheckTest {
         Context::class,
         Application::class,
         SavedStateHandle::class,
+        FirebaseApp::class,
         FirebaseAuth::class,
         FirebaseFirestore::class,
         DataClient::class,
@@ -56,12 +59,18 @@ class KoinModuleCheckTest {
     /**
      * Verifies the full Koin graph exactly as assembled in [KairosApp.onCreate].
      * Catches missing bindings, circular dependencies, and type mismatches
-     * across all 11 modules.
+     * across all modules except [firebaseModule].
+     *
+     * [firebaseModule] is excluded because it uses `getInstance()` factory calls
+     * whose internal constructor dependencies (FirebaseApp, Provider, etc.) cannot
+     * be statically verified. FirebaseAuth and FirebaseFirestore are instead
+     * declared as external types.
      */
     @Test
     fun `all app koin modules verify`() {
         val allModules = module {
             includes(
+                setupModule,
                 dataModule,
                 useCaseModule,
                 syncModule,
@@ -92,6 +101,16 @@ class KoinModuleCheckTest {
     }
 
     /**
+     * Verifies the setup module (FirebaseConfigStore + FirebaseSetupViewModel) in isolation.
+     */
+    @Test
+    fun `setup module verifies`() {
+        setupModule.verify(
+            extraTypes = externalTypes,
+        )
+    }
+
+    /**
      * Verifies the domain layer (use cases) with its data layer dependency.
      * Use cases depend on repository interfaces provided by [dataModule].
      */
@@ -109,11 +128,14 @@ class KoinModuleCheckTest {
      * Verifies all presentation-layer modules (feature ViewModels, notification,
      * widget) together with their upstream dependencies (data + domain).
      * This confirms the full wiring from ViewModel down to repository.
+     *
+     * [firebaseModule] is excluded (see [all app koin modules verify] for rationale).
      */
     @Test
     fun `presentation layer verifies with domain and data`() {
         val presentationStack = module {
             includes(
+                setupModule,
                 dataModule,
                 useCaseModule,
                 syncModule,

@@ -7,7 +7,7 @@ import org.koin.dsl.module
 /**
  * Provides Firebase service singletons that the rest of the Koin graph
  * can inject. These are resolved lazily so Firebase must already be
- * initialized (via google-services.json or [FirebaseInitializer]) before
+ * initialized (via google-services.json or [com.getaltair.kairos.data.firebase.FirebaseInitializer]) before
  * any consumer touches them.
  */
 val firebaseModule = module {

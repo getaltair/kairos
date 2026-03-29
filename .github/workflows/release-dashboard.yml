@@ -28,6 +28,10 @@ jobs:
               run: |
                   VERSION="${TAG_NAME#v}"
                   JAR_PATH=$(find dashboard/build/compose/jars -name "*.jar" | head -1)
+                  if [ -z "$JAR_PATH" ]; then
+                      echo "::error::No JAR found in dashboard/build/compose/jars"
+                      exit 1
+                  fi
                   fpm -s dir -t deb \
                     -n kairos-dashboard \
                     -v "$VERSION" \
