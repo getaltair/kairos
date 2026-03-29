@@ -27,7 +27,15 @@ jobs:
                   cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
             - name: Write google-services.json
               if: env.GOOGLE_SERVICES_JSON != ''
-              run: echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+              run: |
+                  echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+                  if ! python3 -m json.tool app/google-services.json > /dev/null 2>&1; then
+                      echo "::error::GOOGLE_SERVICES_JSON secret is not valid JSON"
+                      exit 1
+                  fi
+            - name: Notice - no google-services.json
+              if: env.GOOGLE_SERVICES_JSON == ''
+              run: echo "::notice::GOOGLE_SERVICES_JSON secret not set. Building without Firebase services."
             - name: Run Spotless check
               run: ./gradlew spotlessCheck
             - name: Run detekt
@@ -50,7 +58,15 @@ jobs:
                   cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
             - name: Write google-services.json
               if: env.GOOGLE_SERVICES_JSON != ''
-              run: echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+              run: |
+                  echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+                  if ! python3 -m json.tool app/google-services.json > /dev/null 2>&1; then
+                      echo "::error::GOOGLE_SERVICES_JSON secret is not valid JSON"
+                      exit 1
+                  fi
+            - name: Notice - no google-services.json
+              if: env.GOOGLE_SERVICES_JSON == ''
+              run: echo "::notice::GOOGLE_SERVICES_JSON secret not set. Building without Firebase services."
             - name: Run unit tests
               run: ./gradlew test
             - name: Upload test reports
@@ -78,7 +94,15 @@ jobs:
                   cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
             - name: Write google-services.json
               if: env.GOOGLE_SERVICES_JSON != ''
-              run: echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+              run: |
+                  echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+                  if ! python3 -m json.tool app/google-services.json > /dev/null 2>&1; then
+                      echo "::error::GOOGLE_SERVICES_JSON secret is not valid JSON"
+                      exit 1
+                  fi
+            - name: Notice - no google-services.json
+              if: env.GOOGLE_SERVICES_JSON == ''
+              run: echo "::notice::GOOGLE_SERVICES_JSON secret not set. Building without Firebase services."
             - name: Build phone app (debug)
               run: ./gradlew :app:assembleDebug
             - name: Build Wear app (debug)

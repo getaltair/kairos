@@ -27,11 +27,16 @@ jobs:
                   TAG_NAME: ${{ github.ref_name }}
               run: |
                   VERSION="${TAG_NAME#v}"
-                  JAR_PATH=$(find dashboard/build/compose/jars -name "*.jar" | head -1)
-                  if [ -z "$JAR_PATH" ]; then
+                  JAR_COUNT=$(find dashboard/build/compose/jars -name "*.jar" | wc -l)
+                  if [ "$JAR_COUNT" -eq 0 ]; then
                       echo "::error::No JAR found in dashboard/build/compose/jars"
                       exit 1
+                  elif [ "$JAR_COUNT" -gt 1 ]; then
+                      echo "::error::Multiple JARs found in dashboard/build/compose/jars -- expected exactly one"
+                      find dashboard/build/compose/jars -name "*.jar"
+                      exit 1
                   fi
+                  JAR_PATH=$(find dashboard/build/compose/jars -name "*.jar")
                   fpm -s dir -t deb \
                     -n kairos-dashboard \
                     -v "$VERSION" \
