@@ -179,6 +179,11 @@ fun KairosNavGraph(firebaseReady: Boolean) {
                 onNavigateToDashboardScan = {
                     navController.navigate("dashboardScan")
                 },
+                onAccountDeleted = {
+                    navController.navigate("today") {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
+                },
                 onBack = { navController.popBackStack() }
             )
         }

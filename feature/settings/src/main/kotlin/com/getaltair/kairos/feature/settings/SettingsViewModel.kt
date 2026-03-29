@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.repository.AuthState
 import com.getaltair.kairos.domain.sync.SyncStateProvider
+import com.getaltair.kairos.domain.usecase.DeleteAccountUseCase
 import com.getaltair.kairos.domain.usecase.ObserveAuthStateUseCase
 import com.getaltair.kairos.domain.usecase.SignOutUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,7 @@ class SettingsViewModel(
     private val syncStateProvider: SyncStateProvider,
     private val observeAuthStateUseCase: ObserveAuthStateUseCase,
     private val signOutUseCase: SignOutUseCase,
+    private val deleteAccountUseCase: DeleteAccountUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -87,19 +89,54 @@ class SettingsViewModel(
     }
 
     fun onDeleteAccountRequest() {
-        _uiState.update { it.copy(showDeleteAccountDialog = true) }
+        _uiState.update { it.copy(deletionState = DeletionState.ConfirmDialog) }
     }
 
     fun onDeleteAccountConfirm() {
-        _uiState.update {
-            it.copy(
-                showDeleteAccountDialog = false,
-                errorMessage = "Account deletion is not yet available.",
-            )
+        _uiState.update { it.copy(deletionState = DeletionState.ReauthDialog) }
+    }
+
+    fun onReauthDismiss() {
+        _uiState.update { it.copy(deletionState = DeletionState.Idle) }
+    }
+
+    fun deleteAccount(password: String) {
+        _uiState.update { it.copy(deletionState = DeletionState.Deleting) }
+        viewModelScope.launch {
+            try {
+                when (val result = deleteAccountUseCase(password)) {
+                    is Result.Success -> {
+                        Timber.d("Account deleted successfully")
+                        _uiState.update { it.copy(deletionState = DeletionState.Deleted) }
+                    }
+
+                    is Result.Error -> {
+                        Timber.e(result.cause, "Failed to delete account: %s", result.message)
+                        _uiState.update {
+                            it.copy(
+                                deletionState = DeletionState.Failed(result.message),
+                                errorMessage = result.message,
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Unexpected error during account deletion")
+                _uiState.update {
+                    it.copy(
+                        deletionState = DeletionState.Failed("An unexpected error occurred. Please try again."),
+                        errorMessage = "An unexpected error occurred. Please try again.",
+                    )
+                }
+            }
         }
     }
 
     fun onDeleteAccountDismiss() {
-        _uiState.update { it.copy(showDeleteAccountDialog = false) }
+        _uiState.update { it.copy(deletionState = DeletionState.Idle) }
+    }
+
+    fun onAccountDeletedConsumed() {
+        _uiState.update { it.copy(deletionState = DeletionState.Idle) }
     }
 }

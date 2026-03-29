@@ -79,6 +79,9 @@ dependencies {
     implementation(project(":sync"))
     implementation(project(":notification"))
 
+    // Room (needed for KairosDatabase.clearAllTables in DataCleanupImpl)
+    implementation(libs.androidx.room.runtime)
+
     // Android Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

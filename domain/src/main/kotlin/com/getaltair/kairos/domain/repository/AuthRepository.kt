@@ -53,6 +53,21 @@ interface AuthRepository {
     suspend fun resetPassword(email: String): com.getaltair.kairos.domain.common.Result<Unit>
 
     /**
+     * Re-authenticates the current user with their password.
+     * Required before sensitive operations like account deletion.
+     */
+    suspend fun reauthenticate(password: String): com.getaltair.kairos.domain.common.Result<Unit>
+
+    /**
+     * Permanently deletes the current user's authentication account.
+     *
+     * The caller is responsible for re-authenticating the user (via [reauthenticate])
+     * before invoking this method. This method only removes the auth account;
+     * data cleanup is the caller's responsibility.
+     */
+    suspend fun deleteAccount(): com.getaltair.kairos.domain.common.Result<Unit>
+
+    /**
      * Returns the current user's ID, or null if not signed in.
      */
     fun getCurrentUserId(): String?

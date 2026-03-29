@@ -1,7 +1,9 @@
 package com.getaltair.kairos.feature.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -40,9 +43,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.getaltair.kairos.domain.sync.SyncState
@@ -56,6 +62,7 @@ fun SettingsScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToNotificationSettings: () -> Unit = {},
     onNavigateToDashboardScan: () -> Unit = {},
+    onAccountDeleted: () -> Unit = {},
     onBack: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
@@ -67,6 +74,13 @@ fun SettingsScreen(
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
             viewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(uiState.deletionState) {
+        if (uiState.deletionState is DeletionState.Deleted) {
+            viewModel.onAccountDeletedConsumed()
+            onAccountDeleted()
         }
     }
 
@@ -86,34 +100,48 @@ fun SettingsScreen(
             )
         },
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            Spacer(modifier = Modifier.height(8.dp))
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // Account section
-            AccountSection(
-                uiState = uiState,
-                onNavigateToLogin = onNavigateToLogin,
-                onNavigateToDashboardScan = onNavigateToDashboardScan,
-                onSignOutRequest = viewModel::onSignOutRequest,
-                onDeleteAccountRequest = viewModel::onDeleteAccountRequest,
-            )
+                // Account section
+                AccountSection(
+                    uiState = uiState,
+                    onNavigateToLogin = onNavigateToLogin,
+                    onNavigateToDashboardScan = onNavigateToDashboardScan,
+                    onSignOutRequest = viewModel::onSignOutRequest,
+                    onDeleteAccountRequest = viewModel::onDeleteAccountRequest,
+                )
 
-            // Notifications section
-            NotificationsNavSection(
-                onNavigateToNotificationSettings = onNavigateToNotificationSettings,
-            )
+                // Notifications section
+                NotificationsNavSection(
+                    onNavigateToNotificationSettings = onNavigateToNotificationSettings,
+                )
 
-            // Sync section
-            SyncSection(uiState = uiState, onNavigateToLogin = onNavigateToLogin)
+                // Sync section
+                SyncSection(uiState = uiState, onNavigateToLogin = onNavigateToLogin)
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            // Loading overlay during account deletion
+            if (uiState.deletionState is DeletionState.Deleting) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
         }
     }
 
@@ -141,7 +169,7 @@ fun SettingsScreen(
     }
 
     // Delete account confirmation dialog
-    if (uiState.showDeleteAccountDialog) {
+    if (uiState.deletionState is DeletionState.ConfirmDialog) {
         AlertDialog(
             onDismissRequest = viewModel::onDeleteAccountDismiss,
             title = { Text(text = "Delete account?") },
@@ -160,6 +188,48 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = viewModel::onDeleteAccountDismiss) {
+                    Text(text = "Cancel")
+                }
+            },
+        )
+    }
+
+    // Re-authentication dialog for account deletion
+    if (uiState.deletionState is DeletionState.ReauthDialog) {
+        var password by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { viewModel.onReauthDismiss() },
+            title = { Text(text = "Confirm your password") },
+            text = {
+                Column {
+                    Text(
+                        text = "Enter your password to permanently delete your account and all data.",
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(text = "Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.deleteAccount(password) },
+                    enabled = password.isNotBlank(),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                ) {
+                    Text(text = "Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onReauthDismiss() }) {
                     Text(text = "Cancel")
                 }
             },
