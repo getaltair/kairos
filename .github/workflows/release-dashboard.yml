@@ -10,12 +10,12 @@ jobs:
         name: Build Dashboard .deb
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-java@v4
+            - uses: actions/checkout@v6
+            - uses: actions/setup-java@v5
               with:
                   distribution: temurin
                   java-version: 21
-            - uses: gradle/actions/setup-gradle@v4
+            - uses: gradle/actions/setup-gradle@v6
               with:
                   cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
             - name: Build dashboard uber JAR
@@ -49,12 +49,12 @@ jobs:
                     deploy/kairos-dashboard.service=/etc/systemd/system/kairos-dashboard.service \
                     deploy/dashboard.properties.default=/opt/kairos/dashboard.properties
             - name: Upload .deb artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: dashboard-deb
                   path: "*.deb"
             - name: Upload uber JAR artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: dashboard-jar
                   path: dashboard/build/compose/jars/*.jar
@@ -66,11 +66,11 @@ jobs:
         permissions:
             contents: write
         steps:
-            - uses: actions/download-artifact@v4
+            - uses: actions/download-artifact@v8
               with:
                   name: dashboard-deb
                   path: deb/
-            - uses: actions/download-artifact@v4
+            - uses: actions/download-artifact@v8
               with:
                   name: dashboard-jar
                   path: jar/
