@@ -48,15 +48,21 @@ dependencies {
     implementation(libs.timber)
 
     // Testing
+    testImplementation(testFixtures(project(":domain")))
     testImplementation(libs.junit)
+    testImplementation(kotlin("test"))
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.androidx.test.runner)
 
     // Instrumented Testing
+    androidTestImplementation(kotlin("test"))
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.turbine)
 }
