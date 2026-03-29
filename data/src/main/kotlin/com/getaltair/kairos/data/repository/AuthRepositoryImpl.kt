@@ -86,12 +86,10 @@ class AuthRepositoryImpl(private val auth: FirebaseAuth) : AuthRepository {
     } catch (e: Exception) {
         if (e is CancellationException) throw e
         Timber.e(e, "Failed to reauthenticate")
-        Result.Error("Failed to reauthenticate: ${e.message}", cause = e)
+        Result.Error("Something went wrong during re-authentication. Please try again.", cause = e)
     }
 
-    override suspend fun deleteAccount(password: String): Result<Unit> = try {
-        val reauthResult = reauthenticate(password)
-        if (reauthResult is Result.Error) return reauthResult
+    override suspend fun deleteAccount(): Result<Unit> = try {
         val user = auth.currentUser
             ?: return Result.Error("No signed-in user")
         user.delete().await()
@@ -99,7 +97,7 @@ class AuthRepositoryImpl(private val auth: FirebaseAuth) : AuthRepository {
     } catch (e: Exception) {
         if (e is CancellationException) throw e
         Timber.e(e, "Failed to delete account")
-        Result.Error("Failed to delete account: ${e.message}", cause = e)
+        Result.Error("Unable to delete your account. Please try again or contact support.", cause = e)
     }
 
     override fun getCurrentUserId(): String? = auth.currentUser?.uid

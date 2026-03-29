@@ -201,7 +201,7 @@ class SyncManager(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Timber.e(e, "Failed to delete all user data for %s", userId)
+            Timber.e(e, "Failed to delete all user data for %s (partial deletion may have occurred)", userId)
             throw e
         }
     }
@@ -218,16 +218,24 @@ class SyncManager(
         val collectionRef = firestore.collection(collectionPath)
         var totalDeleted = 0
 
-        while (true) {
-            val snapshot = collectionRef.limit(BATCH_LIMIT.toLong()).get().await()
-            if (snapshot.isEmpty) break
+        try {
+            while (true) {
+                val snapshot = collectionRef.limit(BATCH_LIMIT.toLong()).get().await()
+                if (snapshot.isEmpty) break
 
-            val batch = firestore.batch()
-            for (doc in snapshot.documents) {
-                batch.delete(doc.reference)
+                val batch = firestore.batch()
+                for (doc in snapshot.documents) {
+                    batch.delete(doc.reference)
+                }
+                batch.commit().await()
+                totalDeleted += snapshot.size()
+                Timber.d("Deleted batch of %d document(s) from %s (total: %d)", snapshot.size(), label, totalDeleted)
             }
-            batch.commit().await()
-            totalDeleted += snapshot.size()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Failed deleting %s after %d document(s) already removed", label, totalDeleted)
+            throw e
         }
 
         if (totalDeleted > 0) {

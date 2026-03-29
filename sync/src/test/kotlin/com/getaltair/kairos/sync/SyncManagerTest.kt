@@ -612,6 +612,265 @@ class SyncManagerTest {
     }
 
     // ------------------------------------------------------------------
+    // deleteAllUserData
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `deleteAllUserData happy path deletes all collections and user document`() = runTest {
+        // Mock routines collection (empty -- no nested subcollections to clean)
+        val routinesPath = FirestoreCollections.routines(userId).value
+        val routinesCollection = mockk<CollectionReference>(relaxed = true)
+        val emptyRoutinesSnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptyRoutinesSnapshot.documents } returns emptyList()
+        every { firestore.collection(routinesPath) } returns routinesCollection
+        every { routinesCollection.get() } returns Tasks.forResult(emptyRoutinesSnapshot)
+
+        // All other collections return empty snapshots on limit().get()
+        val emptySnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptySnapshot.isEmpty } returns true
+        every { emptySnapshot.size() } returns 0
+
+        val genericCollection = mockk<CollectionReference>(relaxed = true)
+        every { firestore.collection(neq(routinesPath)) } returns genericCollection
+        val limitQuery = mockk<com.google.firebase.firestore.Query>(relaxed = true)
+        every { genericCollection.limit(any()) } returns limitQuery
+        every { limitQuery.get() } returns Tasks.forResult(emptySnapshot)
+
+        // Also set up the routinesCollection.limit() for the deleteCollection call on routines
+        val routinesLimitQuery = mockk<com.google.firebase.firestore.Query>(relaxed = true)
+        every { routinesCollection.limit(any()) } returns routinesLimitQuery
+        every { routinesLimitQuery.get() } returns Tasks.forResult(emptySnapshot)
+
+        // Mock user document deletion
+        val userDocPath = FirestoreCollections.user(userId).value
+        val userDocRef = mockk<DocumentReference>(relaxed = true)
+        every { firestore.document(userDocPath) } returns userDocRef
+        every { userDocRef.delete() } returns Tasks.forResult(null)
+
+        syncManager.deleteAllUserData(userId)
+
+        // Verify user document was deleted
+        verify { firestore.document(userDocPath) }
+        verify { userDocRef.delete() }
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `deleteAllUserData throws IllegalArgumentException for blank userId`() = runTest {
+        syncManager.deleteAllUserData("")
+    }
+
+    @Test
+    fun `deleteAllUserData cleans up nested routine subcollections`() = runTest {
+        val routineId = "routine-abc"
+        val routinesPath = FirestoreCollections.routines(userId).value
+        val habitsSubPath = FirestoreCollections.routineHabits(userId, routineId).value
+        val variantsSubPath = FirestoreCollections.routineVariants(userId, routineId).value
+
+        // Mock routine doc
+        val routineDocSnapshot = mockk<DocumentSnapshot>(relaxed = true)
+        every { routineDocSnapshot.id } returns routineId
+
+        val routinesSnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { routinesSnapshot.documents } returns listOf(routineDocSnapshot)
+
+        val routinesCollection = mockk<CollectionReference>(relaxed = true)
+        every { firestore.collection(routinesPath) } returns routinesCollection
+        every { routinesCollection.get() } returns Tasks.forResult(routinesSnapshot)
+
+        // Empty snapshots for deleteCollection calls
+        val emptySnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptySnapshot.isEmpty } returns true
+        every { emptySnapshot.size() } returns 0
+
+        // For each collection path, mock limit().get() returning empty
+        val setupEmptyCollection = { path: String ->
+            val coll = mockk<CollectionReference>(relaxed = true)
+            val query = mockk<com.google.firebase.firestore.Query>(relaxed = true)
+            every { firestore.collection(path) } returns coll
+            every { coll.limit(any()) } returns query
+            every { query.get() } returns Tasks.forResult(emptySnapshot)
+        }
+
+        setupEmptyCollection(habitsSubPath)
+        setupEmptyCollection(variantsSubPath)
+
+        // Set up routines collection limit for deleteCollection
+        val routinesLimitQuery = mockk<com.google.firebase.firestore.Query>(relaxed = true)
+        every { routinesCollection.limit(any()) } returns routinesLimitQuery
+        every { routinesLimitQuery.get() } returns Tasks.forResult(emptySnapshot)
+
+        // Generic collection for all other paths
+        val genericCollection = mockk<CollectionReference>(relaxed = true)
+        val genericQuery = mockk<com.google.firebase.firestore.Query>(relaxed = true)
+        every {
+            firestore.collection(not(match { it == routinesPath || it == habitsSubPath || it == variantsSubPath }))
+        } returns genericCollection
+        every { genericCollection.limit(any()) } returns genericQuery
+        every { genericQuery.get() } returns Tasks.forResult(emptySnapshot)
+
+        // User doc delete
+        val userDocRef = mockk<DocumentReference>(relaxed = true)
+        every { firestore.document(any()) } returns userDocRef
+        every { userDocRef.delete() } returns Tasks.forResult(null)
+
+        syncManager.deleteAllUserData(userId)
+
+        // Verify that we tried to access the subcollection paths
+        verify { firestore.collection(habitsSubPath) }
+        verify { firestore.collection(variantsSubPath) }
+    }
+
+    @Test
+    fun `deleteAllUserData handles empty collections gracefully`() = runTest {
+        // All collections are empty
+        val emptyRoutinesSnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptyRoutinesSnapshot.documents } returns emptyList()
+
+        val emptySnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptySnapshot.isEmpty } returns true
+        every { emptySnapshot.size() } returns 0
+
+        val collectionRef = mockk<CollectionReference>(relaxed = true)
+        every { firestore.collection(any()) } returns collectionRef
+        every { collectionRef.get() } returns Tasks.forResult(emptyRoutinesSnapshot)
+        val limitQuery = mockk<com.google.firebase.firestore.Query>(relaxed = true)
+        every { collectionRef.limit(any()) } returns limitQuery
+        every { limitQuery.get() } returns Tasks.forResult(emptySnapshot)
+
+        val userDocRef = mockk<DocumentReference>(relaxed = true)
+        every { firestore.document(any()) } returns userDocRef
+        every { userDocRef.delete() } returns Tasks.forResult(null)
+
+        // Should complete without error
+        syncManager.deleteAllUserData(userId)
+
+        verify { userDocRef.delete() }
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun `deleteAllUserData propagates Firestore failure`() = runTest {
+        // Routines collection fetch fails
+        val routinesPath = FirestoreCollections.routines(userId).value
+        val routinesCollection = mockk<CollectionReference>(relaxed = true)
+        every { firestore.collection(routinesPath) } returns routinesCollection
+        every { routinesCollection.get() } returns Tasks.forException(
+            RuntimeException("Permission denied"),
+        )
+
+        syncManager.deleteAllUserData(userId)
+    }
+
+    @Test(expected = kotlinx.coroutines.CancellationException::class)
+    fun `deleteAllUserData rethrows CancellationException`() = runTest {
+        val routinesPath = FirestoreCollections.routines(userId).value
+        val routinesCollection = mockk<CollectionReference>(relaxed = true)
+        every { firestore.collection(routinesPath) } returns routinesCollection
+        coEvery { routinesCollection.get() } throws
+            kotlinx.coroutines.CancellationException("Job cancelled")
+
+        syncManager.deleteAllUserData(userId)
+    }
+
+    @Test
+    fun `deleteAllUserData handles batch pagination with more than 500 docs`() = runTest {
+        // Mock routines collection (empty)
+        val routinesPath = FirestoreCollections.routines(userId).value
+        val routinesCollection = mockk<CollectionReference>(relaxed = true)
+        val emptyRoutinesSnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptyRoutinesSnapshot.documents } returns emptyList()
+        every { firestore.collection(routinesPath) } returns routinesCollection
+        every { routinesCollection.get() } returns Tasks.forResult(emptyRoutinesSnapshot)
+
+        // Create a snapshot with documents for first batch, then empty for second
+        val firstBatchDocs = (1..500).map { i ->
+            mockk<DocumentSnapshot>(relaxed = true) {
+                every { reference } returns mockk(relaxed = true)
+            }
+        }
+        val firstBatchSnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { firstBatchSnapshot.isEmpty } returns false
+        every { firstBatchSnapshot.documents } returns firstBatchDocs
+        every { firstBatchSnapshot.size() } returns 500
+
+        val emptySnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptySnapshot.isEmpty } returns true
+        every { emptySnapshot.size() } returns 0
+
+        // habits collection: first call returns 500 docs, second returns empty
+        val habitsPath = FirestoreCollections.habits(userId).value
+        val habitsCollection = mockk<CollectionReference>(relaxed = true)
+        val habitsLimitQuery = mockk<com.google.firebase.firestore.Query>(relaxed = true)
+        every { firestore.collection(habitsPath) } returns habitsCollection
+        every { habitsCollection.limit(any()) } returns habitsLimitQuery
+        every { habitsLimitQuery.get() } returnsMany listOf(
+            Tasks.forResult(firstBatchSnapshot),
+            Tasks.forResult(emptySnapshot),
+        )
+
+        // Batch mock
+        val batchMock = mockk<com.google.firebase.firestore.WriteBatch>(relaxed = true)
+        every { firestore.batch() } returns batchMock
+        every { batchMock.delete(any()) } returns batchMock
+        every { batchMock.commit() } returns Tasks.forResult(null)
+
+        // All other collections return empty
+        val genericCollection = mockk<CollectionReference>(relaxed = true)
+        val genericLimitQuery = mockk<com.google.firebase.firestore.Query>(relaxed = true)
+        every { firestore.collection(not(match { it == routinesPath || it == habitsPath })) } returns genericCollection
+        every { genericCollection.limit(any()) } returns genericLimitQuery
+        every { genericLimitQuery.get() } returns Tasks.forResult(emptySnapshot)
+        every { routinesCollection.limit(any()) } returns mockk<com.google.firebase.firestore.Query>(relaxed = true) {
+            every { get() } returns Tasks.forResult(emptySnapshot)
+        }
+
+        // User doc delete
+        val userDocRef = mockk<DocumentReference>(relaxed = true)
+        every { firestore.document(any()) } returns userDocRef
+        every { userDocRef.delete() } returns Tasks.forResult(null)
+
+        syncManager.deleteAllUserData(userId)
+
+        // batch.commit() should have been called at least once for the 500-doc batch
+        verify(atLeast = 1) { batchMock.commit() }
+    }
+
+    @Test
+    fun `deleteAllUserData stops listeners before deletion`() = runTest {
+        // First start listening so there are active listeners
+        val listenerReg = mockk<com.google.firebase.firestore.ListenerRegistration>(relaxed = true)
+        val collectionRef = mockk<CollectionReference>(relaxed = true)
+        every { firestore.collection(any()) } returns collectionRef
+        every { collectionRef.addSnapshotListener(any()) } returns listenerReg
+
+        syncManager.startListening(userId)
+
+        // Now set up for deleteAllUserData
+        val emptyRoutinesSnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptyRoutinesSnapshot.documents } returns emptyList()
+        every { collectionRef.get() } returns Tasks.forResult(emptyRoutinesSnapshot)
+
+        val emptySnapshot = mockk<QuerySnapshot>(relaxed = true)
+        every { emptySnapshot.isEmpty } returns true
+        every { emptySnapshot.size() } returns 0
+
+        val limitQuery = mockk<com.google.firebase.firestore.Query>(relaxed = true)
+        every { collectionRef.limit(any()) } returns limitQuery
+        every { limitQuery.get() } returns Tasks.forResult(emptySnapshot)
+
+        val userDocRef = mockk<DocumentReference>(relaxed = true)
+        every { firestore.document(any()) } returns userDocRef
+        every { userDocRef.delete() } returns Tasks.forResult(null)
+
+        syncManager.deleteAllUserData(userId)
+
+        // Listeners should have been removed (stopListening is called)
+        verify(atLeast = 1) { listenerReg.remove() }
+
+        // After stopListening, syncState should be NotSignedIn
+        assert(syncManager.syncState.value is SyncState.NotSignedIn)
+    }
+
+    // ------------------------------------------------------------------
     // Test helpers
     // ------------------------------------------------------------------
 

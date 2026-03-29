@@ -54,15 +54,18 @@ interface AuthRepository {
 
     /**
      * Re-authenticates the current user with their password.
-     * Required by Firebase before sensitive operations like account deletion.
+     * Required before sensitive operations like account deletion.
      */
     suspend fun reauthenticate(password: String): com.getaltair.kairos.domain.common.Result<Unit>
 
     /**
-     * Permanently deletes the current user's account and all associated data.
-     * Re-authenticates with the given password before deletion.
+     * Permanently deletes the current user's authentication account.
+     *
+     * The caller is responsible for re-authenticating the user (via [reauthenticate])
+     * before invoking this method. This method only removes the auth account;
+     * data cleanup is the caller's responsibility.
      */
-    suspend fun deleteAccount(password: String): com.getaltair.kairos.domain.common.Result<Unit>
+    suspend fun deleteAccount(): com.getaltair.kairos.domain.common.Result<Unit>
 
     /**
      * Returns the current user's ID, or null if not signed in.

@@ -5,11 +5,11 @@ import com.getaltair.kairos.domain.repository.AuthRepository
 import com.getaltair.kairos.domain.sync.DataCleanup
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
-import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -37,22 +37,22 @@ class DeleteAccountUseCaseTest {
     fun `happy path deletes all data and returns success`() = runTest {
         every { authRepository.getCurrentUserId() } returns "user-123"
         coEvery { authRepository.reauthenticate("password") } returns Result.Success(Unit)
-        every { dataCleanup.stopSyncListeners() } just runs
         coEvery { dataCleanup.deleteCloudData("user-123") } just runs
-        coEvery { authRepository.deleteAccount("password") } returns Result.Success(Unit)
-        every { dataCleanup.clearLocalData() } just runs
+        coEvery { authRepository.deleteAccount() } returns Result.Success(Unit)
+        coEvery { dataCleanup.clearLocalData() } just runs
 
         val result = useCase("password")
 
         assertTrue(result is Result.Success)
 
         // Verify all steps were called in expected order
-        verify(exactly = 1) { authRepository.getCurrentUserId() }
-        coVerify(exactly = 1) { authRepository.reauthenticate("password") }
-        verify(exactly = 1) { dataCleanup.stopSyncListeners() }
-        coVerify(exactly = 1) { dataCleanup.deleteCloudData("user-123") }
-        coVerify(exactly = 1) { authRepository.deleteAccount("password") }
-        verify(exactly = 1) { dataCleanup.clearLocalData() }
+        coVerifyOrder {
+            authRepository.getCurrentUserId()
+            authRepository.reauthenticate("password")
+            dataCleanup.deleteCloudData("user-123")
+            authRepository.deleteAccount()
+            dataCleanup.clearLocalData()
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -71,10 +71,9 @@ class DeleteAccountUseCaseTest {
 
         // Nothing else should be called
         coVerify(exactly = 0) { authRepository.reauthenticate(any()) }
-        verify(exactly = 0) { dataCleanup.stopSyncListeners() }
         coVerify(exactly = 0) { dataCleanup.deleteCloudData(any()) }
-        coVerify(exactly = 0) { authRepository.deleteAccount(any()) }
-        verify(exactly = 0) { dataCleanup.clearLocalData() }
+        coVerify(exactly = 0) { authRepository.deleteAccount() }
+        coVerify(exactly = 0) { dataCleanup.clearLocalData() }
     }
 
     @Test
@@ -89,7 +88,7 @@ class DeleteAccountUseCaseTest {
 
         // Nothing else should be called
         coVerify(exactly = 0) { authRepository.reauthenticate(any()) }
-        verify(exactly = 0) { dataCleanup.stopSyncListeners() }
+        coVerify(exactly = 0) { dataCleanup.deleteCloudData(any()) }
     }
 
     // -------------------------------------------------------------------------
@@ -108,10 +107,9 @@ class DeleteAccountUseCaseTest {
         assertEquals("Incorrect password", (result as Result.Error).message)
 
         // Data operations must NOT be called
-        verify(exactly = 0) { dataCleanup.stopSyncListeners() }
         coVerify(exactly = 0) { dataCleanup.deleteCloudData(any()) }
-        coVerify(exactly = 0) { authRepository.deleteAccount(any()) }
-        verify(exactly = 0) { dataCleanup.clearLocalData() }
+        coVerify(exactly = 0) { authRepository.deleteAccount() }
+        coVerify(exactly = 0) { dataCleanup.clearLocalData() }
     }
 
     // -------------------------------------------------------------------------
@@ -122,7 +120,6 @@ class DeleteAccountUseCaseTest {
     fun `cloud data deletion failure returns error`() = runTest {
         every { authRepository.getCurrentUserId() } returns "user-123"
         coEvery { authRepository.reauthenticate("password") } returns Result.Success(Unit)
-        every { dataCleanup.stopSyncListeners() } just runs
         coEvery { dataCleanup.deleteCloudData("user-123") } throws
             RuntimeException("Firestore timeout")
 
@@ -131,11 +128,10 @@ class DeleteAccountUseCaseTest {
         assertTrue(result is Result.Error)
         val error = result as Result.Error
         assertTrue(error.message.contains("Account deletion failed"))
-        assertTrue(error.message.contains("Firestore timeout"))
 
         // Auth deletion and local cleanup should NOT proceed
-        coVerify(exactly = 0) { authRepository.deleteAccount(any()) }
-        verify(exactly = 0) { dataCleanup.clearLocalData() }
+        coVerify(exactly = 0) { authRepository.deleteAccount() }
+        coVerify(exactly = 0) { dataCleanup.clearLocalData() }
     }
 
     // -------------------------------------------------------------------------
@@ -146,18 +142,19 @@ class DeleteAccountUseCaseTest {
     fun `auth deletion failure returns error`() = runTest {
         every { authRepository.getCurrentUserId() } returns "user-123"
         coEvery { authRepository.reauthenticate("password") } returns Result.Success(Unit)
-        every { dataCleanup.stopSyncListeners() } just runs
         coEvery { dataCleanup.deleteCloudData("user-123") } just runs
-        coEvery { authRepository.deleteAccount("password") } returns
-            Result.Error("Firebase Auth error")
+        coEvery { authRepository.deleteAccount() } returns
+            Result.Error("Auth error")
 
         val result = useCase("password")
 
         assertTrue(result is Result.Error)
-        assertEquals("Firebase Auth error", (result as Result.Error).message)
+        val error = result as Result.Error
+        assertTrue(error.message.contains("Your data has been deleted"))
+        assertTrue(error.message.contains("could not remove your account"))
 
         // Cloud data was already deleted (acceptable), but local data should NOT be cleared
-        verify(exactly = 0) { dataCleanup.clearLocalData() }
+        coVerify(exactly = 0) { dataCleanup.clearLocalData() }
     }
 
     // -------------------------------------------------------------------------
@@ -168,10 +165,45 @@ class DeleteAccountUseCaseTest {
     fun `CancellationException is rethrown not wrapped`() = runTest {
         every { authRepository.getCurrentUserId() } returns "user-123"
         coEvery { authRepository.reauthenticate("password") } returns Result.Success(Unit)
-        every { dataCleanup.stopSyncListeners() } just runs
         coEvery { dataCleanup.deleteCloudData("user-123") } throws
             kotlinx.coroutines.CancellationException("Job cancelled")
 
         useCase("password")
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. Auth deletion failure after cloud data deleted: specific recovery msg
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `auth deletion failure after cloud data deleted returns specific recovery message`() = runTest {
+        every { authRepository.getCurrentUserId() } returns "user-123"
+        coEvery { authRepository.reauthenticate("password") } returns Result.Success(Unit)
+        coEvery { dataCleanup.deleteCloudData("user-123") } just runs
+        coEvery { authRepository.deleteAccount() } returns Result.Error("Auth error")
+
+        val result = useCase("password")
+
+        assertTrue(result is Result.Error)
+        val error = result as Result.Error
+        assertTrue(error.message.contains("Your data has been deleted"))
+        assertTrue(error.message.contains("could not remove your account"))
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. clearLocalData failure is best-effort -- still returns success
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `clearLocalData failure still returns success since account is already deleted`() = runTest {
+        every { authRepository.getCurrentUserId() } returns "user-123"
+        coEvery { authRepository.reauthenticate("password") } returns Result.Success(Unit)
+        coEvery { dataCleanup.deleteCloudData("user-123") } just runs
+        coEvery { authRepository.deleteAccount() } returns Result.Success(Unit)
+        coEvery { dataCleanup.clearLocalData() } throws RuntimeException("Room error")
+
+        val result = useCase("password")
+
+        assertTrue(result is Result.Success)
     }
 }

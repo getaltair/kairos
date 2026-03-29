@@ -76,11 +76,8 @@ class SettingsViewModelTest {
         assertNull(state.userEmail)
         assertFalse(state.isSignedIn)
         assertNull(state.lastSyncTime)
-        assertFalse(state.showDeleteAccountDialog)
         assertFalse(state.showSignOutDialog)
-        assertFalse(state.showReauthDialog)
-        assertFalse(state.isDeletingAccount)
-        assertFalse(state.accountDeleted)
+        assertEquals(DeletionState.Idle, state.deletionState)
         assertNull(state.errorMessage)
     }
 
@@ -183,14 +180,12 @@ class SettingsViewModelTest {
 
         // First show the delete dialog
         viewModel.onDeleteAccountRequest()
-        assertTrue(viewModel.uiState.value.showDeleteAccountDialog)
+        assertEquals(DeletionState.ConfirmDialog, viewModel.uiState.value.deletionState)
 
         // Confirm deletion, which should transition to reauth dialog
         viewModel.onDeleteAccountConfirm()
 
-        val state = viewModel.uiState.value
-        assertTrue(state.showReauthDialog)
-        assertFalse(state.showDeleteAccountDialog)
+        assertEquals(DeletionState.ReauthDialog, viewModel.uiState.value.deletionState)
     }
 
     // -------------------------------------------------------------------------
@@ -247,18 +242,18 @@ class SettingsViewModelTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `onReauthDismiss sets showReauthDialog to false`() {
+    fun `onReauthDismiss resets deletionState to Idle`() {
         viewModel = createViewModel()
 
         // Open the reauth dialog via the normal flow
         viewModel.onDeleteAccountRequest()
         viewModel.onDeleteAccountConfirm()
-        assertTrue(viewModel.uiState.value.showReauthDialog)
+        assertEquals(DeletionState.ReauthDialog, viewModel.uiState.value.deletionState)
 
         // Dismiss it
         viewModel.onReauthDismiss()
 
-        assertFalse(viewModel.uiState.value.showReauthDialog)
+        assertEquals(DeletionState.Idle, viewModel.uiState.value.deletionState)
     }
 
     // -------------------------------------------------------------------------
@@ -266,7 +261,7 @@ class SettingsViewModelTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `deleteAccount success sets accountDeleted to true`() = runTest {
+    fun `deleteAccount success sets deletionState to Deleted`() = runTest {
         viewModel = createViewModel()
         coEvery { deleteAccountUseCase(any()) } returns Result.Success(Unit)
 
@@ -274,8 +269,7 @@ class SettingsViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertTrue(state.accountDeleted)
-        assertFalse(state.isDeletingAccount)
+        assertEquals(DeletionState.Deleted, state.deletionState)
         assertNull(state.errorMessage)
     }
 
@@ -284,7 +278,7 @@ class SettingsViewModelTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `deleteAccount failure sets errorMessage and isDeletingAccount false`() = runTest {
+    fun `deleteAccount failure sets deletionState to Failed with error message`() = runTest {
         viewModel = createViewModel()
         coEvery { deleteAccountUseCase(any()) } returns Result.Error("Incorrect password")
 
@@ -292,8 +286,7 @@ class SettingsViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertFalse(state.accountDeleted)
-        assertFalse(state.isDeletingAccount)
+        assertEquals(DeletionState.Failed("Incorrect password"), state.deletionState)
         assertEquals("Incorrect password", state.errorMessage)
     }
 
@@ -302,7 +295,7 @@ class SettingsViewModelTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `deleteAccount sets isDeletingAccount true while in progress`() = runTest {
+    fun `deleteAccount sets deletionState to Deleting while in progress`() = runTest {
         // Use StandardTestDispatcher so coroutine does not complete eagerly
         val standardDispatcher = StandardTestDispatcher()
         Dispatchers.setMain(standardDispatcher)
@@ -325,16 +318,31 @@ class SettingsViewModelTest {
         // Advance enough for the launch to start but the deferred is still pending
         standardDispatcher.scheduler.runCurrent()
 
-        // While in progress, isDeletingAccount should be true
-        assertTrue(viewModel.uiState.value.isDeletingAccount)
-        assertFalse(viewModel.uiState.value.showReauthDialog)
+        // While in progress, deletionState should be Deleting
+        assertEquals(DeletionState.Deleting, viewModel.uiState.value.deletionState)
 
         // Complete the use case
         deferred.complete(Result.Success(Unit))
         standardDispatcher.scheduler.advanceUntilIdle()
 
-        // After completion, isDeletingAccount should be false
-        assertFalse(viewModel.uiState.value.isDeletingAccount)
-        assertTrue(viewModel.uiState.value.accountDeleted)
+        // After completion, deletionState should be Deleted
+        assertEquals(DeletionState.Deleted, viewModel.uiState.value.deletionState)
+    }
+
+    // -------------------------------------------------------------------------
+    // 15. onAccountDeletedConsumed resets deletionState to Idle
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `onAccountDeletedConsumed resets deletionState to Idle`() = runTest {
+        viewModel = createViewModel()
+        coEvery { deleteAccountUseCase(any()) } returns Result.Success(Unit)
+
+        viewModel.deleteAccount("password123")
+        advanceUntilIdle()
+        assertEquals(DeletionState.Deleted, viewModel.uiState.value.deletionState)
+
+        viewModel.onAccountDeletedConsumed()
+        assertEquals(DeletionState.Idle, viewModel.uiState.value.deletionState)
     }
 }

@@ -7,15 +7,10 @@ package com.getaltair.kairos.domain.sync
  * domain layer can orchestrate account deletion without depending on concrete
  * infrastructure classes.
  *
- * Implemented in the app module where both [com.getaltair.kairos.sync.SyncManager]
- * and [com.getaltair.kairos.data.database.KairosDatabase] are accessible.
+ * Implemented in the app module where both the sync engine
+ * and the local database are accessible.
  */
 interface DataCleanup {
-
-    /**
-     * Stops all active sync listeners to prevent snapshot callbacks during deletion.
-     */
-    fun stopSyncListeners()
 
     /**
      * Deletes all Firestore cloud data for the given user, including all
@@ -29,5 +24,5 @@ interface DataCleanup {
     /**
      * Clears all local database tables, removing all persisted data.
      */
-    fun clearLocalData()
+    suspend fun clearLocalData()
 }

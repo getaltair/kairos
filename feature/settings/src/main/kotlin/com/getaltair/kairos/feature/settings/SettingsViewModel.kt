@@ -89,47 +89,54 @@ class SettingsViewModel(
     }
 
     fun onDeleteAccountRequest() {
-        _uiState.update { it.copy(showDeleteAccountDialog = true) }
+        _uiState.update { it.copy(deletionState = DeletionState.ConfirmDialog) }
     }
 
     fun onDeleteAccountConfirm() {
-        _uiState.update {
-            it.copy(
-                showDeleteAccountDialog = false,
-                showReauthDialog = true,
-            )
-        }
+        _uiState.update { it.copy(deletionState = DeletionState.ReauthDialog) }
     }
 
     fun onReauthDismiss() {
-        _uiState.update { it.copy(showReauthDialog = false) }
+        _uiState.update { it.copy(deletionState = DeletionState.Idle) }
     }
 
     fun deleteAccount(password: String) {
-        _uiState.update { it.copy(isDeletingAccount = true, showReauthDialog = false) }
+        _uiState.update { it.copy(deletionState = DeletionState.Deleting) }
         viewModelScope.launch {
-            when (val result = deleteAccountUseCase(password)) {
-                is Result.Success -> {
-                    Timber.d("Account deleted successfully")
-                    _uiState.update {
-                        it.copy(isDeletingAccount = false, accountDeleted = true)
+            try {
+                when (val result = deleteAccountUseCase(password)) {
+                    is Result.Success -> {
+                        Timber.d("Account deleted successfully")
+                        _uiState.update { it.copy(deletionState = DeletionState.Deleted) }
+                    }
+
+                    is Result.Error -> {
+                        Timber.e(result.cause, "Failed to delete account: %s", result.message)
+                        _uiState.update {
+                            it.copy(
+                                deletionState = DeletionState.Failed(result.message),
+                                errorMessage = result.message,
+                            )
+                        }
                     }
                 }
-
-                is Result.Error -> {
-                    Timber.e(result.cause, "Failed to delete account: %s", result.message)
-                    _uiState.update {
-                        it.copy(
-                            isDeletingAccount = false,
-                            errorMessage = result.message,
-                        )
-                    }
+            } catch (e: Exception) {
+                Timber.e(e, "Unexpected error during account deletion")
+                _uiState.update {
+                    it.copy(
+                        deletionState = DeletionState.Failed("An unexpected error occurred. Please try again."),
+                        errorMessage = "An unexpected error occurred. Please try again.",
+                    )
                 }
             }
         }
     }
 
     fun onDeleteAccountDismiss() {
-        _uiState.update { it.copy(showDeleteAccountDialog = false) }
+        _uiState.update { it.copy(deletionState = DeletionState.Idle) }
+    }
+
+    fun onAccountDeletedConsumed() {
+        _uiState.update { it.copy(deletionState = DeletionState.Idle) }
     }
 }

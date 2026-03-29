@@ -11,14 +11,16 @@ import kotlin.coroutines.cancellation.CancellationException
  * Performs the following steps in order:
  * 1. Validates that a user is currently signed in.
  * 2. Re-authenticates with the provided password (early validation before any data is touched).
- * 3. Stops Firestore snapshot listeners to prevent callbacks during deletion.
- * 4. Deletes all Firestore cloud data for the user.
- * 5. Deletes the Firebase Auth account.
- * 6. Clears all local Room database tables.
+ * 3. Deletes all cloud data for the user (sync listeners are stopped internally).
+ * 4. Deletes the authentication account.
+ * 5. Clears all local database tables (best-effort; failure does not fail the operation).
  *
  * The ordering ensures that cloud data is removed before the auth account, so a failure
- * after Firestore deletion but before auth deletion leaves orphaned auth (recoverable)
+ * after cloud deletion but before auth deletion leaves orphaned auth (recoverable)
  * rather than orphaned cloud data (unrecoverable without the user's identity).
+ *
+ * If step 4 fails after step 3 has completed, a specific error message is returned
+ * informing the user that their data has already been removed.
  */
 class DeleteAccountUseCase(private val authRepository: AuthRepository, private val dataCleanup: DataCleanup) {
 
@@ -36,26 +38,33 @@ class DeleteAccountUseCase(private val authRepository: AuthRepository, private v
         }
 
         return try {
-            // Step 3: Stop sync listeners to prevent snapshot callbacks during deletion
-            dataCleanup.stopSyncListeners()
-
-            // Step 4: Delete all Firestore data for this user
+            // Step 3: Delete all Firestore data for this user
             dataCleanup.deleteCloudData(userId)
 
-            // Step 5: Delete the Firebase Auth account
-            val deleteResult = authRepository.deleteAccount(password)
+            // Step 4: Delete the auth account (Firestore data is already gone at this point)
+            val deleteResult = authRepository.deleteAccount()
             if (deleteResult is Result.Error) {
-                return deleteResult
+                return Result.Error(
+                    "Your data has been deleted, but we could not remove your account. " +
+                        "Please try signing out and deleting again, or contact support.",
+                    cause = deleteResult.cause,
+                )
             }
 
-            // Step 6: Clear all local Room data
-            dataCleanup.clearLocalData()
+            // Step 5: Clear local data (best-effort -- account is already gone)
+            try {
+                dataCleanup.clearLocalData()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Best-effort: account is already deleted, log swallowed at caller level
+            }
 
             Result.Success(Unit)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Result.Error("Account deletion failed: ${e.message}", cause = e)
+            Result.Error("Account deletion failed. Please try again or contact support.", cause = e)
         }
     }
 }

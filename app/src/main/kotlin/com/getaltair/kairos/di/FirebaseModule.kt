@@ -1,5 +1,6 @@
 package com.getaltair.kairos.di
 
+import com.getaltair.kairos.cleanup.DataCleanupImpl
 import com.getaltair.kairos.data.database.KairosDatabase
 import com.getaltair.kairos.domain.sync.DataCleanup
 import com.getaltair.kairos.sync.SyncManager

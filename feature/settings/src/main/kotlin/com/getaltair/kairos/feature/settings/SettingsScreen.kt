@@ -77,8 +77,9 @@ fun SettingsScreen(
         }
     }
 
-    LaunchedEffect(uiState.accountDeleted) {
-        if (uiState.accountDeleted) {
+    LaunchedEffect(uiState.deletionState) {
+        if (uiState.deletionState is DeletionState.Deleted) {
+            viewModel.onAccountDeletedConsumed()
             onAccountDeleted()
         }
     }
@@ -131,7 +132,7 @@ fun SettingsScreen(
             }
 
             // Loading overlay during account deletion
-            if (uiState.isDeletingAccount) {
+            if (uiState.deletionState is DeletionState.Deleting) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -168,7 +169,7 @@ fun SettingsScreen(
     }
 
     // Delete account confirmation dialog
-    if (uiState.showDeleteAccountDialog) {
+    if (uiState.deletionState is DeletionState.ConfirmDialog) {
         AlertDialog(
             onDismissRequest = viewModel::onDeleteAccountDismiss,
             title = { Text(text = "Delete account?") },
@@ -194,7 +195,7 @@ fun SettingsScreen(
     }
 
     // Re-authentication dialog for account deletion
-    if (uiState.showReauthDialog) {
+    if (uiState.deletionState is DeletionState.ReauthDialog) {
         var password by remember { mutableStateOf("") }
 
         AlertDialog(
@@ -219,6 +220,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(
                     onClick = { viewModel.deleteAccount(password) },
+                    enabled = password.isNotBlank(),
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error,
                     ),
