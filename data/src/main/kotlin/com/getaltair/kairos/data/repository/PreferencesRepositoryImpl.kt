@@ -12,7 +12,6 @@ import com.getaltair.kairos.domain.sync.SyncTrigger
 import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -87,7 +86,7 @@ class PreferencesRepositoryImpl(
             Timber.d("Skipping sync push: user not signed in")
             return
         }
-        syncScope.launch(Dispatchers.IO) {
+        syncScope.launch {
             try {
                 syncTrigger.triggerPush(userId, entityType, id, entity)
             } catch (e: CancellationException) {
