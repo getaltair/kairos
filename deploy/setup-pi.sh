@@ -4,6 +4,11 @@ set -euo pipefail
 # Kairos Dashboard - Raspberry Pi 5 Setup Script
 # Run as root or with sudo
 # Set KAIROS_USER env var if your Pi uses a different username
+#
+# NOTE: For new installations, prefer the .deb package from GitHub Releases:
+#   wget https://github.com/getaltair/kairos/releases/latest/download/kairos-dashboard_*_all.deb
+#   sudo dpkg -i kairos-dashboard_*_all.deb
+# This script is for manual/development setups.
 
 KAIROS_USER="${KAIROS_USER:-pi}"
 

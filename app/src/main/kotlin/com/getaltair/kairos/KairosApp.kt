@@ -7,6 +7,10 @@ import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import com.getaltair.kairos.core.di.useCaseModule
 import com.getaltair.kairos.data.di.dataModule
+import com.getaltair.kairos.data.firebase.FirebaseConfigStore
+import com.getaltair.kairos.data.firebase.FirebaseInitializer
+import com.getaltair.kairos.di.firebaseModule
+import com.getaltair.kairos.di.setupModule
 import com.getaltair.kairos.feature.auth.di.authModule
 import com.getaltair.kairos.feature.habit.di.habitModule
 import com.getaltair.kairos.feature.recovery.di.recoveryModule
@@ -21,18 +25,29 @@ import com.getaltair.kairos.notification.worker.LapseDetectionWorker
 import com.getaltair.kairos.notification.worker.MissedCompletionWorker
 import com.getaltair.kairos.sync.di.syncModule
 import com.getaltair.kairos.wear.WearDataSyncService
+import com.google.firebase.FirebaseApp
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
+import org.koin.core.context.loadKoinModules
 import org.koin.core.context.startKoin
 import timber.log.Timber
 
 class KairosApp : Application() {
+
+    private val _firebaseReady = MutableStateFlow(false)
+
+    /** Observe this to know when Firebase (and all app modules) are available. */
+    val firebaseReady = _firebaseReady.asStateFlow()
+
     override fun onCreate() {
         super.onCreate()
 
@@ -42,29 +57,58 @@ class KairosApp : Application() {
         // Notification channels (safe to call multiple times)
         NotificationChannels.createAll(this)
 
-        // Koin DI
+        // Phase 1: Start Koin with only the setup module (provides FirebaseConfigStore)
         startKoin {
             androidLogger()
             androidContext(this@KairosApp)
-            modules(
-                dataModule,
-                useCaseModule,
-                syncModule,
-                notificationModule,
-                authModule,
-                todayModule,
-                habitModule,
-                settingsModule,
-                recoveryModule,
-                routineModule,
-                widgetModule,
-            )
+            modules(setupModule)
         }
 
-        // Recovery system workers
-        scheduleRecoveryWorkers()
+        // Phase 2: Determine Firebase initialization strategy
+        try {
+            when {
+                // google-services plugin already initialized Firebase
+                FirebaseApp.getApps(this).isNotEmpty() -> {
+                    Timber.d("Firebase auto-initialized via google-services.json")
+                    FirebaseInitializer.initializeFromExisting()
+                    loadAllAppModules()
+                }
 
-        // Start Wear Data Layer sync service
+                // User previously configured Firebase at runtime
+                get<FirebaseConfigStore>().isConfigured() -> {
+                    val config = get<FirebaseConfigStore>().load()
+                    if (config != null) {
+                        Timber.d("Initializing Firebase from stored runtime config")
+                        FirebaseInitializer.initialize(this, config)
+                        loadAllAppModules()
+                    } else {
+                        Timber.e("isConfigured() was true but load() returned null; showing setup screen")
+                    }
+                }
+
+                // No Firebase config available -- setup screen will handle it
+                else -> {
+                    Timber.d("No Firebase config found; awaiting user setup")
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Firebase initialization failed; showing setup screen for recovery")
+        }
+    }
+
+    /**
+     * Called from the setup screen after the user provides Firebase credentials.
+     * Loads all remaining Koin modules and starts background services.
+     */
+    fun onFirebaseConfigured() {
+        loadAllAppModules()
+    }
+
+    private fun loadAllAppModules() {
+        if (_firebaseReady.value) return
+        loadKoinModules(allAppModules)
+        _firebaseReady.value = true
+        scheduleRecoveryWorkers()
         startWearDataSync()
     }
 
@@ -86,7 +130,7 @@ class KairosApp : Application() {
      *
      * - MissedCompletionWorker: runs at midnight to flag missed completions
      * - LapseDetectionWorker: runs at 2 AM to detect lapses/relapses
-     * - FreshStartWorker: runs at 7 AM on Mondays / 1st-of-month for fresh start prompts
+     * - FreshStartWorker: runs daily at 7 AM; the worker internally checks whether a fresh-start prompt is appropriate
      *
      * Uses [ExistingPeriodicWorkPolicy.KEEP] so re-launches do not reset the schedule.
      */
@@ -143,6 +187,26 @@ class KairosApp : Application() {
     }
 
     companion object {
+        /**
+         * All Koin modules that require Firebase to be initialized.
+         * Loaded either at startup (when google-services.json exists or
+         * runtime config is stored) or after the user completes setup.
+         */
+        private val allAppModules = listOf(
+            firebaseModule,
+            dataModule,
+            useCaseModule,
+            syncModule,
+            notificationModule,
+            authModule,
+            todayModule,
+            habitModule,
+            settingsModule,
+            recoveryModule,
+            routineModule,
+            widgetModule,
+        )
+
         /**
          * Computes the milliseconds from now until the next occurrence of [hour]:[minute].
          * If that time has already passed today, the delay targets tomorrow.

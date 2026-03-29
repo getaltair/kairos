@@ -5,7 +5,29 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.compose.multiplatform) apply false
     alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.detekt)
     id("com.diffplug.spotless") version "7.0.0.BETA4"
+}
+
+detekt {
+    config.setFrom("$projectDir/config/detekt.yml")
+    buildUponDefaultConfig = true
+    allRules = false
+    parallel = true
+    source.setFrom(
+        "app/src",
+        "wear/src",
+        "domain/src",
+        "data/src",
+        "core/src",
+        "ui/src",
+        "dashboard/src",
+        "feature",
+    )
+}
+
+dependencies {
+    detektPlugins(libs.detekt.compose)
 }
 
 allprojects {

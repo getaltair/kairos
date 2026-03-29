@@ -2,33 +2,27 @@
 
 # Run all lint checks
 lint:
-    @echo "=== ktlint ==="
-    ktlint -R .tools/ktlint-compose-rules.jar --relative
+    @echo "=== spotless ==="
+    ./gradlew spotlessCheck
     @echo ""
     @echo "=== detekt ==="
-    java -jar .tools/detekt-cli.jar \
-        --config config/detekt.yml \
-        --plugins .tools/detekt-compose-rules.jar \
-        --input "core/,feature/,app/src/,sync/src/"
+    ./gradlew detekt
     @echo ""
-    @echo "✅ All clean."
+    @echo "All clean."
 
 # Auto-fix formatting issues
 lint-fix:
-    @echo "=== ktlint auto-fix ==="
-    ktlint -R .tools/ktlint-compose-rules.jar --format --relative
-    @echo "✅ Formatting fixed. Run 'just lint' to check for remaining issues."
+    @echo "=== spotless auto-fix ==="
+    ./gradlew spotlessApply
+    @echo "Formatting fixed. Run 'just lint' to check for remaining issues."
 
 # Run detekt only
 detekt:
-    java -jar .tools/detekt-cli.jar \
-        --config config/detekt.yml \
-        --plugins .tools/detekt-compose-rules.jar \
-        --input "core/,feature/,app/src/,sync/src/"
+    ./gradlew detekt
 
-# Run ktlint only
+# Run spotless (ktlint) only
 ktlint:
-    ktlint -R .tools/ktlint-compose-rules.jar --relative
+    ./gradlew spotlessCheck
 
 # Build debug APK
 build:

@@ -44,12 +44,12 @@ flowchart LR
         V2["Anchor: 'When I arrive at gym'<br/>Type: AT_LOCATION"]
         V3["Anchor: '7:00 AM'<br/>Type: AT_TIME"]
     end
-    
+
     subgraph Invalid["✗ Invalid Habits"]
         I1["No anchor specified"]
         I2["Anchor: ''<br/>(empty string)"]
     end
-    
+
     Valid --> |"Allowed"| Create["Create Habit"]
     Invalid --> |"Rejected"| Error["Validation Error"]
 ```
@@ -64,12 +64,12 @@ flowchart LR
 
 **Every habit must belong to exactly one category.**
 
-| Category | Time Association | Examples |
-|----------|------------------|----------|
-| MORNING | Before noon | Medication, exercise, breakfast routine |
-| AFTERNOON | Noon to 6 PM | Work habits, lunch routine |
-| EVENING | After 6 PM | Wind-down, preparation for next day |
-| ANYTIME | No time constraint | Hydration, posture check |
+| Category  | Time Association   | Examples                                |
+| --------- | ------------------ | --------------------------------------- |
+| MORNING   | Before noon        | Medication, exercise, breakfast routine |
+| AFTERNOON | Noon to 6 PM       | Work habits, lunch routine              |
+| EVENING   | After 6 PM         | Wind-down, preparation for next day     |
+| ANYTIME   | No time constraint | Hydration, posture check                |
 
 **Rule**: `habit.category in [MORNING, AFTERNOON, EVENING, ANYTIME]`
 
@@ -88,21 +88,22 @@ stateDiagram-v2
         LAPSED
         RELAPSED
     }
-    
+
     state StatusPaused {
         PausedState: Any phase frozen
     }
-    
+
     state StatusArchived {
         ArchivedState: Phase preserved
     }
-    
+
     note right of StatusActive: All phases valid when ACTIVE
     note right of StatusPaused: Phase unchanged while paused
     note right of StatusArchived: Phase preserved for history
 ```
 
 **Rules**:
+
 - If `status == ACTIVE`, phase can be any value
 - If `status == PAUSED`, phase is frozen (not updated)
 - If `status == ARCHIVED`, phase is preserved (not updated)
@@ -132,7 +133,7 @@ flowchart LR
         V2["Lapse: 2, Relapse: 5"]
         V3["Lapse: 5, Relapse: 14"]
     end
-    
+
     subgraph Invalid["✗ Invalid Thresholds"]
         I1["Lapse: 7, Relapse: 3"]
         I2["Lapse: 5, Relapse: 5"]
@@ -154,11 +155,12 @@ flowchart LR
     Created["createdAt"] --> Updated["updatedAt"]
     Created --> Paused["pausedAt"]
     Created --> Archived["archivedAt"]
-    
+
     Paused -.-> |"if paused"| Archived
 ```
 
 **Rules**:
+
 - `habit.createdAt <= habit.updatedAt`
 - `habit.pausedAt == null || habit.pausedAt >= habit.createdAt`
 - `habit.archivedAt == null || habit.archivedAt >= habit.createdAt`
@@ -172,12 +174,12 @@ flowchart LR
 
 **Completion type must match the action taken.**
 
-| Type | User Action | System Action |
-|------|-------------|---------------|
-| FULL | User taps "Done" | Never |
-| PARTIAL | User taps "Partial" | Never |
-| SKIPPED | User taps "Skip" | Never |
-| MISSED | Never | System marks at day end |
+| Type    | User Action         | System Action           |
+| ------- | ------------------- | ----------------------- |
+| FULL    | User taps "Done"    | Never                   |
+| PARTIAL | User taps "Partial" | Never                   |
+| SKIPPED | User taps "Skip"    | Never                   |
+| MISSED  | Never               | System marks at day end |
 
 **Rule**: MISSED completions can only be created by the lapse detection worker, never by direct user action.
 
@@ -194,7 +196,7 @@ flowchart LR
         V2["type: PARTIAL<br/>partialPercent: 1"]
         V3["type: PARTIAL<br/>partialPercent: 99"]
     end
-    
+
     subgraph Invalid["✗ Invalid"]
         I1["type: PARTIAL<br/>partialPercent: 0"]
         I2["type: PARTIAL<br/>partialPercent: 100"]
@@ -204,6 +206,7 @@ flowchart LR
 ```
 
 **Rules**:
+
 - If `type == PARTIAL`: `1 <= partialPercent <= 99`
 - If `type != PARTIAL`: `partialPercent == null`
 
@@ -260,7 +263,7 @@ flowchart LR
         V2["5 habits"]
         V3["10 habits"]
     end
-    
+
     subgraph Invalid["✗ Invalid"]
         I1["0 habits"]
         I2["1 habit"]
@@ -282,7 +285,7 @@ flowchart TB
     subgraph Valid["✓ Valid Order"]
         V["Habit A: 0<br/>Habit B: 1<br/>Habit C: 2"]
     end
-    
+
     subgraph Invalid["✗ Invalid Orders"]
         I1["Habit A: 0<br/>Habit B: 2<br/>(gap at 1)"]
         I2["Habit A: 1<br/>Habit B: 2<br/>(no 0)"]
@@ -291,6 +294,7 @@ flowchart TB
 ```
 
 **Rules**:
+
 - `orderIndex` starts at 0
 - No gaps in sequence
 - No duplicate indices within a routine
@@ -311,7 +315,8 @@ flowchart TB
 
 **All durations must be positive.**
 
-**Rule**: 
+**Rule**:
+
 - `routineHabit.overrideDurationSeconds > 0` (if set)
 - Referenced habit's `estimatedSeconds > 0`
 
@@ -354,9 +359,9 @@ sequenceDiagram
     participant Execution
     participant System
     participant DB
-    
+
     Execution->>System: status = COMPLETED
-    
+
     loop Each step
         alt Step was completed
             System->>DB: Create Completion(FULL) for habit
@@ -404,17 +409,18 @@ flowchart LR
         C --> A4["ARCHIVE"]
         C --> A5["FRESH_START"]
     end
-    
+
     subgraph Pending["status: PENDING"]
         P["action is null"]
     end
-    
+
     subgraph Abandoned["status: ABANDONED"]
         Ab["action is null"]
     end
 ```
 
 **Rules**:
+
 - If `status == COMPLETED`: `action != null`
 - If `status == PENDING`: `action == null`
 - If `status == ABANDONED`: `action == null`
@@ -430,7 +436,7 @@ stateDiagram-v2
     [*] --> LAPSE: 3 days missed
     LAPSE --> RELAPSE: 7 days reached
     RELAPSE --> [*]: Resolved
-    
+
     note right of LAPSE: Can escalate
     note right of RELAPSE: Cannot de-escalate
 ```
@@ -446,6 +452,7 @@ stateDiagram-v2
 **Room database is the authoritative source; Firestore is sync/backup.**
 
 **Rules**:
+
 - All reads come from Room — UI never queries Firestore directly
 - All writes go to Room first — then push to Firestore asynchronously
 - Sync failure never blocks local operations
@@ -482,6 +489,7 @@ stateDiagram-v2
 **All Firestore operations require valid Firebase Auth session.**
 
 **Rules**:
+
 - Sync disabled if user not signed in
 - Firestore security rules reject unauthenticated requests
 - Auth state change (sign out) stops snapshot listeners
@@ -496,11 +504,76 @@ stateDiagram-v2
 **Each user can only read and write their own data.**
 
 **Rules**:
+
 - All Firestore data lives under `users/{userId}/` path
 - Security rules enforce `request.auth.uid == userId`
 - Pi dashboard uses Admin SDK (privileged access for a trusted device)
 
 **Enforcement**: Firestore security rules.
+
+---
+
+## Firebase Configuration Invariants
+
+### FC-1: Phased Koin Module Loading
+
+**Firebase-dependent Koin modules cannot be loaded until FirebaseApp is initialized.**
+
+**Rules**:
+
+- `setupModule` must always load first, before any other module
+- `firebaseModule`, `dataModule`, `syncModule`, and `authModule` are loaded only after `FirebaseApp.initializeApp()` succeeds
+- Attempting to resolve Firebase singletons before initialization results in a crash; the phased loading prevents this
+
+**Enforcement**: `KairosApp` loads `setupModule` in `onCreate()`, then loads remaining modules only when `FirebaseInitializer` reports success. `KairosApp.firebaseReady` (StateFlow<Boolean>) gates downstream initialization.
+
+---
+
+### FC-2: SyncManager Requires Valid Firebase Configuration
+
+**SyncManager snapshot listeners require a fully initialized Firebase configuration.**
+
+**Rule**: SyncManager must not start Firestore snapshot listeners until `firebaseReady = true`.
+
+**Enforcement**: SyncManager is provided by `syncModule`, which is only loaded after Firebase initialization. Koin graph structure prevents premature access.
+
+---
+
+### FC-3: Credential Encryption at Rest
+
+**FirebaseConfigStore credentials are encrypted at rest via AES256.**
+
+**Rules**:
+
+- Credentials stored in EncryptedSharedPreferences with AES256_SIV key encryption and AES256_GCM value encryption
+- Plain-text `google-services.json` content is never written to unencrypted storage
+- The encryption key is managed by Android Keystore
+
+**Enforcement**: `FirebaseConfigStore` wraps `EncryptedSharedPreferences` from `androidx.security:security-crypto`.
+
+---
+
+### FC-4: Navigation Gating on Firebase Readiness
+
+**The navigation layer must gate Firebase-dependent screens behind the setup screen when `firebaseReady = false`.**
+
+**Rules**:
+
+- When `firebaseReady = false`, the navigation start destination is the setup screen
+- When `firebaseReady = true`, the navigation start destination is the today screen (or auth screen if not signed in)
+- The app must not render Firebase-dependent composables (today, habit detail, settings with sync) until Firebase is initialized
+
+**Enforcement**: `KairosApp.firebaseReady` StateFlow observed by the navigation graph. Start destination determined by current value at composition time.
+
+---
+
+### FC-5: Setup Module Load Order
+
+**Koin's `setupModule` must always load before any other module.**
+
+**Rule**: `setupModule` provides `FirebaseConfigStore` and `FirebaseSetupViewModel`. These are required for the setup screen to function, which itself determines whether other modules can be loaded.
+
+**Enforcement**: `KairosApp.onCreate()` calls `startKoin` with only `setupModule` in the initial module list. All other modules are added via `loadKoinModules()` after Firebase initialization.
 
 ---
 
@@ -517,7 +590,7 @@ flowchart TB
         F2["Longest streak: 21 days"]
         F3["Streak broken!"]
     end
-    
+
     subgraph Allowed["Allowed Metrics"]
         A1["Completed 4 of 7 this week"]
         A2["85% completion rate"]
@@ -533,13 +606,13 @@ flowchart TB
 
 **All user-facing text must be shame-free.**
 
-| Forbidden Phrases | Allowed Alternatives |
-|-------------------|---------------------|
-| "You failed" | "Let's figure this out" |
-| "Streak broken" | (Never mention) |
-| "You missed X days" | "Ready when you are" |
-| "Try harder" | "What would help?" |
-| "Don't give up" | "Welcome back" |
+| Forbidden Phrases   | Allowed Alternatives    |
+| ------------------- | ----------------------- |
+| "You failed"        | "Let's figure this out" |
+| "Streak broken"     | (Never mention)         |
+| "You missed X days" | "Ready when you are"    |
+| "Try harder"        | "What would help?"      |
+| "Don't give up"     | "Welcome back"          |
 
 **Rule**: All strings pass shame-free review (see Messaging Guidelines).
 
@@ -558,7 +631,7 @@ flowchart TB
         F4["Leaderboards"]
         F5["Streak bonuses"]
     end
-    
+
     subgraph Allowed["Allowed Feedback"]
         A1["Completion animation"]
         A2["Progress percentage"]
@@ -576,6 +649,7 @@ flowchart TB
 **Users can always skip, pause, or simplify without penalty.**
 
 **Rules**:
+
 - Skip option always available
 - Pause option always available
 - No penalty for any of these actions
@@ -585,38 +659,43 @@ flowchart TB
 
 ## Summary Table
 
-| ID | Category | Invariant | Enforcement |
-|----|----------|-----------|-------------|
-| H-1 | Habit | Anchor required | Validation |
-| H-2 | Habit | Category required | Enum constraint |
-| H-3 | Habit | Phase valid for status | State machine |
-| H-4 | Habit | Partial always allowed | Hardcoded true |
-| H-5 | Habit | Threshold ordering | Validation |
-| H-6 | Habit | Timestamp consistency | Validation |
-| C-1 | Completion | Valid type | Enum + workflow |
-| C-2 | Completion | Partial percentage range | Validation |
-| C-3 | Completion | One per habit per day | Unique constraint |
-| C-4 | Completion | No future dates | Validation |
-| C-5 | Completion | Limited backdating | Validation |
-| C-6 | Completion | Habit exists | Foreign key |
-| R-1 | Routine | Minimum 2 habits | Validation |
-| R-2 | Routine | Order index integrity | Validation |
-| R-3 | Routine | Habit reference valid | Foreign key + check |
-| R-4 | Routine | Positive duration | Validation |
-| R-5 | Routine | Variant subset | Validation |
-| E-1 | Execution | Single active | Unique constraint |
-| E-2 | Execution | Step bounds | Validation |
-| E-3 | Execution | Creates completions | Transaction |
-| REC-1 | Recovery | Threshold trigger | Worker logic |
-| REC-2 | Recovery | One pending per habit | Unique constraint |
-| REC-3 | Recovery | Completion has action | Validation |
-| REC-4 | Recovery | Type escalation | State machine |
-| S-1 | Sync | Local source of truth | Architecture |
-| S-2 | Sync | Offline queue persistence | Firestore SDK |
-| S-3 | Sync | Last-write-wins conflicts | Firestore + updatedAt |
-| S-4 | Sync | Auth required for sync | Firebase Auth + rules |
-| S-5 | Sync | Data isolation | Firestore security rules |
-| D-1 | Domain | No streaks | Policy |
-| D-2 | Domain | No punitive messaging | Review |
-| D-3 | Domain | No gamification | Policy |
-| D-4 | Domain | Flexibility over rigidity | Design |
+| ID    | Category        | Invariant                         | Enforcement                |
+| ----- | --------------- | --------------------------------- | -------------------------- |
+| H-1   | Habit           | Anchor required                   | Validation                 |
+| H-2   | Habit           | Category required                 | Enum constraint            |
+| H-3   | Habit           | Phase valid for status            | State machine              |
+| H-4   | Habit           | Partial always allowed            | Hardcoded true             |
+| H-5   | Habit           | Threshold ordering                | Validation                 |
+| H-6   | Habit           | Timestamp consistency             | Validation                 |
+| C-1   | Completion      | Valid type                        | Enum + workflow            |
+| C-2   | Completion      | Partial percentage range          | Validation                 |
+| C-3   | Completion      | One per habit per day             | Unique constraint          |
+| C-4   | Completion      | No future dates                   | Validation                 |
+| C-5   | Completion      | Limited backdating                | Validation                 |
+| C-6   | Completion      | Habit exists                      | Foreign key                |
+| R-1   | Routine         | Minimum 2 habits                  | Validation                 |
+| R-2   | Routine         | Order index integrity             | Validation                 |
+| R-3   | Routine         | Habit reference valid             | Foreign key + check        |
+| R-4   | Routine         | Positive duration                 | Validation                 |
+| R-5   | Routine         | Variant subset                    | Validation                 |
+| E-1   | Execution       | Single active                     | Unique constraint          |
+| E-2   | Execution       | Step bounds                       | Validation                 |
+| E-3   | Execution       | Creates completions               | Transaction                |
+| REC-1 | Recovery        | Threshold trigger                 | Worker logic               |
+| REC-2 | Recovery        | One pending per habit             | Unique constraint          |
+| REC-3 | Recovery        | Completion has action             | Validation                 |
+| REC-4 | Recovery        | Type escalation                   | State machine              |
+| S-1   | Sync            | Local source of truth             | Architecture               |
+| S-2   | Sync            | Offline queue persistence         | Firestore SDK              |
+| S-3   | Sync            | Last-write-wins conflicts         | Firestore + updatedAt      |
+| S-4   | Sync            | Auth required for sync            | Firebase Auth + rules      |
+| S-5   | Sync            | Data isolation                    | Firestore security rules   |
+| D-1   | Domain          | No streaks                        | Policy                     |
+| D-2   | Domain          | No punitive messaging             | Review                     |
+| D-3   | Domain          | No gamification                   | Policy                     |
+| D-4   | Domain          | Flexibility over rigidity         | Design                     |
+| FC-1  | Firebase Config | Phased Koin module loading        | KairosApp init sequence    |
+| FC-2  | Firebase Config | SyncManager requires Firebase     | Koin graph structure       |
+| FC-3  | Firebase Config | Credentials encrypted at rest     | EncryptedSharedPreferences |
+| FC-4  | Firebase Config | Navigation gated on firebaseReady | StateFlow + NavGraph       |
+| FC-5  | Firebase Config | setupModule loads first           | KairosApp.onCreate()       |

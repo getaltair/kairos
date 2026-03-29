@@ -38,6 +38,76 @@ mindmap
 
 ## Flow 1: First Launch & Onboarding
 
+### Firebase Configuration Check
+
+On every app launch, the first decision point is whether Firebase is available. This check runs before any onboarding or content screens.
+
+```mermaid
+flowchart TB
+    subgraph LaunchGate["App Launch -- Firebase Gate"]
+        Start["App Opens"]
+        Start --> CheckAuto{"google-services.json<br/>present at build time?"}
+
+        CheckAuto -->|Yes| AutoInit["Firebase auto-initialized<br/>via google-services plugin"]
+        CheckAuto -->|No| CheckStored{"Stored config in<br/>EncryptedSharedPreferences?"}
+
+        CheckStored -->|Yes| ManualInit["FirebaseInitializer reads<br/>stored config, calls<br/>FirebaseApp.initializeApp()"]
+        CheckStored -->|No| SetupScreen["Firebase Setup Screen"]
+
+        AutoInit --> LoadModules["Load Phase 2 Koin modules"]
+        ManualInit --> LoadModules
+
+        SetupScreen --> UserPastes["User pastes google-services.json"]
+        UserPastes --> ParseValidate["Parse JSON, validate fields,<br/>save to FirebaseConfigStore"]
+        ParseValidate --> InitFirebase["FirebaseInitializer<br/>initializes Firebase"]
+        InitFirebase --> LoadModules
+
+        LoadModules --> Proceed["Proceed to app content"]
+    end
+```
+
+| Firebase state                                              | Startup behavior                                                               |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Auto-initialized (CI/dev build with `google-services.json`) | Proceed directly to onboarding (first launch) or today screen (returning user) |
+| Stored config exists (returning self-hoster)                | Initialize Firebase from encrypted store, then proceed to today screen         |
+| No config (new self-hoster)                                 | Show Firebase Setup Screen; app is gated until configuration completes         |
+
+### Firebase Setup Screen
+
+Self-hosters see this screen before any other content on first launch. After successful configuration, the app navigates directly to the today screen (skipping onboarding, since self-hosters are power users).
+
+```mermaid
+flowchart TB
+    subgraph SetupScreen["Firebase Setup Screen"]
+        Title["Configure Firebase"]
+        Instructions["Instructions text:<br/>'Paste the contents of your<br/>google-services.json file.<br/>You can find this in your<br/>Firebase Console under<br/>Project Settings > General.'"]
+        Input["Multi-line text field<br/>for JSON content"]
+        Button["Configure button"]
+
+        Title --> Instructions --> Input --> Button
+
+        Button --> Validate{"Valid JSON with<br/>required fields?"}
+        Validate -->|No| ErrorState["Error message:<br/>'Invalid configuration.<br/>Check your JSON and try again.'"]
+        ErrorState --> Input
+        Validate -->|Yes| Loading["Loading state<br/>during initialization"]
+        Loading --> Success["Navigate to Today screen<br/>(back stack cleared)"]
+    end
+```
+
+| Element          | Details                                                                                                                                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Screen title     | "Configure Firebase"                                                                                                                                                                                                     |
+| Instructions     | Explains what to paste and where to obtain the `google-services.json` file from the Firebase Console                                                                                                                     |
+| Text input       | Multi-line text field accepting raw JSON content                                                                                                                                                                         |
+| Configure button | Triggers parse, validate, save, and initialize sequence                                                                                                                                                                  |
+| Error state      | Displayed inline when JSON is malformed or missing required fields (`project_id`, `mobilesdk_app_id`, `current_key`). Optional fields (`storage_bucket`, `project_number`) are used if present. User can edit and retry. |
+| Loading state    | Shown during `FirebaseApp.initializeApp()` and Koin module loading                                                                                                                                                       |
+| Post-setup note  | Self-hosters must also deploy `firestore.rules` (in the repo root) to their Firebase project for security rules to take effect                                                                                           |
+
+### Standard Onboarding (After Firebase Is Ready)
+
+For builds with `google-services.json` baked in, the standard onboarding flow applies on first launch:
+
 ```mermaid
 flowchart TB
     subgraph FirstLaunch["First Launch Flow"]
@@ -54,23 +124,23 @@ flowchart TB
 
 ### Welcome Screen
 
-| Element | Content |
-|---------|---------|
-| Illustration | Calm, non-gamified visual |
-| Headline | "Kairos" |
-| Subhead | "Habit building designed for how your brain actually works" |
-| CTA | "Get Started" |
-| Skip | Not available (must see philosophy) |
+| Element      | Content                                                     |
+| ------------ | ----------------------------------------------------------- |
+| Illustration | Calm, non-gamified visual                                   |
+| Headline     | "Kairos"                                                    |
+| Subhead      | "Habit building designed for how your brain actually works" |
+| CTA          | "Get Started"                                               |
+| Skip         | Not available (must see philosophy)                         |
 
 ### Philosophy Screen
 
-| Element | Content |
-|---------|---------|
-| Headline | "Three things we do differently" |
-| Point 1 | "No streaks to break" with icon |
-| Point 2 | "Partial completion counts" with icon |
-| Point 3 | "Recovery is built in" with icon |
-| CTA | "Create Your First Habit" |
+| Element  | Content                               |
+| -------- | ------------------------------------- |
+| Headline | "Three things we do differently"      |
+| Point 1  | "No streaks to break" with icon       |
+| Point 2  | "Partial completion counts" with icon |
+| Point 3  | "Recovery is built in" with icon      |
+| CTA      | "Create Your First Habit"             |
 
 ---
 
@@ -80,20 +150,20 @@ flowchart TB
 flowchart TB
     subgraph CreateHabit["Create Habit Flow"]
         Start["Tap + or 'Add Habit'"]
-        
+
         subgraph Required["Required Steps"]
             Name["1. Enter Habit Name<br/>'What do you want to do?'"]
             Anchor["2. Select Anchor<br/>'When will you do this?'"]
             Category["3. Choose Category<br/>Morning / Afternoon / Evening / Anytime"]
         end
-        
+
         subgraph Optional["Optional Configuration"]
             Duration["Estimated time"]
             MicroVersion["Micro version<br/>'Smallest possible version'"]
             Reminders["Notification settings"]
             Visual["Icon & color"]
         end
-        
+
         Start --> Name --> Anchor --> Category
         Category --> Optional
         Optional --> Review["Review & Create"]
@@ -112,12 +182,12 @@ flowchart LR
     end
 ```
 
-| UI Element | Behavior |
-|------------|----------|
-| Text input | Auto-focus, 1-100 characters |
-| Character count | Subtle indicator |
-| Suggestions | Tap to fill, categorized |
-| Continue | Enabled when name valid |
+| UI Element      | Behavior                     |
+| --------------- | ---------------------------- |
+| Text input      | Auto-focus, 1-100 characters |
+| Character count | Subtle indicator             |
+| Suggestions     | Tap to fill, categorized     |
+| Continue        | Enabled when name valid      |
 
 ### Create Habit: Anchor Selection
 
@@ -125,14 +195,14 @@ flowchart LR
 flowchart TB
     subgraph AnchorScreen["Anchor Selection"]
         Question["When will you do this?"]
-        
+
         subgraph AnchorTypes["Anchor Type Tabs"]
             After["After I..."]
             Before["Before I..."]
             AtLocation["When I arrive at..."]
             AtTime["At a specific time"]
         end
-        
+
         subgraph AfterOptions["After I... Options"]
             A1["Wake up"]
             A2["Brush my teeth"]
@@ -141,17 +211,17 @@ flowchart TB
             A5["Custom..."]
         end
     end
-    
+
     Question --> AnchorTypes
     After --> AfterOptions
 ```
 
-| Anchor Type | Input Method | Examples |
-|-------------|--------------|----------|
-| After behavior | Preset list + custom | "After I brush my teeth" |
-| Before behavior | Preset list + custom | "Before I start work" |
-| At location | Location picker | "When I arrive at gym" |
-| At time | Time picker | "At 7:00 AM" |
+| Anchor Type     | Input Method         | Examples                 |
+| --------------- | -------------------- | ------------------------ |
+| After behavior  | Preset list + custom | "After I brush my teeth" |
+| Before behavior | Preset list + custom | "Before I start work"    |
+| At location     | Location picker      | "When I arrive at gym"   |
+| At time         | Time picker          | "At 7:00 AM"             |
 
 ### Create Habit: Category
 
@@ -173,23 +243,23 @@ flowchart LR
 flowchart TB
     subgraph TodayScreen["Today Screen"]
         Header["Header<br/>Date + Progress Ring"]
-        
+
         subgraph HabitGroups["Habit Groups"]
             Morning["🌅 Morning Habits"]
             Afternoon["☀️ Afternoon Habits"]
             Evening["🌙 Evening Habits"]
             Anytime["⏰ Anytime"]
         end
-        
+
         subgraph HabitCard["Habit Card"]
             CardName["Habit Name"]
             CardAnchor["Anchor text (subtle)"]
             CardAction["Completion Button"]
         end
-        
+
         FAB["+ Add Habit"]
     end
-    
+
     Header --> HabitGroups
     Morning --> HabitCard
 ```
@@ -200,20 +270,20 @@ flowchart TB
 stateDiagram-v2
     [*] --> Empty: No habits
     [*] --> HasHabits: Has habits
-    
+
     state Empty {
         [*] --> EmptyState
         EmptyState: Illustration
         EmptyState: "Add your first habit"
         EmptyState: + Button
     }
-    
+
     state HasHabits {
         [*] --> Pending
         Pending --> AllDone: All completed
         Pending --> PartiallyDone: Some completed
     }
-    
+
     state AllDone {
         [*] --> Celebration
         Celebration: "All done for today!"
@@ -229,10 +299,10 @@ sequenceDiagram
     participant Card as Habit Card
     participant Sheet as Bottom Sheet
     participant DB as Database
-    
+
     User->>Card: Tap completion button
     Card->>Sheet: Show completion options
-    
+
     alt Quick complete (full)
         Sheet->>User: "Done" option
         User->>Sheet: Tap "Done"
@@ -271,7 +341,7 @@ flowchart LR
         Animation["Checkmark animation"]
         Update["Card updates"]
     end
-    
+
     Tap --> Haptic --> Animation --> Update
 ```
 
@@ -281,13 +351,13 @@ flowchart LR
 flowchart TB
     subgraph CompletionSheet["Completion Bottom Sheet"]
         HabitInfo["Habit name + anchor"]
-        
+
         subgraph Options["Completion Options"]
             Done["✓ Done<br/>Fully completed"]
             Partial["◐ Partial<br/>Did some of it"]
             Skip["⊘ Skip Today<br/>Not doing it"]
         end
-        
+
         subgraph OptionalTracking["Optional (if enabled)"]
             Energy["Energy Level<br/>1-5 selector"]
             Note["Add Note"]
@@ -303,27 +373,27 @@ flowchart TB
 flowchart TB
     subgraph RoutineFlow["Routine Runner Flow"]
         Start["Tap routine 'Play' button"]
-        
+
         subgraph VariantSelect["Variant Selection (if multiple)"]
             Quick["Quick (10 min)"]
             Standard["Standard (20 min)"]
             Extended["Extended (35 min)"]
         end
-        
+
         subgraph Runner["Routine Runner"]
             CurrentHabit["Current Habit<br/>Large timer display"]
             Progress["Progress indicator<br/>2 of 5"]
             Controls["Done | Skip | Pause"]
             UpNext["Up next preview"]
         end
-        
+
         subgraph Complete["Completion"]
             Summary["Routine Summary<br/>Time: 18:32<br/>Completed: 4/5"]
             Celebrate["Celebration animation"]
             BackToToday["Return to Today"]
         end
     end
-    
+
     Start --> VariantSelect --> Runner
     Runner --> Complete
 ```
@@ -334,18 +404,18 @@ flowchart TB
 flowchart TB
     subgraph RunnerScreen["Routine Runner Layout"]
         Header["Morning Routine<br/>Step 2 of 4"]
-        
+
         subgraph Timer["Timer Display"]
             HabitName["Take medication"]
             TimerRing["Large countdown ring<br/>2:45"]
         end
-        
+
         subgraph Actions["Action Buttons"]
             Done["✓ Done"]
             Skip["Skip →"]
             More["•••"]
         end
-        
+
         Preview["Up next: Drink water (1 min)"]
     end
 ```
@@ -359,10 +429,10 @@ flowchart TB
     subgraph LapseFlow["Lapse Recovery Flow"]
         Detect["System detects 3+ missed days"]
         Notify["Gentle notification<br/>'Habit is waiting when you're ready'"]
-        
+
         subgraph UserEngages["User Taps Notification"]
             Welcome["Welcome back!<br/>Let's figure this out."]
-            
+
             subgraph Blocker["What got in the way? (optional)"]
                 B1["Too tired"]
                 B2["No time"]
@@ -370,7 +440,7 @@ flowchart TB
                 B4["Needed break"]
                 B5["Skip this"]
             end
-            
+
             subgraph Actions["What would you like to do?"]
                 Resume["Resume Tracking<br/>Pick up where you left off"]
                 Simplify["Try Smaller<br/>Use micro version"]
@@ -378,19 +448,19 @@ flowchart TB
                 Archive["Archive<br/>Remove for now"]
             end
         end
-        
+
         Detect --> Notify --> Welcome --> Blocker --> Actions
     end
 ```
 
 ### Recovery Session UI
 
-| Screen | Purpose | Messaging |
-|--------|---------|-----------|
-| Welcome | Warm return | "Welcome back! Let's figure this out together." |
-| Blocker | Optional data | "What got in the way? (This helps us help you)" |
-| Actions | Choose path | Clear options, no judgment |
-| Confirm | Reinforce choice | "Great choice. Your habit is ready." |
+| Screen  | Purpose          | Messaging                                       |
+| ------- | ---------------- | ----------------------------------------------- |
+| Welcome | Warm return      | "Welcome back! Let's figure this out together." |
+| Blocker | Optional data    | "What got in the way? (This helps us help you)" |
+| Actions | Choose path      | Clear options, no judgment                      |
+| Confirm | Reinforce choice | "Great choice. Your habit is ready."            |
 
 ---
 
@@ -401,21 +471,21 @@ flowchart TB
     subgraph RelapseFlow["Relapse Fresh Start"]
         Detect["7+ days missed"]
         Notify["Fresh start notification"]
-        
+
         subgraph Session["Fresh Start Session"]
             Welcome["It's good to see you!<br/>Ready for a fresh start?"]
             Reflection["Quick reflection (optional)<br/>What happened?"]
-            
+
             subgraph Options["Options"]
                 Fresh["Fresh Start<br/>Day 1 of a new chapter"]
                 Pause["Take a Break<br/>Come back when ready"]
                 Archive["Archive<br/>Not right now"]
             end
         end
-        
+
         Fresh --> NewPhase["Phase resets to FORMING<br/>Progress preserved"]
     end
-    
+
     Detect --> Notify --> Session
 ```
 
@@ -427,7 +497,7 @@ flowchart TB
 flowchart TB
     subgraph SettingsFlow["Settings Flow"]
         Main["Settings Main"]
-        
+
         subgraph Sections["Setting Sections"]
             Notifications["Notifications<br/>Channels, quiet hours"]
             Sync["Sync & Backup<br/>Enable, account, status"]
@@ -436,7 +506,7 @@ flowchart TB
             About["About<br/>Version, feedback"]
         end
     end
-    
+
     Main --> Sections
 ```
 
@@ -449,10 +519,10 @@ sequenceDiagram
     participant FireAuth as Firebase Auth
     participant Firestore as Cloud Firestore
     participant Room as Room DB
-    
+
     User->>Settings: Tap "Sign In"
     Settings->>FireAuth: Launch sign-in UI
-    
+
     alt Email/Password
         FireAuth->>User: Email + password form
         User->>FireAuth: Enter credentials
@@ -460,18 +530,18 @@ sequenceDiagram
         FireAuth->>User: Google account picker
         User->>FireAuth: Select account
     end
-    
+
     FireAuth-->>Settings: Authenticated (uid)
-    
+
     Settings->>Firestore: Check for existing user data
-    
+
     alt Firestore empty (new user)
         Settings->>Room: Read all local data
         Settings->>Firestore: Push local data
     else Firestore has data (returning user)
         Settings->>Firestore: Pull data into Room
     end
-    
+
     Settings->>Firestore: Start snapshot listeners
     Settings->>User: "You're all set!"
 ```
@@ -487,12 +557,12 @@ flowchart TB
             TileView["Today's habits list"]
             TileTap["Tap habit → Complete"]
         end
-        
+
         subgraph Complication["Complication"]
             CompView["Remaining count: 3"]
             CompTap["Tap → Open app"]
         end
-        
+
         subgraph App["Watch App"]
             AppList["Habit list view"]
             AppDetail["Habit detail + complete"]
@@ -509,13 +579,13 @@ sequenceDiagram
     participant Watch
     participant Phone
     participant Firestore
-    
+
     User->>Watch: Tap habit on tile
     Watch->>Watch: Show confirm dialog
     User->>Watch: Confirm "Done"
     Watch->>Watch: Record completion locally
     Watch->>User: Haptic + visual confirm
-    
+
     Watch->>Phone: Sync via Data Layer
     Phone->>Phone: Update Room DB
     Phone->>Firestore: Push completion
@@ -538,12 +608,12 @@ flowchart TB
 
 ### Empty States
 
-| Screen | Empty State | CTA |
-|--------|-------------|-----|
+| Screen            | Empty State                           | CTA              |
+| ----------------- | ------------------------------------- | ---------------- |
 | Today (no habits) | Illustration + "Add your first habit" | Add Habit button |
-| Today (all done) | "All done for today! 🎉" | None needed |
-| Routines (none) | "Group habits into routines" | Create Routine |
-| History (no data) | "Your history will appear here" | None |
+| Today (all done)  | "All done for today! 🎉"              | None needed      |
+| Routines (none)   | "Group habits into routines"          | Create Routine   |
+| History (no data) | "Your history will appear here"       | None             |
 
 ---
 
@@ -551,30 +621,30 @@ flowchart TB
 
 ### Tap Targets
 
-| Element | Minimum Size | Recommended Size |
-|---------|--------------|------------------|
-| Primary buttons | 48dp | 56dp |
-| Completion button | 48dp | 64dp |
-| List items | 48dp height | 72dp height |
-| Icon buttons | 48dp | 48dp |
+| Element           | Minimum Size | Recommended Size |
+| ----------------- | ------------ | ---------------- |
+| Primary buttons   | 48dp         | 56dp             |
+| Completion button | 48dp         | 64dp             |
+| List items        | 48dp height  | 72dp height      |
+| Icon buttons      | 48dp         | 48dp             |
 
 ### Animations
 
-| Action | Animation | Duration |
-|--------|-----------|----------|
-| Habit complete | Checkmark draw + scale | 300ms |
-| Card expand | Height + fade | 200ms |
-| Screen transition | Shared element | 300ms |
-| Progress update | Ring fill | 400ms |
+| Action            | Animation              | Duration |
+| ----------------- | ---------------------- | -------- |
+| Habit complete    | Checkmark draw + scale | 300ms    |
+| Card expand       | Height + fade          | 200ms    |
+| Screen transition | Shared element         | 300ms    |
+| Progress update   | Ring fill              | 400ms    |
 
 ### Haptic Feedback
 
-| Action | Haptic Type |
-|--------|-------------|
-| Habit complete | Success (tick) |
-| Button tap | Light click |
-| Error | Error pattern |
-| Routine step done | Medium click |
+| Action            | Haptic Type    |
+| ----------------- | -------------- |
+| Habit complete    | Success (tick) |
+| Button tap        | Light click    |
+| Error             | Error pattern  |
+| Routine step done | Medium click   |
 
 ---
 
@@ -582,16 +652,16 @@ flowchart TB
 
 ### Screen Reader Support
 
-| Element | Content Description |
-|---------|---------------------|
+| Element           | Content Description             |
+| ----------------- | ------------------------------- |
 | Completion button | "Complete [habit name], button" |
-| Progress ring | "[X] of [Y] habits completed" |
-| Habit card | "[name], [status], [anchor]" |
+| Progress ring     | "[X] of [Y] habits completed"   |
+| Habit card        | "[name], [status], [anchor]"    |
 
 ### Motion Reduction
 
-| Animation | Reduced Motion Alternative |
-|-----------|---------------------------|
-| Celebration | Static checkmark |
-| Progress ring | Instant fill |
-| Transitions | Fade only |
+| Animation     | Reduced Motion Alternative |
+| ------------- | -------------------------- |
+| Celebration   | Static checkmark           |
+| Progress ring | Instant fill               |
+| Transitions   | Fade only                  |
