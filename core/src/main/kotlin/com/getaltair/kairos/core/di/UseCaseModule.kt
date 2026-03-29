@@ -13,6 +13,7 @@ import com.getaltair.kairos.domain.usecase.CompleteRoutineUseCase
 import com.getaltair.kairos.domain.usecase.CreateHabitUseCase
 import com.getaltair.kairos.domain.usecase.CreateMissedCompletionsUseCase
 import com.getaltair.kairos.domain.usecase.CreateRoutineUseCase
+import com.getaltair.kairos.domain.usecase.DeleteAccountUseCase
 import com.getaltair.kairos.domain.usecase.DeleteHabitUseCase
 import com.getaltair.kairos.domain.usecase.DeleteRoutineUseCase
 import com.getaltair.kairos.domain.usecase.DetectLapsesUseCase
@@ -64,6 +65,7 @@ val useCaseModule = module {
     factory { SignOutUseCase(get()) }
     factory { ResetPasswordUseCase(get()) }
     factory { ObserveAuthStateUseCase(get()) }
+    factory { DeleteAccountUseCase(get(), get()) }
 
     // Recovery use cases
     factory { CreateMissedCompletionsUseCase(get(), get()) }

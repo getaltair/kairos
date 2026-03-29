@@ -124,6 +124,118 @@ class SyncManager(
     }
 
     // ------------------------------------------------------------------
+    // Account deletion
+    // ------------------------------------------------------------------
+
+    /**
+     * Deletes ALL Firestore data for a user, then the user document itself.
+     *
+     * This is used during account deletion to wipe cloud data before the
+     * Firebase Auth account is removed. The method:
+     * 1. Stops all snapshot listeners (prevents callbacks during deletion).
+     * 2. Deletes documents from every subcollection under `users/{userId}`.
+     * 3. For routines, also deletes nested subcollections (habits, variants).
+     * 4. Deletes the user document at `users/{userId}`.
+     *
+     * Firestore batches are limited to 500 operations, so documents are
+     * committed in chunks when a subcollection exceeds that limit.
+     */
+    suspend fun deleteAllUserData(userId: String) {
+        require(userId.isNotBlank()) { "userId must not be blank" }
+
+        Timber.i("Starting full data deletion for user %s", userId)
+        stopListening()
+
+        try {
+            // --- Routines require special handling for nested subcollections ---
+            val routinesPath = FirestoreCollections.routines(userId).value
+            val routineDocs = firestore.collection(routinesPath).get().await().documents
+            Timber.d("Found %d routine(s) to clean up", routineDocs.size)
+
+            for (routineDoc in routineDocs) {
+                val routineId = routineDoc.id
+                // Delete routine_habits subcollection
+                val habitsPath = FirestoreCollections.routineHabits(userId, routineId).value
+                deleteCollection(habitsPath, "routine_habits for routine $routineId")
+                // Delete routine_variants subcollection
+                val variantsPath = FirestoreCollections.routineVariants(userId, routineId).value
+                deleteCollection(variantsPath, "routine_variants for routine $routineId")
+            }
+
+            // --- Delete top-level subcollections ---
+            deleteCollection(
+                FirestoreCollections.habits(userId).value,
+                "habits",
+            )
+            deleteCollection(
+                FirestoreCollections.completions(userId).value,
+                "completions",
+            )
+            deleteCollection(
+                routinesPath,
+                "routines",
+            )
+            deleteCollection(
+                FirestoreCollections.routineExecutions(userId).value,
+                "routine_executions",
+            )
+            deleteCollection(
+                FirestoreCollections.recoverySessions(userId).value,
+                "recovery_sessions",
+            )
+            deleteCollection(
+                FirestoreCollections.preferences(userId).value,
+                "preferences",
+            )
+            deleteCollection(
+                FirestoreCollections.deletions(userId).value,
+                "deletions",
+            )
+
+            // --- Delete the user document itself ---
+            val userDocPath = FirestoreCollections.user(userId).value
+            firestore.document(userDocPath).delete().await()
+            Timber.i("Deleted user document at %s", userDocPath)
+
+            Timber.i("Completed full data deletion for user %s", userId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to delete all user data for %s", userId)
+            throw e
+        }
+    }
+
+    /**
+     * Deletes all documents in a Firestore collection, respecting the
+     * 500-operation batch limit. Documents are fetched and deleted in
+     * batches until the collection is empty.
+     *
+     * @param collectionPath Full Firestore collection path.
+     * @param label Human-readable label for logging.
+     */
+    private suspend fun deleteCollection(collectionPath: String, label: String) {
+        val collectionRef = firestore.collection(collectionPath)
+        var totalDeleted = 0
+
+        while (true) {
+            val snapshot = collectionRef.limit(BATCH_LIMIT.toLong()).get().await()
+            if (snapshot.isEmpty) break
+
+            val batch = firestore.batch()
+            for (doc in snapshot.documents) {
+                batch.delete(doc.reference)
+            }
+            batch.commit().await()
+            totalDeleted += snapshot.size()
+        }
+
+        if (totalDeleted > 0) {
+            Timber.d("Deleted %d document(s) from %s", totalDeleted, label)
+        }
+    }
+
+    // ------------------------------------------------------------------
     // Push operations
     // ------------------------------------------------------------------
 
@@ -1277,5 +1389,10 @@ class SyncManager(
         is com.getaltair.kairos.domain.entity.RecoverySession -> entity.toFirestoreMap()
         is com.getaltair.kairos.domain.entity.UserPreferences -> entity.toFirestoreMap()
         else -> throw IllegalArgumentException("Unknown entity type: ${entity::class.simpleName}")
+    }
+
+    companion object {
+        /** Firestore WriteBatch maximum operations per commit. */
+        private const val BATCH_LIMIT = 500
     }
 }

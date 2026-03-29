@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.getaltair.kairos.core.di.useCaseModule
 import com.getaltair.kairos.data.di.dataModule
 import com.getaltair.kairos.di.setupModule
+import com.getaltair.kairos.domain.sync.DataCleanup
 import com.getaltair.kairos.feature.auth.di.authModule
 import com.getaltair.kairos.feature.habit.di.habitModule
 import com.getaltair.kairos.feature.recovery.di.recoveryModule
@@ -54,6 +55,7 @@ class KoinModuleCheckTest {
         DataClient::class,
         MessageClient::class,
         CapabilityClient::class,
+        DataCleanup::class,
     )
 
     /**

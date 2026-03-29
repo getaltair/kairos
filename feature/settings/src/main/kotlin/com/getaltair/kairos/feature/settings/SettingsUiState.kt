@@ -10,5 +10,8 @@ data class SettingsUiState(
     val lastSyncTime: Instant? = null,
     val showDeleteAccountDialog: Boolean = false,
     val showSignOutDialog: Boolean = false,
+    val showReauthDialog: Boolean = false,
+    val isDeletingAccount: Boolean = false,
+    val accountDeleted: Boolean = false,
     val errorMessage: String? = null,
 )

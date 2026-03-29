@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.getaltair.kairos.domain.common.Result
 import com.getaltair.kairos.domain.repository.AuthState
 import com.getaltair.kairos.domain.sync.SyncStateProvider
+import com.getaltair.kairos.domain.usecase.DeleteAccountUseCase
 import com.getaltair.kairos.domain.usecase.ObserveAuthStateUseCase
 import com.getaltair.kairos.domain.usecase.SignOutUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,7 @@ class SettingsViewModel(
     private val syncStateProvider: SyncStateProvider,
     private val observeAuthStateUseCase: ObserveAuthStateUseCase,
     private val signOutUseCase: SignOutUseCase,
+    private val deleteAccountUseCase: DeleteAccountUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -94,8 +96,36 @@ class SettingsViewModel(
         _uiState.update {
             it.copy(
                 showDeleteAccountDialog = false,
-                errorMessage = "Account deletion is not yet available.",
+                showReauthDialog = true,
             )
+        }
+    }
+
+    fun onReauthDismiss() {
+        _uiState.update { it.copy(showReauthDialog = false) }
+    }
+
+    fun deleteAccount(password: String) {
+        _uiState.update { it.copy(isDeletingAccount = true, showReauthDialog = false) }
+        viewModelScope.launch {
+            when (val result = deleteAccountUseCase(password)) {
+                is Result.Success -> {
+                    Timber.d("Account deleted successfully")
+                    _uiState.update {
+                        it.copy(isDeletingAccount = false, accountDeleted = true)
+                    }
+                }
+
+                is Result.Error -> {
+                    Timber.e(result.cause, "Failed to delete account: %s", result.message)
+                    _uiState.update {
+                        it.copy(
+                            isDeletingAccount = false,
+                            errorMessage = result.message,
+                        )
+                    }
+                }
+            }
         }
     }
 

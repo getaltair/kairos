@@ -53,6 +53,18 @@ interface AuthRepository {
     suspend fun resetPassword(email: String): com.getaltair.kairos.domain.common.Result<Unit>
 
     /**
+     * Re-authenticates the current user with their password.
+     * Required by Firebase before sensitive operations like account deletion.
+     */
+    suspend fun reauthenticate(password: String): com.getaltair.kairos.domain.common.Result<Unit>
+
+    /**
+     * Permanently deletes the current user's account and all associated data.
+     * Re-authenticates with the given password before deletion.
+     */
+    suspend fun deleteAccount(password: String): com.getaltair.kairos.domain.common.Result<Unit>
+
+    /**
      * Returns the current user's ID, or null if not signed in.
      */
     fun getCurrentUserId(): String?

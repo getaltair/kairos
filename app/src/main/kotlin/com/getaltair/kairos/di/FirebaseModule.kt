@@ -1,5 +1,8 @@
 package com.getaltair.kairos.di
 
+import com.getaltair.kairos.data.database.KairosDatabase
+import com.getaltair.kairos.domain.sync.DataCleanup
+import com.getaltair.kairos.sync.SyncManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import org.koin.dsl.module
@@ -9,8 +12,14 @@ import org.koin.dsl.module
  * can inject. These are resolved lazily so Firebase must already be
  * initialized (via google-services.json or [com.getaltair.kairos.data.firebase.FirebaseInitializer]) before
  * any consumer touches them.
+ *
+ * Also provides the [DataCleanup] binding that bridges the domain-layer
+ * interface with concrete sync and database infrastructure.
  */
 val firebaseModule = module {
     single<FirebaseAuth> { FirebaseAuth.getInstance() }
     single<FirebaseFirestore> { FirebaseFirestore.getInstance() }
+
+    // Account deletion infrastructure: bridges SyncManager + KairosDatabase
+    single<DataCleanup> { DataCleanupImpl(get<SyncManager>(), get<KairosDatabase>()) }
 }
