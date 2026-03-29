@@ -1,0 +1,433 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComposableParamOrder:DashboardScreen.kt$DashboardScreen</ID>
+    <ID>ComposableParamOrder:EmptyState.kt$EmptyState</ID>
+    <ID>ComposableParamOrder:HabitCard.kt$HabitCard</ID>
+    <ID>ComposableParamOrder:RoutineBuilderScreen.kt$RoutineBuilderScreen</ID>
+    <ID>ConstructorParameterNaming:HabitDao.kt$TodayHabitWithCompletion$val completed_at: Long?</ID>
+    <ID>ConstructorParameterNaming:HabitDao.kt$TodayHabitWithCompletion$val completion_date: String?</ID>
+    <ID>ConstructorParameterNaming:HabitDao.kt$TodayHabitWithCompletion$val completion_id: UUID?</ID>
+    <ID>ConstructorParameterNaming:HabitDao.kt$TodayHabitWithCompletion$val completion_type: String?</ID>
+    <ID>ConstructorParameterNaming:HabitDao.kt$TodayHabitWithCompletion$val energy_level: Int?</ID>
+    <ID>ConstructorParameterNaming:HabitDao.kt$TodayHabitWithCompletion$val partial_percent: Int?</ID>
+    <ID>ConstructorParameterNaming:HabitDao.kt$TodayHabitWithCompletion$val skip_reason: String?</ID>
+    <ID>CyclomaticComplexMethod:AnchorStep.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun AnchorStep( anchorType: AnchorType, anchorBehavior: String, anchorTime: String?, anchorError: String?, onAnchorTypeSelected: (AnchorType) -&gt; Unit, onAnchorBehaviorChanged: (String) -&gt; Unit, onAnchorTimeChanged: (String) -&gt; Unit, onContinue: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>CyclomaticComplexMethod:CompleteRecoverySessionUseCase.kt$CompleteRecoverySessionUseCase$suspend operator fun invoke(sessionId: UUID, action: RecoveryAction): Result&lt;RecoverySession&gt;</ID>
+    <ID>CyclomaticComplexMethod:CreateHabitScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CreateHabitScreen(onBack: () -&gt; Unit, onCreated: () -&gt; Unit, viewModel: CreateHabitViewModel = koinViewModel())</ID>
+    <ID>CyclomaticComplexMethod:DetectLapsesUseCase.kt$DetectLapsesUseCase$suspend operator fun invoke(): Result&lt;List&lt;LapseDetection&gt;&gt;</ID>
+    <ID>CyclomaticComplexMethod:EditHabitViewModel.kt$EditHabitViewModel$fun saveHabit()</ID>
+    <ID>CyclomaticComplexMethod:HabitComplicationService.kt$HabitComplicationService$override suspend fun onComplicationRequest(request: ComplicationRequest,): ComplicationData?</ID>
+    <ID>CyclomaticComplexMethod:HabitDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun HabitDetailScreen( habitId: UUID, onBack: () -&gt; Unit, onEdit: (UUID) -&gt; Unit, onDeleted: () -&gt; Unit, viewModel: HabitDetailViewModel = koinViewModel() )</ID>
+    <ID>CyclomaticComplexMethod:RecoverySessionScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RecoverySessionScreen( habitId: String, onComplete: () -&gt; Unit, viewModel: RecoverySessionViewModel = koinViewModel(parameters = { parametersOf(habitId) }) )</ID>
+    <ID>CyclomaticComplexMethod:RoutineBuilderScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RoutineBuilderScreen( routineId: String? = null, onNavigateBack: () -&gt; Unit, onRoutineSaved: (UUID) -&gt; Unit, viewModel: RoutineBuilderViewModel = koinViewModel(parameters = { parametersOf(routineId) }), )</ID>
+    <ID>CyclomaticComplexMethod:StatusServer.kt$StatusServer$fun start()</ID>
+    <ID>CyclomaticComplexMethod:StatusServerTest.kt$StatusServerTest$private fun authTestApp( authManager: AuthSessionManager? = null, holder: DashboardStateHolder? = stateHolder, block: suspend io.ktor.server.testing.ApplicationTestBuilder.() -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:TodayScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TodayScreen( onAddHabit: () -&gt; Unit = {}, onHabitClick: (java.util.UUID) -&gt; Unit = {}, onNavigateToSettings: () -&gt; Unit = {}, onNavigateToRoutines: () -&gt; Unit = {}, viewModel: TodayViewModel = koinViewModel() )</ID>
+    <ID>CyclomaticComplexMethod:WearAction.kt$WearAction.Companion$fun fromJson(json: String): WearAction?</ID>
+    <ID>CyclomaticComplexMethod:WearRoutineData.kt$WearRoutineData.Companion$fun fromJson(json: String): WearRoutineData?</ID>
+    <ID>ForbiddenComment:HabitRepositoryImpl.kt$HabitRepositoryImpl$// TODO: Use per-habit lapse_threshold_days instead of hardcoded default</ID>
+    <ID>ForbiddenComment:RoutineSummaryViewModel.kt$RoutineSummaryViewModel$// TODO: C6 -- Cannot distinguish done vs skipped without step results</ID>
+    <ID>ImplicitDefaultLocale:AnchorStep.kt$String.format( "%02d:%02d", timePickerState.hour, timePickerState.minute, )</ID>
+    <ID>ImplicitDefaultLocale:AnchorStep.kt$String.format("%d:%02d %s", displayHour, minute, amPm)</ID>
+    <ID>ImplicitDefaultLocale:RoutineTimerService.kt$RoutineTimerService$String.format("%d:%02d", minutes, seconds)</ID>
+    <ID>ImplicitDefaultLocale:TimerDisplay.kt$String.format("%d:%02d", minutes, seconds)</ID>
+    <ID>InstanceOfCheckForException:AbandonRoutineUseCase.kt$AbandonRoutineUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:AdvanceRoutineStepUseCase.kt$AdvanceRoutineStepUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:ArchiveHabitUseCase.kt$ArchiveHabitUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:AuthRepositoryImpl.kt$AuthRepositoryImpl$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:AuthSessionManager.kt$AuthSessionManager$e is SecurityException</ID>
+    <ID>InstanceOfCheckForException:BackdateCompletionUseCase.kt$BackdateCompletionUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:CompleteHabitUseCase.kt$CompleteHabitUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:CompleteRecoverySessionUseCase.kt$CompleteRecoverySessionUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:CompleteRoutineUseCase.kt$CompleteRoutineUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:CompletionRepositoryImpl.kt$CompletionRepositoryImpl$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:CreateHabitUseCase.kt$CreateHabitUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:CreateMissedCompletionsUseCase.kt$CreateMissedCompletionsUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:CreateRoutineUseCase.kt$CreateRoutineUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:DataLayerListenerService.kt$DataLayerListenerService$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:DeleteHabitUseCase.kt$DeleteHabitUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:DeleteRoutineUseCase.kt$DeleteRoutineUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:DetectLapsesUseCase.kt$DetectLapsesUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:EditHabitUseCase.kt$EditHabitUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:GetActiveHabitsUseCase.kt$GetActiveHabitsUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:GetActiveRoutinesUseCase.kt$GetActiveRoutinesUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:GetHabitDetailUseCase.kt$GetHabitDetailUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:GetHabitUseCase.kt$GetHabitUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:GetPendingRecoveriesUseCase.kt$GetPendingRecoveriesUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:GetRoutineDetailUseCase.kt$GetRoutineDetailUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:GetRoutineExecutionUseCase.kt$GetRoutineExecutionUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:GetTodayHabitsUseCase.kt$GetTodayHabitsUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:GetWeeklyStatsUseCase.kt$GetWeeklyStatsUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:HabitComplicationService.kt$HabitComplicationService$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:HabitDetailViewModel.kt$HabitDetailViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:HabitRepositoryImpl.kt$HabitRepositoryImpl$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:HabitTileService.kt$HabitTileService$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:KairosWidget.kt$KairosWidget$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:NotificationSettingsViewModel.kt$NotificationSettingsViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:PauseHabitUseCase.kt$PauseHabitUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:PreferencesRepositoryImpl.kt$PreferencesRepositoryImpl$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:RecoveryRepositoryImpl.kt$RecoveryRepositoryImpl$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:ResetPasswordUseCase.kt$ResetPasswordUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:RestoreHabitUseCase.kt$RestoreHabitUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:ResumeHabitUseCase.kt$ResumeHabitUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:RoutineBuilderViewModel.kt$RoutineBuilderViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:RoutineExecutionRepositoryImpl.kt$RoutineExecutionRepositoryImpl$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:RoutineListViewModel.kt$RoutineListViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:RoutineRepositoryImpl.kt$RoutineRepositoryImpl$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:RoutineRunnerViewModel.kt$RoutineRunnerViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:RoutineSummaryViewModel.kt$RoutineSummaryViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:SignInUseCase.kt$SignInUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:SignOutUseCase.kt$SignOutUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:SignUpUseCase.kt$SignUpUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:SkipHabitUseCase.kt$SkipHabitUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:StartRoutineUseCase.kt$StartRoutineUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:TodayViewModel.kt$TodayViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:UndoCompletionUseCase.kt$UndoCompletionUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:UpdateRoutineUseCase.kt$UpdateRoutineUseCase$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:WearDataRepository.kt$WearDataRepository$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:WearDataSyncService.kt$WearDataSyncService$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:WidgetUpdateHelper.kt$WidgetUpdateHelper$e is CancellationException</ID>
+    <ID>LambdaParameterInRestartableEffect:CreateHabitScreen.kt$onCreated</ID>
+    <ID>LambdaParameterInRestartableEffect:DashboardScanScreen.kt$onBack</ID>
+    <ID>LambdaParameterInRestartableEffect:EditHabitScreen.kt$onSaved</ID>
+    <ID>LambdaParameterInRestartableEffect:FirebaseSetupScreen.kt$onConfigured</ID>
+    <ID>LambdaParameterInRestartableEffect:HabitDetailScreen.kt$onDeleted</ID>
+    <ID>LambdaParameterInRestartableEffect:LoginScreen.kt$onLoginSuccess</ID>
+    <ID>LambdaParameterInRestartableEffect:RecoverySessionScreen.kt$onComplete</ID>
+    <ID>LambdaParameterInRestartableEffect:RoutineBuilderScreen.kt$onRoutineSaved</ID>
+    <ID>LambdaParameterInRestartableEffect:RoutineRunnerScreen.kt$onComplete</ID>
+    <ID>LambdaParameterInRestartableEffect:RoutineRunnerScreen.kt$onFinished</ID>
+    <ID>LambdaParameterInRestartableEffect:SettingsScreen.kt$onAccountDeleted</ID>
+    <ID>LambdaParameterInRestartableEffect:SignUpScreen.kt$onSignUpSuccess</ID>
+    <ID>LargeClass:AdminFirestoreMapperTest.kt$AdminFirestoreMapperTest</ID>
+    <ID>LongMethod:AnchorStep.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun AnchorStep( anchorType: AnchorType, anchorBehavior: String, anchorTime: String?, anchorError: String?, onAnchorTypeSelected: (AnchorType) -&gt; Unit, onAnchorBehaviorChanged: (String) -&gt; Unit, onAnchorTimeChanged: (String) -&gt; Unit, onContinue: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:CategoryStep.kt$@Composable fun CategoryStep( selected: HabitCategory?, categoryError: String?, onCategorySelected: (HabitCategory) -&gt; Unit, onContinue: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:CompletionBottomSheet.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CompletionBottomSheet( habit: Habit, onDone: () -&gt; Unit, onPartial: (Int) -&gt; Unit, onSkip: (SkipReason?) -&gt; Unit, onDismiss: () -&gt; Unit )</ID>
+    <ID>LongMethod:CompletionCalendar.kt$@Composable fun CompletionCalendar( completions: List&lt;Completion&gt;, onDateTapped: (LocalDate) -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:CreateHabitScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CreateHabitScreen(onBack: () -&gt; Unit, onCreated: () -&gt; Unit, viewModel: CreateHabitViewModel = koinViewModel())</ID>
+    <ID>LongMethod:CreateHabitViewModel.kt$CreateHabitViewModel$fun createHabit()</ID>
+    <ID>LongMethod:DashboardAuthClient.kt$DashboardAuthClient$suspend fun confirmAuth( host: String, port: Int, sessionToken: String, firebaseIdToken: String, ): Result&lt;DashboardAuthResponse&gt;</ID>
+    <ID>LongMethod:DashboardScanViewModel.kt$DashboardScanViewModel$fun onQrCodeScanned(rawValue: String)</ID>
+    <ID>LongMethod:DashboardStateHolder.kt$DashboardStateHolder$fun completeHabit(habitId: UUID)</ID>
+    <ID>LongMethod:DetectLapsesUseCase.kt$DetectLapsesUseCase$suspend operator fun invoke(): Result&lt;List&lt;LapseDetection&gt;&gt;</ID>
+    <ID>LongMethod:EditHabitScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun EditHabitScreen( habitId: UUID, onBack: () -&gt; Unit, onSaved: () -&gt; Unit, viewModel: EditHabitViewModel = koinViewModel() )</ID>
+    <ID>LongMethod:EditHabitViewModel.kt$EditHabitViewModel$fun saveHabit()</ID>
+    <ID>LongMethod:FirebaseSetupScreen.kt$@Composable fun FirebaseSetupScreen(onConfigured: () -&gt; Unit, viewModel: FirebaseSetupViewModel = koinViewModel(),)</ID>
+    <ID>LongMethod:ForgotPasswordScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ForgotPasswordScreen(onBack: () -&gt; Unit, viewModel: AuthViewModel = koinViewModel())</ID>
+    <ID>LongMethod:HabitCard.kt$@Composable fun HabitCard( habitWithStatus: HabitWithStatus, onClick: () -&gt; Unit, onNavigateToDetail: () -&gt; Unit = {}, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:HabitDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun HabitDetailScreen( habitId: UUID, onBack: () -&gt; Unit, onEdit: (UUID) -&gt; Unit, onDeleted: () -&gt; Unit, viewModel: HabitDetailViewModel = koinViewModel() )</ID>
+    <ID>LongMethod:HabitsPanel.kt$@Composable fun HabitsPanel( habitsByCategory: Map&lt;HabitCategory, List&lt;Habit&gt;&gt;, completedHabitIds: Set&lt;UUID&gt;, completedCount: Int, totalHabits: Int, onComplete: (UUID) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:KairosNavGraph.kt$@Composable fun KairosNavGraph(firebaseReady: Boolean)</ID>
+    <ID>LongMethod:LoginScreen.kt$@Composable fun LoginScreen( onLoginSuccess: () -&gt; Unit, onNavigateToSignUp: () -&gt; Unit, onNavigateToForgotPassword: () -&gt; Unit, viewModel: AuthViewModel = koinViewModel() )</ID>
+    <ID>LongMethod:LoginScreen.kt$@Composable fun LoginScreen(authSessionManager: AuthSessionManager, serverPort: Int, modifier: Modifier = Modifier,)</ID>
+    <ID>LongMethod:Main.kt$fun main()</ID>
+    <ID>LongMethod:NameStep.kt$@OptIn(ExperimentalLayoutApi::class) @Composable fun NameStep( name: String, nameError: String?, onNameChanged: (String) -&gt; Unit, onContinue: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:NotificationSettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun NotificationSettingsScreen( onNavigateBack: () -&gt; Unit, viewModel: NotificationSettingsViewModel = koinViewModel(), )</ID>
+    <ID>LongMethod:NotificationSettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun QuietHoursSection( quietHoursEnabled: Boolean, quietHoursStart: LocalTime, quietHoursEnd: LocalTime, onToggleQuietHours: (Boolean) -&gt; Unit, onStartTimeChanged: (LocalTime) -&gt; Unit, onEndTimeChanged: (LocalTime) -&gt; Unit, )</ID>
+    <ID>LongMethod:OptionsStep.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun OptionsStep( estimatedSeconds: Int, microVersion: String, icon: String?, color: String?, frequency: HabitFrequency, activeDays: Set&lt;DayOfWeek&gt;, isCreating: Boolean, onEstimatedSecondsChanged: (Int) -&gt; Unit, onMicroVersionChanged: (String) -&gt; Unit, onIconSelected: (String?) -&gt; Unit, onColorSelected: (String?) -&gt; Unit, onFrequencySelected: (HabitFrequency) -&gt; Unit, onActiveDaysChanged: (Set&lt;DayOfWeek&gt;) -&gt; Unit, onCreateHabit: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:RecoverySessionScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RecoverySessionScreen( habitId: String, onComplete: () -&gt; Unit, viewModel: RecoverySessionViewModel = koinViewModel(parameters = { parametersOf(habitId) }) )</ID>
+    <ID>LongMethod:RoutineBuilderScreen.kt$@Composable private fun SelectedHabitRow( habit: Habit, durationOverride: Int?, index: Int, totalCount: Int, onRemove: () -&gt; Unit, onDurationChanged: (Int?) -&gt; Unit, onReorder: (Int, Int) -&gt; Unit, )</ID>
+    <ID>LongMethod:RoutineBuilderScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RoutineBuilderScreen( routineId: String? = null, onNavigateBack: () -&gt; Unit, onRoutineSaved: (UUID) -&gt; Unit, viewModel: RoutineBuilderViewModel = koinViewModel(parameters = { parametersOf(routineId) }), )</ID>
+    <ID>LongMethod:RoutineBuilderViewModel.kt$RoutineBuilderViewModel$fun save()</ID>
+    <ID>LongMethod:RoutineBuilderViewModel.kt$RoutineBuilderViewModel$private fun loadData()</ID>
+    <ID>LongMethod:RoutineCard.kt$@Composable fun RoutineCard( routine: Routine, habitCount: Int, estimatedSeconds: Int, onClick: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:RoutineListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RoutineListScreen( onCreateRoutine: () -&gt; Unit, onRoutineClick: (UUID) -&gt; Unit, viewModel: RoutineListViewModel = koinViewModel(), )</ID>
+    <ID>LongMethod:RoutineRunnerScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RoutineRunnerScreen( routineId: String, onComplete: (executionId: String) -&gt; Unit, onNavigateBack: () -&gt; Unit, viewModel: RoutineRunnerViewModel = koinViewModel(parameters = { parametersOf(routineId) }), )</ID>
+    <ID>LongMethod:RoutineRunnerViewModel.kt$RoutineRunnerViewModel$private fun advanceStep(uiResult: StepResultType, domainResult: StepResult)</ID>
+    <ID>LongMethod:RoutineRunnerViewModel.kt$RoutineRunnerViewModel$private fun loadAndStart()</ID>
+    <ID>LongMethod:RoutineSummaryScreen.kt$@Composable fun RoutineSummaryScreen( executionId: String, onDone: () -&gt; Unit, viewModel: RoutineSummaryViewModel = koinViewModel(parameters = { parametersOf(executionId) }), )</ID>
+    <ID>LongMethod:RoutineSummaryViewModel.kt$RoutineSummaryViewModel$private fun loadSummary()</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable private fun AccountSection( uiState: SettingsUiState, onNavigateToLogin: () -&gt; Unit, onNavigateToDashboardScan: () -&gt; Unit, onSignOutRequest: () -&gt; Unit, onDeleteAccountRequest: () -&gt; Unit, )</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable private fun SyncStatusRow(syncState: SyncState)</ID>
+    <ID>LongMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( onNavigateToLogin: () -&gt; Unit, onNavigateToNotificationSettings: () -&gt; Unit = {}, onNavigateToDashboardScan: () -&gt; Unit = {}, onAccountDeleted: () -&gt; Unit = {}, onBack: () -&gt; Unit = {}, viewModel: SettingsViewModel = koinViewModel(), )</ID>
+    <ID>LongMethod:SignUpScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SignUpScreen( onSignUpSuccess: () -&gt; Unit, onNavigateToLogin: () -&gt; Unit, viewModel: AuthViewModel = koinViewModel() )</ID>
+    <ID>LongMethod:StatusServer.kt$StatusServer$fun start()</ID>
+    <ID>LongMethod:StatusServerTest.kt$StatusServerTest$private fun authTestApp( authManager: AuthSessionManager? = null, holder: DashboardStateHolder? = stateHolder, block: suspend io.ktor.server.testing.ApplicationTestBuilder.() -&gt; Unit, )</ID>
+    <ID>LongMethod:StepIndicator.kt$@Composable fun StepIndicator(currentIndex: Int, stepResults: List&lt;StepResultType&gt;, modifier: Modifier = Modifier,)</ID>
+    <ID>LongMethod:TimerDisplay.kt$@Composable fun TimerDisplay( timeRemainingSeconds: Int, totalTimeSeconds: Int, habitName: String, isPaused: Boolean, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:TodayScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TodayScreen( onAddHabit: () -&gt; Unit = {}, onHabitClick: (java.util.UUID) -&gt; Unit = {}, onNavigateToSettings: () -&gt; Unit = {}, onNavigateToRoutines: () -&gt; Unit = {}, viewModel: TodayViewModel = koinViewModel() )</ID>
+    <ID>LongMethod:WearMessageListenerService.kt$WearMessageListenerService$private fun handleRoutineStepDone(action: WearAction)</ID>
+    <ID>LongParameterList:AnchorStep.kt$( anchorType: AnchorType, anchorBehavior: String, anchorTime: String?, anchorError: String?, onAnchorTypeSelected: (AnchorType) -&gt; Unit, onAnchorBehaviorChanged: (String) -&gt; Unit, onAnchorTimeChanged: (String) -&gt; Unit, onContinue: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongParameterList:AnchorStep.kt$( presets: List&lt;String&gt;, anchorBehavior: String, placeholder: String, onPresetSelected: (String) -&gt; Unit, onTextChanged: (String) -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongParameterList:AuthTextField.kt$( value: String, onValueChange: (String) -&gt; Unit, label: String, modifier: Modifier = Modifier, enabled: Boolean = true, visualTransformation: VisualTransformation = VisualTransformation.None, trailingIcon: @Composable (() -&gt; Unit)? = null, keyboardOptions: KeyboardOptions = KeyboardOptions.Default, keyboardActions: KeyboardActions = KeyboardActions.Default, singleLine: Boolean = true )</ID>
+    <ID>LongParameterList:Completion.kt$Completion$( type: CompletionType = this.type, partialPercent: Int? = this.partialPercent, skipReason: SkipReason? = this.skipReason, energyLevel: Int? = this.energyLevel, note: String? = this.note, updatedAt: Instant = Instant.now() )</ID>
+    <ID>LongParameterList:CompletionDao.kt$CompletionDao$( id: UUID, completedAt: Long, type: String, partialPercent: Int?, skipReason: String?, energyLevel: Int?, note: String?, updatedAt: Long )</ID>
+    <ID>LongParameterList:Habit.kt$Habit$( name: String = this.name, description: String? = this.description, icon: String? = this.icon, color: String? = this.color, anchorBehavior: String = this.anchorBehavior, anchorType: AnchorType = this.anchorType, timeWindowStart: String? = this.timeWindowStart, timeWindowEnd: String? = this.timeWindowEnd, category: HabitCategory = this.category, frequency: HabitFrequency = this.frequency, activeDays: Set&lt;java.time.DayOfWeek&gt;? = this.activeDays, estimatedSeconds: Int = this.estimatedSeconds, microVersion: String? = this.microVersion, allowPartialCompletion: Boolean = this.allowPartialCompletion, subtasks: List&lt;String&gt;? = this.subtasks, phase: HabitPhase = this.phase, status: HabitStatus = this.status, pausedAt: Instant? = this.pausedAt, archivedAt: Instant? = this.archivedAt, lapseThresholdDays: Int = this.lapseThresholdDays, relapseThresholdDays: Int = this.relapseThresholdDays, updatedAt: Instant = Instant.now() )</ID>
+    <ID>LongParameterList:HabitActionButtons.kt$( status: HabitStatus, onPause: () -&gt; Unit, onResume: () -&gt; Unit, onArchive: () -&gt; Unit, onRestore: () -&gt; Unit, onDelete: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongParameterList:HabitDao.kt$HabitDao$( id: UUID, name: String, description: String?, icon: String?, color: String?, anchorBehavior: String, anchorType: String, timeWindowStart: String?, timeWindowEnd: String?, category: HabitCategory, frequency: String, activeDays: String?, estimatedSeconds: Int, microVersion: String?, allowPartialCompletion: Boolean, subtasks: String?, phase: String, status: HabitStatus, pausedAt: Long?, archivedAt: Long?, lapseThresholdDays: Int, relapseThresholdDays: Int, updatedAt: Long = Instant.now().toEpochMilli() )</ID>
+    <ID>LongParameterList:HabitFactory.kt$HabitFactory$( id: UUID = DEFAULT_HABIT_ID, name: String = "Test Habit", description: String? = null, icon: String? = null, color: String? = null, anchorBehavior: String = "After brushing teeth", anchorType: AnchorType = AnchorType.AfterBehavior, timeWindowStart: String? = null, timeWindowEnd: String? = null, category: HabitCategory = HabitCategory.Morning, frequency: HabitFrequency = HabitFrequency.Daily, activeDays: Set&lt;DayOfWeek&gt;? = null, estimatedSeconds: Int = 300, microVersion: String? = null, allowPartialCompletion: Boolean = true, subtasks: List&lt;String&gt;? = null, phase: HabitPhase = HabitPhase.ONBOARD, status: HabitStatus = HabitStatus.Active, createdAt: Instant = DEFAULT_INSTANT, updatedAt: Instant = DEFAULT_INSTANT, pausedAt: Instant? = null, archivedAt: Instant? = null, lapseThresholdDays: Int = 3, relapseThresholdDays: Int = 7, )</ID>
+    <ID>LongParameterList:HabitFactory.kt$HabitFactory$( id: UUID = DEFAULT_ROUTINE_ID, name: String = "Morning Routine", description: String? = null, icon: String? = null, color: String? = null, category: HabitCategory = HabitCategory.Morning, status: RoutineStatus = RoutineStatus.Active, createdAt: Instant = DEFAULT_INSTANT, updatedAt: Instant = DEFAULT_INSTANT, )</ID>
+    <ID>LongParameterList:HabitFactory.kt$HabitFactory$( id: UUID = UUID.fromString("00000000-0000-0000-0000-000000000010"), habitId: UUID = DEFAULT_HABIT_ID, date: LocalDate = LocalDate.of(2025, 1, 1), completedAt: Instant = DEFAULT_INSTANT, type: CompletionType = CompletionType.Full, partialPercent: Int? = null, skipReason: com.getaltair.kairos.domain.enums.SkipReason? = null, energyLevel: Int? = null, note: String? = null, createdAt: Instant = DEFAULT_INSTANT, updatedAt: Instant = DEFAULT_INSTANT, )</ID>
+    <ID>LongParameterList:HabitFactory.kt$HabitFactory$( id: UUID = UUID.fromString("00000000-0000-0000-0000-000000000020"), routineId: UUID = DEFAULT_ROUTINE_ID, variantId: UUID? = null, startedAt: Instant = DEFAULT_INSTANT, completedAt: Instant? = null, status: ExecutionStatus = ExecutionStatus.NotStarted, currentStepIndex: Int = 0, currentStepRemainingSeconds: Int? = null, totalPausedSeconds: Int = 0, createdAt: Instant = DEFAULT_INSTANT, updatedAt: Instant = DEFAULT_INSTANT, )</ID>
+    <ID>LongParameterList:HabitFactory.kt$HabitFactory$( id: UUID = UUID.fromString("00000000-0000-0000-0000-000000000030"), routineId: UUID = DEFAULT_ROUTINE_ID, habitId: UUID = DEFAULT_HABIT_ID, orderIndex: Int = 0, overrideDurationSeconds: Int? = null, variantIds: List&lt;UUID&gt; = emptyList(), createdAt: Instant = DEFAULT_INSTANT, updatedAt: Instant = DEFAULT_INSTANT, )</ID>
+    <ID>LongParameterList:HabitFactory.kt$HabitFactory$( id: UUID = UUID.fromString("00000000-0000-0000-0000-000000000040"), routineId: UUID = DEFAULT_ROUTINE_ID, name: String = "Standard", estimatedMinutes: Int = 30, isDefault: Boolean = false, createdAt: Instant = DEFAULT_INSTANT, updatedAt: Instant = DEFAULT_INSTANT, )</ID>
+    <ID>LongParameterList:HabitFactory.kt$HabitFactory$( id: UUID = UUID.fromString("00000000-0000-0000-0000-000000000050"), habitId: UUID = DEFAULT_HABIT_ID, type: RecoveryType = RecoveryType.Lapse, status: SessionStatus = SessionStatus.Pending, triggeredAt: Instant = DEFAULT_INSTANT, completedAt: Instant? = null, blockers: Set&lt;Blocker&gt; = setOf(Blocker.NoEnergy), action: com.getaltair.kairos.domain.enums.RecoveryAction? = null, notes: String? = null, createdAt: Instant = DEFAULT_INSTANT, updatedAt: Instant = DEFAULT_INSTANT, )</ID>
+    <ID>LongParameterList:HabitFactory.kt$HabitFactory$( id: UUID = UUID.fromString("00000000-0000-0000-0000-000000000060"), userId: String? = null, notificationEnabled: Boolean = true, defaultReminderTime: LocalTime = LocalTime.of(9, 0), theme: Theme = Theme.System, energyTrackingEnabled: Boolean = false, notificationChannels: Map&lt;String, Any&gt;? = null, quietHoursEnabled: Boolean = true, quietHoursStart: LocalTime = LocalTime.of(22, 0), quietHoursEnd: LocalTime = LocalTime.of(7, 0), createdAt: Instant = DEFAULT_INSTANT, updatedAt: Instant = DEFAULT_INSTANT, )</ID>
+    <ID>LongParameterList:HabitValidatorTest.kt$HabitValidatorTest$( anchorBehavior: String = "After brushing teeth", allowPartialCompletion: Boolean = true, lapseThresholdDays: Int = 3, relapseThresholdDays: Int = 7, createdAt: Instant = Instant.parse("2025-01-01T00:00:00Z"), updatedAt: Instant = Instant.parse("2025-01-01T00:00:00Z"), pausedAt: Instant? = null, archivedAt: Instant? = null )</ID>
+    <ID>LongParameterList:HabitsPanel.kt$( habitsByCategory: Map&lt;HabitCategory, List&lt;Habit&gt;&gt;, completedHabitIds: Set&lt;UUID&gt;, completedCount: Int, totalHabits: Int, onComplete: (UUID) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongParameterList:NotificationSettingsScreen.kt$( quietHoursEnabled: Boolean, quietHoursStart: LocalTime, quietHoursEnd: LocalTime, onToggleQuietHours: (Boolean) -&gt; Unit, onStartTimeChanged: (LocalTime) -&gt; Unit, onEndTimeChanged: (LocalTime) -&gt; Unit, )</ID>
+    <ID>LongParameterList:OptionsStep.kt$( estimatedSeconds: Int, microVersion: String, icon: String?, color: String?, frequency: HabitFrequency, activeDays: Set&lt;DayOfWeek&gt;, isCreating: Boolean, onEstimatedSecondsChanged: (Int) -&gt; Unit, onMicroVersionChanged: (String) -&gt; Unit, onIconSelected: (String?) -&gt; Unit, onColorSelected: (String?) -&gt; Unit, onFrequencySelected: (HabitFrequency) -&gt; Unit, onActiveDaysChanged: (Set&lt;DayOfWeek&gt;) -&gt; Unit, onCreateHabit: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongParameterList:RecoverySession.kt$RecoverySession$( type: RecoveryType = this.type, status: SessionStatus = this.status, completedAt: Instant? = this.completedAt, action: RecoveryAction? = this.action, notes: String? = this.notes, updatedAt: Instant = Instant.now() )</ID>
+    <ID>LongParameterList:RecoverySessionDao.kt$RecoverySessionDao$( id: UUID, type: String, status: SessionStatus, completedAt: Long?, action: String?, notes: String?, updatedAt: Long )</ID>
+    <ID>LongParameterList:Routine.kt$Routine$( name: String = this.name, description: String? = this.description, icon: String? = this.icon, color: String? = this.color, category: HabitCategory = this.category, status: RoutineStatus = this.status, updatedAt: Instant = Instant.now() )</ID>
+    <ID>LongParameterList:RoutineBuilderScreen.kt$( habit: Habit, durationOverride: Int?, index: Int, totalCount: Int, onRemove: () -&gt; Unit, onDurationChanged: (Int?) -&gt; Unit, onReorder: (Int, Int) -&gt; Unit, )</ID>
+    <ID>LongParameterList:RoutineDao.kt$RoutineDao$( id: UUID, name: String, description: String?, icon: String?, color: String?, category: String, status: RoutineStatus, userId: String?, updatedAt: Long )</ID>
+    <ID>LongParameterList:RoutineExecution.kt$RoutineExecution$( status: ExecutionStatus = this.status, currentStepIndex: Int = this.currentStepIndex, currentStepRemainingSeconds: Int? = this.currentStepRemainingSeconds, completedAt: Instant? = this.completedAt, totalPausedSeconds: Int = this.totalPausedSeconds, updatedAt: Instant = Instant.now() )</ID>
+    <ID>LongParameterList:RoutineExecutionDao.kt$RoutineExecutionDao$( id: UUID, completedAt: Long?, status: ExecutionStatus, currentStepIndex: Int, currentStepRemainingSeconds: Int?, totalPausedSeconds: Int, updatedAt: Long )</ID>
+    <ID>LongParameterList:RoutineHabitDao.kt$RoutineHabitDao$( id: UUID, habitId: UUID, orderIndex: Int, overrideDurationSeconds: Int?, variantIds: String?, updatedAt: Long )</ID>
+    <ID>LongParameterList:RoutineRunnerViewModel.kt$RoutineRunnerViewModel$( application: Application, private val routineId: String, private val getRoutineDetailUseCase: GetRoutineDetailUseCase, private val startRoutineUseCase: StartRoutineUseCase, private val advanceRoutineStepUseCase: AdvanceRoutineStepUseCase, private val completeRoutineUseCase: CompleteRoutineUseCase, private val abandonRoutineUseCase: AbandonRoutineUseCase, private val nanoClock: NanoClock = NanoClock { System.nanoTime() }, )</ID>
+    <ID>LongParameterList:RoutineSummaryViewModelTest.kt$RoutineSummaryViewModelTest$( id: UUID = executionId, routineId: UUID = this.routineId, status: ExecutionStatus = ExecutionStatus.Completed, currentStepIndex: Int = 0, totalPausedSeconds: Int = 0, startedAt: Instant = fixedStart, completedAt: Instant? = fixedEnd, )</ID>
+    <ID>LongParameterList:SettingsScreen.kt$( onNavigateToLogin: () -&gt; Unit, onNavigateToNotificationSettings: () -&gt; Unit = {}, onNavigateToDashboardScan: () -&gt; Unit = {}, onAccountDeleted: () -&gt; Unit = {}, onBack: () -&gt; Unit = {}, viewModel: SettingsViewModel = koinViewModel(), )</ID>
+    <ID>LongParameterList:UserPreferences.kt$UserPreferences$( notificationEnabled: Boolean = this.notificationEnabled, defaultReminderTime: LocalTime = this.defaultReminderTime, theme: Theme = this.theme, energyTrackingEnabled: Boolean = this.energyTrackingEnabled, notificationChannels: Map&lt;String, Any&gt;? = this.notificationChannels, quietHoursEnabled: Boolean = this.quietHoursEnabled, quietHoursStart: LocalTime = this.quietHoursStart, quietHoursEnd: LocalTime = this.quietHoursEnd, updatedAt: Instant = Instant.now() )</ID>
+    <ID>LongParameterList:UserPreferencesDao.kt$UserPreferencesDao$( id: UUID, userId: String?, notificationEnabled: Boolean, defaultReminderTime: String, theme: String, energyTrackingEnabled: Boolean, notificationChannels: String?, quietHoursEnabled: Boolean, quietHoursStart: LocalTime, quietHoursEnd: LocalTime, updatedAt: Long )</ID>
+    <ID>LoopWithTooManyJumpStatements:CreateMissedCompletionsUseCase.kt$CreateMissedCompletionsUseCase$for</ID>
+    <ID>LoopWithTooManyJumpStatements:DetectLapsesUseCase.kt$DetectLapsesUseCase$for</ID>
+    <ID>LoopWithTooManyJumpStatements:DetectLapsesUseCase.kt$DetectLapsesUseCase$while</ID>
+    <ID>MaxLineLength:AdminFirestoreMapper.kt$// Sealed-class tag conversions (mirrors the tag values in sync/FirestoreMapper.kt but uses Admin SDK types and permissive defaults)</ID>
+    <ID>MaxLineLength:FirebaseConfigStore.kt$FirebaseConfig$"FirebaseConfig(projectId=$projectId, applicationId=$applicationId, apiKey=REDACTED, storageBucket=$storageBucket, gcmSenderId=$gcmSenderId)"</ID>
+    <ID>MaxLineLength:GetPendingRecoveriesUseCase.kt$GetPendingRecoveriesUseCase$"Failed to load habit ${session.habitId} for recovery session ${session.id}: ${habitResult.message}"</ID>
+    <ID>MaxLineLength:HabitValidator.kt$HabitValidator$"relapseThresholdDays (${habit.relapseThresholdDays}) must be greater than lapseThresholdDays (${habit.lapseThresholdDays})"</ID>
+    <ID>MaxLineLength:KairosWidgetContent.kt$// Glance lacks percentage-based widths; 200dp approximates a 3-column widget. Resizing may cause overflow.</ID>
+    <ID>MaxLineLength:Main.kt$"Failed to initialize Firebase Admin SDK with service account at '${config.firebaseServiceAccountPath}': ${e.message}"</ID>
+    <ID>MaxLineLength:UserPreferencesDao.kt$UserPreferencesDao$"UPDATE user_preferences SET notification_enabled = :notificationEnabled, updated_at = :updatedAt WHERE id = :id"</ID>
+    <ID>MaxLineLength:UserPreferencesDao.kt$UserPreferencesDao$"UPDATE user_preferences SET quiet_hours_enabled = :enabled, quiet_hours_start = :start, quiet_hours_end = :end WHERE id = :id"</ID>
+    <ID>ModifierMissing:CreateHabitScreen.kt$CreateHabitScreen</ID>
+    <ID>ModifierMissing:DashboardScanScreen.kt$DashboardScanScreen</ID>
+    <ID>ModifierMissing:EditHabitScreen.kt$EditHabitScreen</ID>
+    <ID>ModifierMissing:FirebaseSetupScreen.kt$FirebaseSetupScreen</ID>
+    <ID>ModifierMissing:ForgotPasswordScreen.kt$ForgotPasswordScreen</ID>
+    <ID>ModifierMissing:HabitDetailScreen.kt$HabitDetailScreen</ID>
+    <ID>ModifierMissing:HabitListScreen.kt$HabitListScreen</ID>
+    <ID>ModifierMissing:LoginScreen.kt$LoginScreen</ID>
+    <ID>ModifierMissing:NotificationSettingsScreen.kt$NotificationSettingsScreen</ID>
+    <ID>ModifierMissing:RecoverySessionScreen.kt$RecoverySessionScreen</ID>
+    <ID>ModifierMissing:RoutineBuilderScreen.kt$RoutineBuilderScreen</ID>
+    <ID>ModifierMissing:RoutineListScreen.kt$RoutineListScreen</ID>
+    <ID>ModifierMissing:RoutineRunnerScreen.kt$RoutineRunnerScreen</ID>
+    <ID>ModifierMissing:RoutineSummaryScreen.kt$RoutineSummaryScreen</ID>
+    <ID>ModifierMissing:SettingsScreen.kt$SettingsScreen</ID>
+    <ID>ModifierMissing:SignUpScreen.kt$SignUpScreen</ID>
+    <ID>ModifierMissing:StandbyScreen.kt$StandbyScreen</ID>
+    <ID>ModifierMissing:TodayScreen.kt$TodayScreen</ID>
+    <ID>MultipleEmitters:DashboardScanScreen.kt$ConfirmingContent</ID>
+    <ID>MultipleEmitters:DashboardScanScreen.kt$ErrorContent</ID>
+    <ID>MultipleEmitters:DashboardScanScreen.kt$ScanningContent</ID>
+    <ID>MultipleEmitters:DashboardScanScreen.kt$SuccessContent</ID>
+    <ID>MultipleEmitters:RecoverySessionScreen.kt$ActionSelectionStep</ID>
+    <ID>MultipleEmitters:RecoverySessionScreen.kt$BlockerSelectionStep</ID>
+    <ID>MultipleEmitters:RecoverySessionScreen.kt$ConfirmationStep</ID>
+    <ID>MultipleEmitters:RecoverySessionScreen.kt$WelcomeStep</ID>
+    <ID>MutableStateAutoboxing:ScreenSaver.kt$mutableStateOf(0)</ID>
+    <ID>MutableStateAutoboxing:StatusIndicator.kt$mutableStateOf(0L)</ID>
+    <ID>NestedBlockDepth:DetectLapsesUseCase.kt$DetectLapsesUseCase$suspend operator fun invoke(): Result&lt;List&lt;LapseDetection&gt;&gt;</ID>
+    <ID>NestedBlockDepth:GetPendingRecoveriesUseCase.kt$GetPendingRecoveriesUseCase$suspend operator fun invoke(): Result&lt;List&lt;Pair&lt;RecoverySession, Habit&gt;&gt;&gt;</ID>
+    <ID>ParameterNaming:AnchorStep.kt$onAnchorBehaviorChanged</ID>
+    <ID>ParameterNaming:AnchorStep.kt$onAnchorTimeChanged</ID>
+    <ID>ParameterNaming:AnchorStep.kt$onAnchorTypeSelected</ID>
+    <ID>ParameterNaming:AnchorStep.kt$onPresetSelected</ID>
+    <ID>ParameterNaming:AnchorStep.kt$onTextChanged</ID>
+    <ID>ParameterNaming:CategoryStep.kt$onCategorySelected</ID>
+    <ID>ParameterNaming:CompletionBottomSheet.kt$onDone</ID>
+    <ID>ParameterNaming:CompletionCalendar.kt$onDateTapped</ID>
+    <ID>ParameterNaming:CreateHabitScreen.kt$onCreated</ID>
+    <ID>ParameterNaming:EditHabitScreen.kt$onSaved</ID>
+    <ID>ParameterNaming:FirebaseSetupScreen.kt$onConfigured</ID>
+    <ID>ParameterNaming:HabitDetailScreen.kt$onDeleted</ID>
+    <ID>ParameterNaming:NameStep.kt$onNameChanged</ID>
+    <ID>ParameterNaming:NotificationSettingsScreen.kt$onEndTimeChanged</ID>
+    <ID>ParameterNaming:NotificationSettingsScreen.kt$onStartTimeChanged</ID>
+    <ID>ParameterNaming:OptionsStep.kt$onActiveDaysChanged</ID>
+    <ID>ParameterNaming:OptionsStep.kt$onColorSelected</ID>
+    <ID>ParameterNaming:OptionsStep.kt$onEstimatedSecondsChanged</ID>
+    <ID>ParameterNaming:OptionsStep.kt$onFrequencySelected</ID>
+    <ID>ParameterNaming:OptionsStep.kt$onIconSelected</ID>
+    <ID>ParameterNaming:OptionsStep.kt$onMicroVersionChanged</ID>
+    <ID>ParameterNaming:RecoverySessionScreen.kt$onDone</ID>
+    <ID>ParameterNaming:RoutineBuilderScreen.kt$onCategorySelected</ID>
+    <ID>ParameterNaming:RoutineBuilderScreen.kt$onDurationChanged</ID>
+    <ID>ParameterNaming:RoutineBuilderScreen.kt$onRoutineSaved</ID>
+    <ID>ParameterNaming:RoutineRunnerScreen.kt$onFinished</ID>
+    <ID>ParameterNaming:RoutineSummaryScreen.kt$onDone</ID>
+    <ID>ParameterNaming:SettingsScreen.kt$onAccountDeleted</ID>
+    <ID>ReturnCount:AbandonRoutineUseCase.kt$AbandonRoutineUseCase$suspend operator fun invoke(executionId: UUID): Result&lt;RoutineExecution&gt;</ID>
+    <ID>ReturnCount:ActionQueue.kt$ActionQueue$private fun parseActionList(json: String): List&lt;WearAction&gt;</ID>
+    <ID>ReturnCount:AdvanceRoutineStepUseCase.kt$AdvanceRoutineStepUseCase$suspend operator fun invoke(executionId: UUID, stepResult: StepResult, habitId: UUID,): Result&lt;RoutineExecution&gt;</ID>
+    <ID>ReturnCount:ArchiveHabitUseCase.kt$ArchiveHabitUseCase$suspend operator fun invoke(habitId: UUID): Result&lt;Habit&gt;</ID>
+    <ID>ReturnCount:AuthSessionManager.kt$AuthSessionManager$@Synchronized fun confirmSession(sessionToken: String, firebaseIdToken: String,): Result&lt;PersistedSession&gt;</ID>
+    <ID>ReturnCount:AuthViewModel.kt$AuthViewModel$fun signIn()</ID>
+    <ID>ReturnCount:AuthViewModel.kt$AuthViewModel$fun signUp()</ID>
+    <ID>ReturnCount:BackdateCompletionUseCase.kt$BackdateCompletionUseCase$suspend operator fun invoke( habitId: UUID, date: LocalDate, type: CompletionType, partialPercent: Int? = null ): Result&lt;Completion&gt;</ID>
+    <ID>ReturnCount:BlockerConverter.kt$BlockerConverter$@TypeConverter fun stringToBlockerList(json: String?): List&lt;Blocker&gt;?</ID>
+    <ID>ReturnCount:CompleteHabitUseCase.kt$CompleteHabitUseCase$suspend operator fun invoke( habitId: UUID, completionType: CompletionType, partialPercent: Int? = null ): Result&lt;Completion&gt;</ID>
+    <ID>ReturnCount:CompleteHabitUseCase.kt$CompleteHabitUseCase$suspend operator fun invoke(habitId: UUID, type: CompletionType, partialPercent: Int? = null): Result&lt;Completion&gt;</ID>
+    <ID>ReturnCount:CompleteRecoverySessionUseCase.kt$CompleteRecoverySessionUseCase$suspend operator fun invoke(sessionId: UUID, action: RecoveryAction): Result&lt;RecoverySession&gt;</ID>
+    <ID>ReturnCount:CompleteRoutineUseCase.kt$CompleteRoutineUseCase$suspend operator fun invoke(executionId: UUID): Result&lt;RoutineExecution&gt;</ID>
+    <ID>ReturnCount:CompletionValidator.kt$CompletionValidator$fun validate(completion: Completion, today: LocalDate = LocalDate.now()): Result&lt;Unit&gt;</ID>
+    <ID>ReturnCount:CreateHabitViewModel.kt$CreateHabitViewModel$fun createHabit()</ID>
+    <ID>ReturnCount:CreateHabitViewModel.kt$CreateHabitViewModel$fun goToNextStep()</ID>
+    <ID>ReturnCount:CreateRoutineUseCase.kt$CreateRoutineUseCase$suspend operator fun invoke( name: String, category: HabitCategory, habitIds: List&lt;UUID&gt;, durations: Map&lt;UUID, Int?&gt; = emptyMap(), ): Result&lt;Routine&gt;</ID>
+    <ID>ReturnCount:DeleteAccountUseCase.kt$DeleteAccountUseCase$suspend operator fun invoke(password: String): Result&lt;Unit&gt;</ID>
+    <ID>ReturnCount:DeleteHabitUseCase.kt$DeleteHabitUseCase$suspend operator fun invoke(habitId: UUID): Result&lt;Unit&gt;</ID>
+    <ID>ReturnCount:EditHabitUseCase.kt$EditHabitUseCase$suspend operator fun invoke(updatedHabit: Habit): Result&lt;Habit&gt;</ID>
+    <ID>ReturnCount:EditHabitViewModel.kt$EditHabitViewModel$fun saveHabit()</ID>
+    <ID>ReturnCount:FirebaseConfigStore.kt$FirebaseConfigStore$fun load(): FirebaseConfig?</ID>
+    <ID>ReturnCount:GetHabitDetailUseCase.kt$GetHabitDetailUseCase$suspend operator fun invoke(habitId: UUID): Result&lt;HabitDetail&gt;</ID>
+    <ID>ReturnCount:GetRoutineDetailUseCase.kt$GetRoutineDetailUseCase$suspend operator fun invoke(routineId: UUID): Result&lt;Pair&lt;Routine, List&lt;RoutineStep&gt;&gt;&gt;</ID>
+    <ID>ReturnCount:GetTodayHabitsUseCase.kt$GetTodayHabitsUseCase$suspend operator fun invoke(): Result&lt;List&lt;HabitWithStatus&gt;&gt;</ID>
+    <ID>ReturnCount:GetWeeklyStatsUseCase.kt$GetWeeklyStatsUseCase$suspend operator fun invoke(habitId: UUID? = null): Result&lt;WeeklyStats&gt;</ID>
+    <ID>ReturnCount:HabitValidator.kt$HabitValidator$fun validate(habit: Habit): Result&lt;Unit&gt;</ID>
+    <ID>ReturnCount:PauseHabitUseCase.kt$PauseHabitUseCase$suspend operator fun invoke(habitId: UUID): Result&lt;Habit&gt;</ID>
+    <ID>ReturnCount:RecoverySessionViewModel.kt$RecoverySessionViewModel$fun confirmAction()</ID>
+    <ID>ReturnCount:RestoreHabitUseCase.kt$RestoreHabitUseCase$suspend operator fun invoke(habitId: UUID): Result&lt;Habit&gt;</ID>
+    <ID>ReturnCount:ResumeHabitUseCase.kt$ResumeHabitUseCase$suspend operator fun invoke(habitId: UUID): Result&lt;Habit&gt;</ID>
+    <ID>ReturnCount:RoomTypeConverters.kt$RoomTypeConverters$@TypeConverter fun stringToBlockerList(json: String?): List&lt;Blocker&gt;?</ID>
+    <ID>ReturnCount:RoutineBuilderViewModel.kt$RoutineBuilderViewModel$fun save()</ID>
+    <ID>ReturnCount:RoutineValidator.kt$RoutineValidator$fun validateCreate(name: String, habitIds: List&lt;java.util.UUID&gt;): Result&lt;Unit&gt;</ID>
+    <ID>ReturnCount:RoutineValidator.kt$RoutineValidator$fun validateOrderIndices(habits: List&lt;RoutineHabit&gt;): Result&lt;Unit&gt;</ID>
+    <ID>ReturnCount:SkipHabitUseCase.kt$SkipHabitUseCase$suspend operator fun invoke(habitId: UUID, skipReason: SkipReason? = null): Result&lt;Completion&gt;</ID>
+    <ID>ReturnCount:StartRoutineUseCase.kt$StartRoutineUseCase$suspend operator fun invoke(routineId: UUID): Result&lt;RoutineExecution&gt;</ID>
+    <ID>ReturnCount:WearAction.kt$WearAction.Companion$fun fromJson(json: String): WearAction?</ID>
+    <ID>ReturnCount:WearCompletionData.kt$WearCompletionData.Companion$fun listFromJson(json: String): List&lt;WearCompletionData&gt;</ID>
+    <ID>ReturnCount:WearHabitData.kt$WearHabitData.Companion$fun listFromJson(json: String): List&lt;WearHabitData&gt;</ID>
+    <ID>ReturnCount:WearMessageListenerService.kt$WearMessageListenerService$override fun onMessageReceived(messageEvent: MessageEvent)</ID>
+    <ID>SwallowedException:DayOfWeekListConverter.kt$DayOfWeekListConverter$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:DeleteAccountUseCase.kt$DeleteAccountUseCase$e: Exception</ID>
+    <ID>SwallowedException:GetWeeklyStatsUseCaseTest.kt$GetWeeklyStatsUseCaseTest$e: CancellationException</ID>
+    <ID>SwallowedException:RecoverySessionEntityMapper.kt$RecoverySessionEntityMapper$e: Exception</ID>
+    <ID>SwallowedException:RoomTypeConverters.kt$RoomTypeConverters$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:RoutineHabitEntityMapper.kt$RoutineHabitEntityMapper$e: Exception</ID>
+    <ID>SwallowedException:StatusServerTest.kt$StatusServerTest$e: Exception</ID>
+    <ID>ThrowsCount:HabitEntityMapper.kt$HabitEntityMapper$fun toEntity(domain: Habit): HabitEntity</ID>
+    <ID>ThrowsCount:RecoverySessionEntityMapper.kt$RecoverySessionEntityMapper$fun toDomain(entity: RecoverySessionEntity): RecoverySession</ID>
+    <ID>ThrowsCount:WearDataSyncService.kt$WearDataSyncService$private suspend fun syncAll()</ID>
+    <ID>TooGenericExceptionCaught:AbandonRoutineUseCase.kt$AbandonRoutineUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ActionQueue.kt$ActionQueue$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AdvanceRoutineStepUseCase.kt$AdvanceRoutineStepUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ArchiveHabitUseCase.kt$ArchiveHabitUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AuthRepositoryImpl.kt$AuthRepositoryImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AuthSessionManager.kt$AuthSessionManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AuthViewModel.kt$AuthViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BackdateCompletionUseCase.kt$BackdateCompletionUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BlockerConverter.kt$BlockerConverter$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CompleteHabitUseCase.kt$CompleteHabitUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CompleteRecoverySessionUseCase.kt$CompleteRecoverySessionUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CompleteRoutineUseCase.kt$CompleteRoutineUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CompletionRepositoryImpl.kt$CompletionRepositoryImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CreateHabitUseCase.kt$CreateHabitUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CreateHabitViewModel.kt$CreateHabitViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CreateMissedCompletionsUseCase.kt$CreateMissedCompletionsUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CreateRoutineUseCase.kt$CreateRoutineUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DashboardAuthClient.kt$DashboardAuthClient$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DashboardScanViewModel.kt$DashboardScanViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DashboardStateHolder.kt$DashboardStateHolder$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DataLayerListenerService.kt$DataLayerListenerService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DeleteAccountUseCase.kt$DeleteAccountUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DeleteHabitUseCase.kt$DeleteHabitUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DeleteRoutineUseCase.kt$DeleteRoutineUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DetectLapsesUseCase.kt$DetectLapsesUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:EditHabitUseCase.kt$EditHabitUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:EditHabitViewModel.kt$EditHabitViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FirebaseAdminClient.kt$FirebaseAdminClient$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FirebaseConfigStore.kt$FirebaseConfigStore$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FirebaseConfigStore.kt$FirebaseConfigStore$retryException: Exception</ID>
+    <ID>TooGenericExceptionCaught:FirebaseInitializer.kt$FirebaseInitializer$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FirebaseSetupViewModel.kt$FirebaseSetupViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GetActiveHabitsUseCase.kt$GetActiveHabitsUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GetActiveRoutinesUseCase.kt$GetActiveRoutinesUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GetHabitDetailUseCase.kt$GetHabitDetailUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GetHabitUseCase.kt$GetHabitUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GetPendingRecoveriesUseCase.kt$GetPendingRecoveriesUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GetRoutineDetailUseCase.kt$GetRoutineDetailUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GetRoutineExecutionUseCase.kt$GetRoutineExecutionUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GetTodayHabitsUseCase.kt$GetTodayHabitsUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GetWeeklyStatsUseCase.kt$GetWeeklyStatsUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:HabitComplicationService.kt$HabitComplicationService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:HabitDetailViewModel.kt$HabitDetailViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:HabitRepositoryImpl.kt$HabitRepositoryImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:HabitTileService.kt$HabitTileService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:JsonListConverter.kt$JsonListConverter$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:JsonMapConverter.kt$JsonMapConverter$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:KairosApp.kt$KairosApp$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:KairosWidget.kt$KairosWidget$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LoginScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:Main.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NotificationSettingsViewModel.kt$NotificationSettingsViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PauseHabitUseCase.kt$PauseHabitUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PreferencesRepositoryImpl.kt$PreferencesRepositoryImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RecoveryRepositoryImpl.kt$RecoveryRepositoryImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RecoverySessionEntityMapper.kt$RecoverySessionEntityMapper$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RecoverySessionViewModel.kt$RecoverySessionViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ResetPasswordUseCase.kt$ResetPasswordUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RestoreHabitUseCase.kt$RestoreHabitUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ResumeHabitUseCase.kt$ResumeHabitUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RoomTypeConverters.kt$RoomTypeConverters$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RoutineBuilderViewModel.kt$RoutineBuilderViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RoutineExecutionRepositoryImpl.kt$RoutineExecutionRepositoryImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RoutineHabitEntityMapper.kt$RoutineHabitEntityMapper$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RoutineListViewModel.kt$RoutineListViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RoutineRepositoryImpl.kt$RoutineRepositoryImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RoutineRunnerViewModel.kt$RoutineRunnerViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RoutineSummaryViewModel.kt$RoutineSummaryViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SettingsViewModel.kt$SettingsViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SignInUseCase.kt$SignInUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SignOutUseCase.kt$SignOutUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SignUpUseCase.kt$SignUpUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SkipHabitUseCase.kt$SkipHabitUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:StartRoutineUseCase.kt$StartRoutineUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:StatusServer.kt$StatusServer$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:TodayViewModel.kt$TodayViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:UndoCompletionUseCase.kt$UndoCompletionUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:UpdateRoutineUseCase.kt$UpdateRoutineUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:UserPreferencesEntityMapper.kt$UserPreferencesEntityMapper$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:WearDataRepository.kt$WearDataRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:WearDataSyncService.kt$WearDataSyncService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:WearMessageListenerService.kt$WearMessageListenerService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:WidgetUpdateHelper.kt$WidgetUpdateHelper$e: Exception</ID>
+    <ID>TooManyFunctions:CompletionDao.kt$CompletionDao</ID>
+    <ID>TooManyFunctions:CreateHabitViewModel.kt$CreateHabitViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:HabitDao.kt$HabitDao</ID>
+    <ID>TooManyFunctions:HabitNotificationDao.kt$HabitNotificationDao</ID>
+    <ID>TooManyFunctions:RecoverySessionDao.kt$RecoverySessionDao</ID>
+    <ID>TooManyFunctions:RoomTypeConverters.kt$RoomTypeConverters</ID>
+    <ID>TooManyFunctions:RoutineDao.kt$RoutineDao</ID>
+    <ID>TooManyFunctions:RoutineExecutionDao.kt$RoutineExecutionDao</ID>
+    <ID>TooManyFunctions:RoutineHabitDao.kt$RoutineHabitDao</ID>
+    <ID>TooManyFunctions:RoutineVariantDao.kt$RoutineVariantDao</ID>
+    <ID>TooManyFunctions:UserPreferencesDao.kt$UserPreferencesDao</ID>
+    <ID>TopLevelPropertyNaming:AuthSession.kt$/** Time-to-live for pending QR auth sessions, in seconds. */ const val SESSION_TTL_SECONDS = 120L</ID>
+    <ID>TopLevelPropertyNaming:AuthSessionManager.kt$private const val SESSION_FILE = "session.json"</ID>
+    <ID>TopLevelPropertyNaming:AuthSessionManager.kt$private const val TOKEN_BYTE_LENGTH = 32</ID>
+    <ID>TopLevelPropertyNaming:DashboardScanScreen.kt$private const val AUTO_NAVIGATE_DELAY_MS = 2_000L</ID>
+    <ID>TopLevelPropertyNaming:KairosWidgetContent.kt$/** Maximum number of habits displayed in the widget list. */ internal const val MAX_WIDGET_HABITS = 5</ID>
+    <ID>TopLevelPropertyNaming:LoginScreen.kt$private const val COUNTDOWN_TICK_MS = 1_000L</ID>
+    <ID>TopLevelPropertyNaming:LoginScreen.kt$private const val REFRESH_INTERVAL_MS = 120_000L</ID>
+    <ID>TopLevelPropertyNaming:QrCodeGenerator.kt$private const val QR_SIZE = 400</ID>
+    <ID>TopLevelPropertyNaming:QrCodeGenerator.kt$private const val QUIET_ZONE = 2</ID>
+    <ID>TopLevelPropertyNaming:WearNavGraph.kt$const val ROUTE_HABIT_DETAIL = "habit_detail/{habitId}"</ID>
+    <ID>TopLevelPropertyNaming:WearNavGraph.kt$const val ROUTE_HABIT_LIST = "habit_list"</ID>
+    <ID>TopLevelPropertyNaming:WearNavGraph.kt$const val ROUTE_ROUTINE_LIST = "routine_list"</ID>
+    <ID>TopLevelPropertyNaming:WearNavGraph.kt$const val ROUTE_ROUTINE_RUNNER = "routine_runner/{routineId}"</ID>
+    <ID>UnusedParameter:TimerDisplay.kt$habitName: String</ID>
+    <ID>UnusedPrivateProperty:AuthViewModel.kt$AuthViewModel$private val signOutUseCase: SignOutUseCase</ID>
+    <ID>UnusedPrivateProperty:HabitListViewModelTest.kt$HabitListViewModelTest$val job = backgroundScope.launch { viewModel.uiState.collect {} }</ID>
+    <ID>UnusedPrivateProperty:WearDataRepository.kt$WearDataRepository$private val dataClient: DataClient</ID>
+    <ID>UnusedPrivateProperty:WearDataSyncService.kt$WearDataSyncService$private val routineExecutionRepository: RoutineExecutionRepository by inject()</ID>
+    <ID>UseCheckOrError:CompletionEntityMapper.kt$CompletionEntityMapper$throw IllegalStateException("Failed to convert CompletionType")</ID>
+    <ID>UseCheckOrError:CompletionRepositoryImpl.kt$CompletionRepositoryImpl$throw IllegalStateException("Failed to convert: completionType")</ID>
+    <ID>UseCheckOrError:HabitEntityMapper.kt$HabitEntityMapper$throw IllegalStateException("Failed to convert: anchorType")</ID>
+    <ID>UseCheckOrError:HabitEntityMapper.kt$HabitEntityMapper$throw IllegalStateException("Failed to convert: category")</ID>
+    <ID>UseCheckOrError:HabitEntityMapper.kt$HabitEntityMapper$throw IllegalStateException("Failed to convert: frequency")</ID>
+    <ID>UseCheckOrError:HabitEntityMapper.kt$HabitEntityMapper$throw IllegalStateException("Failed to convert: phase")</ID>
+    <ID>UseCheckOrError:HabitEntityMapper.kt$HabitEntityMapper$throw IllegalStateException("Failed to convert: status")</ID>
+    <ID>UseCheckOrError:HabitRepositoryImpl.kt$HabitRepositoryImpl$throw IllegalStateException("Failed to convert: anchorType")</ID>
+    <ID>UseCheckOrError:HabitRepositoryImpl.kt$HabitRepositoryImpl$throw IllegalStateException("Failed to convert: frequency")</ID>
+    <ID>UseCheckOrError:HabitRepositoryImpl.kt$HabitRepositoryImpl$throw IllegalStateException("Failed to convert: phase")</ID>
+    <ID>UseCheckOrError:HabitRepositoryImpl.kt$HabitRepositoryImpl$throw IllegalStateException("Failed to convert: status")</ID>
+    <ID>UseCheckOrError:PreferencesRepositoryImpl.kt$PreferencesRepositoryImpl$throw IllegalStateException("Failed to convert: defaultReminderTime")</ID>
+    <ID>UseCheckOrError:PreferencesRepositoryImpl.kt$PreferencesRepositoryImpl$throw IllegalStateException("Failed to convert: theme")</ID>
+    <ID>UseCheckOrError:RecoveryRepositoryImpl.kt$RecoveryRepositoryImpl$throw IllegalStateException("Unknown RecoveryType: ${session.type}")</ID>
+    <ID>UseCheckOrError:RoutineRepositoryImpl.kt$RoutineRepositoryImpl$throw IllegalStateException("Unknown HabitCategory: ${routine.category}")</ID>
+  </CurrentIssues>
+</SmellBaseline>

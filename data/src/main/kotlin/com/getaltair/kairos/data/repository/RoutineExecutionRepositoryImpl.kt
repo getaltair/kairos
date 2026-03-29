@@ -90,7 +90,7 @@ class RoutineExecutionRepositoryImpl(
             Timber.d("Skipping sync push: user not signed in")
             return
         }
-        syncScope.launch(Dispatchers.IO) {
+        syncScope.launch {
             try {
                 syncTrigger.triggerPush(userId, entityType, id, entity)
             } catch (e: CancellationException) {

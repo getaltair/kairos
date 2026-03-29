@@ -33,10 +33,11 @@ We do not read, analyze, sell, or share your habit data with any third party for
 
 Kairos uses the following Google services, each subject to [Google's Privacy Policy](https://policies.google.com/privacy):
 
-| Service                 | Purpose                             |
-| ----------------------- | ----------------------------------- |
-| Firebase Authentication | User sign-in and account management |
-| Cloud Firestore         | Habit data storage and sync         |
+| Service                    | Purpose                                |
+| -------------------------- | -------------------------------------- |
+| Firebase Authentication    | User sign-in and account management    |
+| Cloud Firestore            | Habit data storage and sync            |
+| Play Services Code Scanner | QR code scanning for dashboard pairing |
 
 No other third-party SDKs or services are used.
 
