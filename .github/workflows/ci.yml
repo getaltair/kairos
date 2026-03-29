@@ -104,7 +104,7 @@ jobs:
               if: env.GOOGLE_SERVICES_JSON == ''
               run: echo "::notice::GOOGLE_SERVICES_JSON secret not set. Building without Firebase services."
             - name: Build all targets (debug)
-              run: ./gradlew :app:assembleDebug :wear:assembleDebug :dashboard:packageUberJarForCurrentOS --max-workers 2
+              run: ./gradlew :app:assembleDebug :wear:assembleDebug :dashboard:packageUberJarForCurrentOS --max-workers 1
             - name: Upload debug APKs
               uses: actions/upload-artifact@v4
               with:
