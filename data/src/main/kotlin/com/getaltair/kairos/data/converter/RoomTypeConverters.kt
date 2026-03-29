@@ -33,11 +33,6 @@ object RoomTypeConverters {
 
     private val moshi: Moshi = Moshi.Builder().build()
 
-    private val uuidListAdapter: JsonAdapter<List<UUID>> by lazy {
-        val type = Types.newParameterizedType(List::class.java, UUID::class.java)
-        moshi.adapter(type)
-    }
-
     private val stringListAdapter: JsonAdapter<List<String>> by lazy {
         val type = Types.newParameterizedType(List::class.java, String::class.java)
         moshi.adapter(type)
@@ -45,11 +40,6 @@ object RoomTypeConverters {
 
     private val mapAdapter: JsonAdapter<Map<String, Any>> by lazy {
         val type = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
-        moshi.adapter(type)
-    }
-
-    private val blockerListAdapter: JsonAdapter<List<Blocker>> by lazy {
-        val type = Types.newParameterizedType(List::class.java, Blocker::class.java)
         moshi.adapter(type)
     }
 
@@ -109,13 +99,15 @@ object RoomTypeConverters {
     // ==================== UUID List Converter ====================
 
     @TypeConverter
-    fun uuidListToString(list: List<UUID>?): String? = list?.let { uuidListAdapter.toJson(it) }
+    fun uuidListToString(list: List<UUID>?): String? = list?.let {
+        stringListAdapter.toJson(it.map { uuid -> uuid.toString() })
+    }
 
     @TypeConverter
     fun stringToUuidList(json: String?): List<UUID>? {
         if (json.isNullOrBlank()) return null
         return try {
-            uuidListAdapter.fromJson(json)
+            stringListAdapter.fromJson(json)?.map { UUID.fromString(it) }
         } catch (e: Exception) {
             Timber.e(e, "Failed to parse UUID list from JSON: $json")
             null
@@ -157,17 +149,34 @@ object RoomTypeConverters {
     // ==================== Blocker List Converter ====================
 
     @TypeConverter
-    fun blockerListToString(blockers: List<Blocker>?): String? = blockers?.let { blockerListAdapter.toJson(it) }
+    fun blockerListToString(blockers: List<Blocker>?): String? = blockers?.let { list ->
+        stringListAdapter.toJson(list.map { it.javaClass.simpleName })
+    }
 
     @TypeConverter
     fun stringToBlockerList(json: String?): List<Blocker>? {
         if (json.isNullOrBlank()) return null
         return try {
-            blockerListAdapter.fromJson(json)
+            val names = stringListAdapter.fromJson(json) ?: return null
+            names.mapNotNull { blockerFromName(it) }
         } catch (e: Exception) {
             Timber.e(e, "Failed to parse blocker list from JSON: $json")
             null
         }
+    }
+
+    private fun blockerFromName(name: String): Blocker? = when (name) {
+        "NoEnergy" -> Blocker.NoEnergy
+        "PainPhysical" -> Blocker.PainPhysical
+        "PainMental" -> Blocker.PainMental
+        "TooBusy" -> Blocker.TooBusy
+        "FamilyEmergency" -> Blocker.FamilyEmergency
+        "WorkEmergency" -> Blocker.WorkEmergency
+        "Sick" -> Blocker.Sick
+        "Weather" -> Blocker.Weather
+        "EquipmentFailure" -> Blocker.EquipmentFailure
+        "Other" -> Blocker.Other
+        else -> null
     }
 
     // ==================== Enum Converters (Sealed Class Objects) ====================

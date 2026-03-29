@@ -17,11 +17,6 @@ class JsonListConverter {
 
     private val moshi: Moshi = Moshi.Builder().build()
 
-    private val uuidListAdapter: JsonAdapter<List<UUID>> by lazy {
-        val type = Types.newParameterizedType(List::class.java, UUID::class.java)
-        moshi.adapter(type)
-    }
-
     private val stringListAdapter: JsonAdapter<List<String>> by lazy {
         val type = Types.newParameterizedType(List::class.java, String::class.java)
         moshi.adapter(type)
@@ -31,7 +26,9 @@ class JsonListConverter {
      * Converts [List<UUID>] to JSON [String].
      */
     @TypeConverter
-    fun uuidListToString(list: List<UUID>?): String? = list?.let { uuidListAdapter.toJson(it) }
+    fun uuidListToString(list: List<UUID>?): String? = list?.let {
+        stringListAdapter.toJson(it.map { uuid -> uuid.toString() })
+    }
 
     /**
      * Converts JSON [String] to [List<UUID>].
@@ -40,7 +37,7 @@ class JsonListConverter {
     fun stringToUuidList(json: String?): List<UUID>? {
         if (json.isNullOrBlank()) return null
         return try {
-            uuidListAdapter.fromJson(json)
+            stringListAdapter.fromJson(json)?.map { UUID.fromString(it) }
         } catch (e: Exception) {
             Timber.e(e, "Failed to parse UUID list from JSON: $json")
             null
