@@ -11,6 +11,7 @@ plugins {
 
 detekt {
     config.setFrom("$projectDir/config/detekt.yml")
+    baseline = file("$projectDir/config/detekt-baseline.xml")
     buildUponDefaultConfig = true
     allRules = false
     parallel = true

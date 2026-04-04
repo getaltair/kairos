@@ -188,7 +188,7 @@ class HabitRepositoryImpl(
             Timber.d("Skipping sync push: user not signed in")
             return
         }
-        syncScope.launch(Dispatchers.IO) {
+        syncScope.launch {
             try {
                 syncTrigger.triggerPush(userId, entityType, id, entity)
             } catch (e: CancellationException) {
@@ -207,7 +207,7 @@ class HabitRepositoryImpl(
             Timber.d("Skipping sync push: user not signed in")
             return
         }
-        syncScope.launch(Dispatchers.IO) {
+        syncScope.launch {
             try {
                 syncTrigger.triggerDeletion(userId, entityType, id)
             } catch (e: CancellationException) {

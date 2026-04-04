@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,6 +49,7 @@ import com.getaltair.kairos.feature.today.components.CompletionBottomSheet
 import com.getaltair.kairos.feature.today.components.EmptyState
 import com.getaltair.kairos.feature.today.components.HabitCard
 import com.getaltair.kairos.feature.today.components.ProgressRing
+import com.getaltair.kairos.ui.icons.filled.SelfImprovement
 import java.time.format.DateTimeFormatter
 import org.koin.androidx.compose.koinViewModel
 

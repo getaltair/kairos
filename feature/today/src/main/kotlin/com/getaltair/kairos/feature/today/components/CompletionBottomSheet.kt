@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -29,6 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.SkipReason
+import com.getaltair.kairos.ui.icons.filled.Adjust
+import com.getaltair.kairos.ui.icons.filled.SkipNext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
