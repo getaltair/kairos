@@ -19,13 +19,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Compress
-import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -51,6 +46,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.getaltair.kairos.domain.enums.Blocker
 import com.getaltair.kairos.domain.enums.RecoveryAction
 import com.getaltair.kairos.domain.enums.RecoveryType
+import com.getaltair.kairos.ui.icons.filled.Archive
+import com.getaltair.kairos.ui.icons.filled.AutoAwesome
+import com.getaltair.kairos.ui.icons.filled.Compress
+import com.getaltair.kairos.ui.icons.filled.Pause
+import com.getaltair.kairos.ui.icons.filled.RestartAlt
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 

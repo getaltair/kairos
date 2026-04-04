@@ -27,8 +27,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -65,6 +63,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.getaltair.kairos.domain.entity.Habit
 import com.getaltair.kairos.domain.enums.HabitCategory
+import com.getaltair.kairos.ui.icons.filled.DragHandle
+import com.getaltair.kairos.ui.icons.filled.Timer
 import java.util.UUID
 import kotlin.math.roundToInt
 import org.koin.androidx.compose.koinViewModel

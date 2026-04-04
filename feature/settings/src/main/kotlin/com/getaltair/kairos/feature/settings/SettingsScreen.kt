@@ -19,11 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -52,6 +48,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.getaltair.kairos.domain.sync.SyncState
+import com.getaltair.kairos.ui.icons.filled.CloudOff
+import com.getaltair.kairos.ui.icons.filled.Devices
+import com.getaltair.kairos.ui.icons.filled.Error
+import com.getaltair.kairos.ui.icons.filled.PersonOff
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import org.koin.androidx.compose.koinViewModel
