@@ -445,7 +445,7 @@ sequenceDiagram
 
 ## Firestore Collection Structure
 
-See `08-erd.md` §Remote Schema (Firestore) for the complete collection structure and document schemas.
+See `05-erd.md` §Remote Schema (Firestore) for the complete collection structure and document schemas.
 
 ```
 users/{userId}

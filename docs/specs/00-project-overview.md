@@ -244,19 +244,20 @@ flowchart TB
 
 This project documentation consists of the following documents:
 
-| Document                         | Description                          |
-| -------------------------------- | ------------------------------------ |
-| `00-project-overview.md`         | This document—philosophy and context |
-| `01-prd-core.md`                 | Core habit tracking requirements     |
-| `02-prd-recovery.md`             | Recovery system requirements         |
-| `03-prd-routines.md`             | Routine runner requirements          |
-| `04-prd-sync.md`                 | Cloud synchronization requirements   |
-| `05-domain-model.md`             | Domain entities and relationships    |
-| `06-invariants.md`               | Business rules and constraints       |
-| `07-architecture.md`             | System architecture and components   |
-| `08-erd.md`                      | Entity-relationship diagrams         |
-| `09-state-machines.md`           | Lifecycle and state diagrams         |
-| `10-user-flows.md`               | User journey and interaction flows   |
-| `11-notification-design.md`      | Notification system design           |
-| `12-wearos-design.md`            | WearOS integration design            |
-| `adr-runtime-firebase-config.md` | ADR: Runtime Firebase configuration  |
+| Document                               | Description                                |
+| -------------------------------------- | ------------------------------------------ |
+| `00-project-overview.md`               | This document—philosophy and context       |
+| `01-PRD-001-core.md`                   | Core habit tracking requirements           |
+| `01-PRD-002-recovery.md`               | Recovery system requirements               |
+| `01-PRD-003-routines.md`               | Routine runner requirements                |
+| `01-PRD-004-sync.md`                   | Cloud synchronization requirements         |
+| `02-domain-model.md`                   | Domain entities and relationships          |
+| `03-invariants.md`                     | Business rules and constraints             |
+| `04-architecture.md`                   | System architecture and components         |
+| `05-erd.md`                            | Entity-relationship diagrams               |
+| `06-state-machines.md`                 | Lifecycle and state diagrams               |
+| `07-user-flows.md`                     | User journey and interaction flows         |
+| `08-SUB-001-notifications.md`          | Notification system design                 |
+| `09-PLAT-001-wearos.md`                | WearOS integration design                  |
+| `10-PLAN-001-kairos.md`                | Implementation plan (feature build order)  |
+| `../adr-runtime-firebase-config.md`    | ADR: Runtime Firebase configuration        |

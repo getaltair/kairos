@@ -140,7 +140,7 @@ Because the Android app, Pi dashboard, and potentially WearOS all use Kotlin, th
 
 **Dependencies:** None
 **Priority:** P0
-**Docs:** `07-architecture.md` §Module Structure, §Dependency Injection
+**Docs:** `04-architecture.md` §Module Structure, §Dependency Injection
 
 ### What to build
 
@@ -199,7 +199,7 @@ kairos/
 
 **Dependencies:** Step 1 (module structure exists)
 **Priority:** P0
-**Docs:** `05-domain-model.md` (full entity definitions), `06-invariants.md` (constraints), `09-state-machines.md` (valid transitions)
+**Docs:** `02-domain-model.md` (full entity definitions), `03-invariants.md` (constraints), `06-state-machines.md` (valid transitions)
 
 ### What to build
 
@@ -209,34 +209,34 @@ Pure Kotlin domain models in the `domain` module. Zero framework dependencies �
 
 | Entity             | Key Fields                                                           | Source Doc                           |
 | ------------------ | -------------------------------------------------------------------- | ------------------------------------ |
-| `Habit`            | name, anchorBehavior, anchorType, category, frequency, phase, status | 05-domain-model.md §Habit            |
-| `Completion`       | habitId, date, type, partialPercent, skipReason                      | 05-domain-model.md §Completion       |
-| `Routine`          | name, category, status                                               | 05-domain-model.md §Routine          |
-| `RoutineHabit`     | routineId, habitId, orderIndex                                       | 05-domain-model.md §RoutineHabit     |
-| `RoutineVariant`   | routineId, name, estimatedMinutes                                    | 05-domain-model.md §RoutineVariant   |
-| `RoutineExecution` | routineId, status, currentStepIndex                                  | 05-domain-model.md §RoutineExecution |
-| `RecoverySession`  | habitId, type, status, blockers, action                              | 05-domain-model.md §RecoverySession  |
-| `UserPreferences`  | notificationEnabled, theme                                           | 05-domain-model.md §UserPreferences  |
+| `Habit`            | name, anchorBehavior, anchorType, category, frequency, phase, status | 02-domain-model.md §Habit            |
+| `Completion`       | habitId, date, type, partialPercent, skipReason                      | 02-domain-model.md §Completion       |
+| `Routine`          | name, category, status                                               | 02-domain-model.md §Routine          |
+| `RoutineHabit`     | routineId, habitId, orderIndex                                       | 02-domain-model.md §RoutineHabit     |
+| `RoutineVariant`   | routineId, name, estimatedMinutes                                    | 02-domain-model.md §RoutineVariant   |
+| `RoutineExecution` | routineId, status, currentStepIndex                                  | 02-domain-model.md §RoutineExecution |
+| `RecoverySession`  | habitId, type, status, blockers, action                              | 02-domain-model.md §RecoverySession  |
+| `UserPreferences`  | notificationEnabled, theme                                           | 02-domain-model.md §UserPreferences  |
 
 ### Enumerations to define
 
 | Enum              | Values                                                                                                                                        | Source Doc                         |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `AnchorType`      | AFTER_BEHAVIOR, BEFORE_BEHAVIOR, AT_LOCATION, AT_TIME                                                                                         | 05-domain-model.md                 |
-| `HabitCategory`   | MORNING, AFTERNOON, EVENING, ANYTIME, DEPARTURE                                                                                               | 05-domain-model.md + dashboard req |
-| `HabitFrequency`  | DAILY, WEEKDAYS, WEEKENDS, CUSTOM                                                                                                             | 05-domain-model.md                 |
-| `HabitPhase`      | ONBOARD, FORMING, MAINTAINING, LAPSED, RELAPSED                                                                                               | 09-state-machines.md               |
-| `HabitStatus`     | ACTIVE, PAUSED, ARCHIVED                                                                                                                      | 09-state-machines.md               |
-| `CompletionType`  | FULL, PARTIAL, SKIPPED, MISSED                                                                                                                | 05-domain-model.md                 |
-| `SkipReason`      | TOO_TIRED, NO_TIME, NOT_FEELING_WELL, TRAVELING, TOOK_DAY_OFF, OTHER                                                                          | 05-domain-model.md                 |
-| `RecoveryType`    | LAPSE, RELAPSE                                                                                                                                | 02-prd-recovery.md                 |
-| `SessionStatus`   | PENDING, COMPLETED, ABANDONED                                                                                                                 | 02-prd-recovery.md                 |
-| `RecoveryAction`  | RESUME, SIMPLIFY, PAUSE, ARCHIVE, FRESH_START                                                                                                 | 02-prd-recovery.md                 |
-| `Blocker`         | TOO_TIRED, FELT_UNWELL, LOW_MOTIVATION, NO_TIME, SCHEDULE_CHANGED, TRAVELING, OVERWHELMED, FORGOT, COULDNT_START, NEEDED_BREAK, DEPRIORITIZED | 02-prd-recovery.md                 |
-| `SyncStatus`      | LOCAL_ONLY, SYNCED, PENDING_SYNC, PENDING_DELETE, CONFLICT                                                                                    | 09-state-machines.md               |
-| `ExecutionStatus` | NOT_STARTED, IN_PROGRESS, PAUSED, COMPLETED, ABANDONED                                                                                        | 09-state-machines.md               |
-| `RoutineStatus`   | ACTIVE, PAUSED, ARCHIVED                                                                                                                      | 05-domain-model.md                 |
-| `Theme`           | SYSTEM, LIGHT, DARK                                                                                                                           | 05-domain-model.md                 |
+| `AnchorType`      | AFTER_BEHAVIOR, BEFORE_BEHAVIOR, AT_LOCATION, AT_TIME                                                                                         | 02-domain-model.md                 |
+| `HabitCategory`   | MORNING, AFTERNOON, EVENING, ANYTIME, DEPARTURE                                                                                               | 02-domain-model.md + dashboard req |
+| `HabitFrequency`  | DAILY, WEEKDAYS, WEEKENDS, CUSTOM                                                                                                             | 02-domain-model.md                 |
+| `HabitPhase`      | ONBOARD, FORMING, MAINTAINING, LAPSED, RELAPSED                                                                                               | 06-state-machines.md               |
+| `HabitStatus`     | ACTIVE, PAUSED, ARCHIVED                                                                                                                      | 06-state-machines.md               |
+| `CompletionType`  | FULL, PARTIAL, SKIPPED, MISSED                                                                                                                | 02-domain-model.md                 |
+| `SkipReason`      | TOO_TIRED, NO_TIME, NOT_FEELING_WELL, TRAVELING, TOOK_DAY_OFF, OTHER                                                                          | 02-domain-model.md                 |
+| `RecoveryType`    | LAPSE, RELAPSE                                                                                                                                | 01-PRD-002-recovery.md                 |
+| `SessionStatus`   | PENDING, COMPLETED, ABANDONED                                                                                                                 | 01-PRD-002-recovery.md                 |
+| `RecoveryAction`  | RESUME, SIMPLIFY, PAUSE, ARCHIVE, FRESH_START                                                                                                 | 01-PRD-002-recovery.md                 |
+| `Blocker`         | TOO_TIRED, FELT_UNWELL, LOW_MOTIVATION, NO_TIME, SCHEDULE_CHANGED, TRAVELING, OVERWHELMED, FORGOT, COULDNT_START, NEEDED_BREAK, DEPRIORITIZED | 01-PRD-002-recovery.md                 |
+| `SyncStatus`      | LOCAL_ONLY, SYNCED, PENDING_SYNC, PENDING_DELETE, CONFLICT                                                                                    | 06-state-machines.md               |
+| `ExecutionStatus` | NOT_STARTED, IN_PROGRESS, PAUSED, COMPLETED, ABANDONED                                                                                        | 06-state-machines.md               |
+| `RoutineStatus`   | ACTIVE, PAUSED, ARCHIVED                                                                                                                      | 02-domain-model.md                 |
+| `Theme`           | SYSTEM, LIGHT, DARK                                                                                                                           | 02-domain-model.md                 |
 
 > **Note:** `DEPARTURE` is added to `HabitCategory` for the Pi dashboard's "Don't Forget" checklist. These are modeled as habits so they get full tracking, sync, and recovery for free.
 
@@ -249,7 +249,7 @@ Pure Kotlin domain models in the `domain` module. Zero framework dependencies �
 
 ### State machine validation
 
-Implement `canTransitionTo()` for `HabitPhase` and `HabitStatus` per `09-state-machines.md`:
+Implement `canTransitionTo()` for `HabitPhase` and `HabitStatus` per `06-state-machines.md`:
 
 ```kotlin
 sealed class HabitPhase {
@@ -279,11 +279,11 @@ Define in `domain` module — implemented in `data` module later:
 
 - [ ] All entities compile as data classes in `domain` module
 - [ ] All enumerations defined with correct values (including DEPARTURE category)
-- [ ] `HabitPhase.canTransitionTo()` passes unit tests for all valid/invalid transitions from `09-state-machines.md`
+- [ ] `HabitPhase.canTransitionTo()` passes unit tests for all valid/invalid transitions from `06-state-machines.md`
 - [ ] `HabitStatus` transitions validated similarly
 - [ ] Repository interfaces defined with no implementation
 - [ ] `domain` module has zero Android framework dependencies (pure Kotlin)
-- [ ] Unit tests cover all invariants from `06-invariants.md` that can be validated at model level (H-1, H-2, H-4, H-5, C-2, C-4, C-5)
+- [ ] Unit tests cover all invariants from `03-invariants.md` that can be validated at model level (H-1, H-2, H-4, H-5, C-2, C-4, C-5)
 
 ---
 
@@ -291,7 +291,7 @@ Define in `domain` module — implemented in `data` module later:
 
 **Dependencies:** Step 2 (domain models define the schema)
 **Priority:** P0
-**Docs:** `08-erd.md` §Local Database Schema, `06-invariants.md` (constraints to enforce in DB)
+**Docs:** `05-erd.md` §Local Database Schema, `03-invariants.md` (constraints to enforce in DB)
 
 ### What to build
 
@@ -301,24 +301,24 @@ Room remains the local source of truth — Firestore syncs to/from it, but all r
 - Room entity classes (mapped from domain models with `@Entity` annotations)
 - Type converters (enums, JSON lists, timestamps, LocalDate, LocalTime)
 - DAOs for all entities
-- Database indices per `08-erd.md` §Index Definitions
+- Database indices per `05-erd.md` §Index Definitions
 - Database migration framework (export schema = true)
 
 ### Tables to create
 
 | Table                 | Entity Class              | Key Constraints                                                      | Source                     |
 | --------------------- | ------------------------- | -------------------------------------------------------------------- | -------------------------- |
-| `habits`              | `HabitEntity`             | PK: id, Index: (status, category), (phase)                           | 08-erd.md §Core Tables     |
-| `completions`         | `CompletionEntity`        | PK: id, FK: habit_id, UNIQUE: (habit_id, date)                       | 08-erd.md §Core Tables     |
-| `routines`            | `RoutineEntity`           | PK: id                                                               | 08-erd.md §Routine Tables  |
-| `routine_habits`      | `RoutineHabitEntity`      | PK: id, FK: routine_id + habit_id, UNIQUE: (routine_id, order_index) | 08-erd.md §Routine Tables  |
-| `routine_variants`    | `RoutineVariantEntity`    | PK: id, FK: routine_id                                               | 08-erd.md §Routine Tables  |
-| `routine_executions`  | `RoutineExecutionEntity`  | PK: id, FK: routine_id, Index: (status)                              | 08-erd.md §Routine Tables  |
-| `recovery_sessions`   | `RecoverySessionEntity`   | PK: id, FK: habit_id, Index: (habit_id, status)                      | 08-erd.md §Recovery Tables |
-| `habit_notifications` | `HabitNotificationEntity` | PK: id, FK: habit_id                                                 | 08-erd.md                  |
-| `user_preferences`    | `UserPreferencesEntity`   | PK: id                                                               | 08-erd.md                  |
+| `habits`              | `HabitEntity`             | PK: id, Index: (status, category), (phase)                           | 05-erd.md §Core Tables     |
+| `completions`         | `CompletionEntity`        | PK: id, FK: habit_id, UNIQUE: (habit_id, date)                       | 05-erd.md §Core Tables     |
+| `routines`            | `RoutineEntity`           | PK: id                                                               | 05-erd.md §Routine Tables  |
+| `routine_habits`      | `RoutineHabitEntity`      | PK: id, FK: routine_id + habit_id, UNIQUE: (routine_id, order_index) | 05-erd.md §Routine Tables  |
+| `routine_variants`    | `RoutineVariantEntity`    | PK: id, FK: routine_id                                               | 05-erd.md §Routine Tables  |
+| `routine_executions`  | `RoutineExecutionEntity`  | PK: id, FK: routine_id, Index: (status)                              | 05-erd.md §Routine Tables  |
+| `recovery_sessions`   | `RecoverySessionEntity`   | PK: id, FK: habit_id, Index: (habit_id, status)                      | 05-erd.md §Recovery Tables |
+| `habit_notifications` | `HabitNotificationEntity` | PK: id, FK: habit_id                                                 | 05-erd.md                  |
+| `user_preferences`    | `UserPreferencesEntity`   | PK: id                                                               | 05-erd.md                  |
 
-### Critical indices (from 08-erd.md §Index Definitions)
+### Critical indices (from 05-erd.md §Index Definitions)
 
 ```sql
 CREATE INDEX idx_habits_status_category ON habits(status, category);
@@ -328,7 +328,7 @@ CREATE INDEX idx_habits_phase ON habits(phase);
 CREATE UNIQUE INDEX idx_routine_habits_order ON routine_habits(routine_id, order_index);
 ```
 
-### Key DAO queries (from 08-erd.md §Query Examples)
+### Key DAO queries (from 05-erd.md §Query Examples)
 
 | DAO             | Query                                            | Purpose                              |
 | --------------- | ------------------------------------------------ | ------------------------------------ |
@@ -364,7 +364,7 @@ Bidirectional mappers in `data` module:
 
 **Dependencies:** Step 3 (DAOs available for repository implementations)
 **Priority:** P0
-**Docs:** `07-architecture.md` §Domain Layer + §Data Layer, `06-invariants.md` (validation rules), `01-prd-core.md` §Functional Requirements
+**Docs:** `04-architecture.md` §Domain Layer + §Data Layer, `03-invariants.md` (validation rules), `01-PRD-001-core.md` §Functional Requirements
 
 ### What to build
 
@@ -401,7 +401,7 @@ data class HabitWithStatus(
 
 ### Validation layer
 
-`HabitValidator` enforcing invariants from `06-invariants.md`:
+`HabitValidator` enforcing invariants from `03-invariants.md`:
 
 - H-1: `anchorBehavior.isNotBlank()`
 - H-2: `category` is valid enum
@@ -432,7 +432,7 @@ data class HabitWithStatus(
 
 **Dependencies:** Step 4 (use cases power the screen)
 **Priority:** P0
-**Docs:** `01-prd-core.md` §UI Requirements + §UC-2 + §UC-3, `10-user-flows.md` §Flow 3 + §Flow 4, `00-project-overview.md` §Design Principles
+**Docs:** `01-PRD-001-core.md` §UI Requirements + §UC-2 + §UC-3, `07-user-flows.md` §Flow 3 + §Flow 4, `00-project-overview.md` §Design Principles
 
 ### What to build
 
@@ -448,7 +448,7 @@ The primary screen users see every day.
 | `isLoading`  | Boolean               | Initial load state            |
 | `undoAction` | UndoState?            | 30-second undo window         |
 
-### Screen layout (from 01-prd-core.md §Today Screen)
+### Screen layout (from 01-PRD-001-core.md §Today Screen)
 
 ```
 ┌─────────────────────────────────┐
@@ -472,7 +472,7 @@ The primary screen users see every day.
 └─────────────────────────────────┘
 ```
 
-### Habit card states (from 01-prd-core.md §Habit Card States)
+### Habit card states (from 01-PRD-001-core.md §Habit Card States)
 
 | State               | Visual                        | Interaction            |
 | ------------------- | ----------------------------- | ---------------------- |
@@ -487,7 +487,7 @@ The primary screen users see every day.
 - **◐ Partial** — percentage slider (1-99), then confirms
 - **⊘ Skip Today** — optional skip reason picker, then confirms
 
-### Non-functional targets (from 01-prd-core.md)
+### Non-functional targets (from 01-PRD-001-core.md)
 
 | Metric                            | Target  |
 | --------------------------------- | ------- |
@@ -517,13 +517,13 @@ The primary screen users see every day.
 
 **Dependencies:** Step 5 (Today screen to navigate back to, FAB triggers creation)
 **Priority:** P0
-**Docs:** `01-prd-core.md` §UC-1 + §FR-1, `10-user-flows.md` §Flow 2
+**Docs:** `01-PRD-001-core.md` §UC-1 + §FR-1, `07-user-flows.md` §Flow 2
 
 ### What to build
 
 Multi-step habit creation wizard. Three required steps, one optional step.
 
-### Flow steps (from 10-user-flows.md §Flow 2)
+### Flow steps (from 07-user-flows.md §Flow 2)
 
 | Step        | Required | Screen                                          | Input                      |
 | ----------- | -------- | ----------------------------------------------- | -------------------------- |
@@ -532,7 +532,7 @@ Multi-step habit creation wizard. Three required steps, one optional step.
 | 3. Category | Yes      | Selector (5 options including DEPARTURE)        | Category enum              |
 | 4. Options  | No       | Duration, micro-version, icon, color, frequency | All optional with defaults |
 
-### Anchor selection (from 10-user-flows.md §Anchor Selection)
+### Anchor selection (from 07-user-flows.md §Anchor Selection)
 
 | Tab                 | Presets                                           | Custom               |
 | ------------------- | ------------------------------------------------- | -------------------- |
@@ -555,13 +555,13 @@ Multi-step habit creation wizard. Three required steps, one optional step.
 
 | Field                    | Default          | Source                |
 | ------------------------ | ---------------- | --------------------- |
-| `estimatedSeconds`       | 300 (5 min)      | 05-domain-model.md    |
-| `frequency`              | DAILY            | 05-domain-model.md    |
-| `allowPartialCompletion` | true (hardcoded) | 06-invariants.md H-4  |
-| `phase`                  | ONBOARD          | 01-prd-core.md FR-1.6 |
+| `estimatedSeconds`       | 300 (5 min)      | 02-domain-model.md    |
+| `frequency`              | DAILY            | 02-domain-model.md    |
+| `allowPartialCompletion` | true (hardcoded) | 03-invariants.md H-4  |
+| `phase`                  | ONBOARD          | 01-PRD-001-core.md FR-1.6 |
 | `status`                 | ACTIVE           | Implicit              |
-| `lapseThresholdDays`     | 3                | 08-erd.md             |
-| `relapseThresholdDays`   | 7                | 08-erd.md             |
+| `lapseThresholdDays`     | 3                | 05-erd.md             |
+| `relapseThresholdDays`   | 7                | 05-erd.md             |
 
 ### Done when
 
@@ -582,7 +582,7 @@ Multi-step habit creation wizard. Three required steps, one optional step.
 
 **Dependencies:** Step 6 (habits exist to manage)
 **Priority:** P0
-**Docs:** `01-prd-core.md` §UC-4 + §FR-4, `09-state-machines.md` §Habit Status State Machine, `06-invariants.md` H-6
+**Docs:** `01-PRD-001-core.md` §UC-4 + §FR-4, `06-state-machines.md` §Habit Status State Machine, `03-invariants.md` H-6
 
 ### What to build
 
@@ -595,7 +595,7 @@ Edit, pause, resume, archive, restore, delete habits. Backdate completions. Habi
 - Weekly completion rate
 - Edit / Pause / Archive actions
 
-### Status transitions (from 09-state-machines.md §Habit Status)
+### Status transitions (from 06-state-machines.md §Habit Status)
 
 | Action  | From             | To        | Side Effects                             |
 | ------- | ---------------- | --------- | ---------------------------------------- |
@@ -618,7 +618,7 @@ Edit, pause, resume, archive, restore, delete habits. Backdate completions. Habi
 | `BackdateCompletionUseCase` | habitId, date, type     | Result<Completion> |
 | `GetHabitDetailUseCase`     | habitId                 | Flow<HabitDetail>  |
 
-### Backdate rules (from 06-invariants.md C-4, C-5)
+### Backdate rules (from 03-invariants.md C-4, C-5)
 
 - Cannot backdate to future
 - Cannot backdate more than 7 days
@@ -639,7 +639,7 @@ Edit, pause, resume, archive, restore, delete habits. Backdate completions. Habi
 
 **Dependencies:** Step 2 (domain models for schema alignment). Can be done in parallel with Steps 3–7.
 **Priority:** P0
-**Docs:** `08-erd.md` §Remote Schema (Firestore) — collection structure, document schemas, and security rules already defined
+**Docs:** `05-erd.md` §Remote Schema (Firestore) — collection structure, document schemas, and security rules already defined
 
 ### What to build
 
@@ -655,7 +655,7 @@ Firebase project configuration. Primarily console/config work, not application c
 
 ### 8b. Firestore collection structure
 
-Firestore is schemaless — collections are created on first write. Verify planned structure from `08-erd.md` §Firestore Collection Structure:
+Firestore is schemaless — collections are created on first write. Verify planned structure from `05-erd.md` §Firestore Collection Structure:
 
 ```
 users/{userId}
@@ -674,7 +674,7 @@ Create a seed script or manual test to verify one document writes to each collec
 
 ### 8c. Firestore security rules
 
-Deploy security rules from `08-erd.md` §Firestore Security Rules:
+Deploy security rules from `05-erd.md` §Firestore Security Rules:
 
 ```javascript
 rules_version = '2';
@@ -753,7 +753,7 @@ Enable a single APK to work for both CI-built (pre-configured) and self-hosted (
 
 **Dependencies:** Step 7 (local app functional), Step 8 (Firebase project configured)
 **Priority:** P0
-**Docs:** `08-erd.md` §Remote Schema, `06-invariants.md` S-1 (local source of truth)
+**Docs:** `05-erd.md` §Remote Schema, `03-invariants.md` S-1 (local source of truth)
 
 ### What to build
 
@@ -861,7 +861,7 @@ When user signs in for the first time with existing local data:
 
 **Dependencies:** Step 9 (data flowing to Firestore so dashboard can read it)
 **Priority:** P1
-**Docs:** `12-wearos-design.md` (glanceable design principles apply)
+**Docs:** `09-PLAT-001-wearos.md` (glanceable design principles apply)
 
 > This is a new component not fully spec'd in the existing docs. Requirements derived from user needs: "don't forget to take with you" checklist + today's habits + reminders, displayed on a 15.6" touchscreen on a Pi 5.
 
@@ -972,13 +972,13 @@ firestore.collection("users/$userId/habits")
 
 **Dependencies:** Step 7 (habits exist to notify about)
 **Priority:** P0
-**Docs:** `11-notification-design.md` (complete spec), `06-invariants.md` D-2 (no punitive messaging)
+**Docs:** `08-SUB-001-notifications.md` (complete spec), `03-invariants.md` D-2 (no punitive messaging)
 
 ### What to build
 
 Notification channels, habit reminders, quiet hours, notification action handling.
 
-### 11a. Notification channels (from 11-notification-design.md)
+### 11a. Notification channels (from 08-SUB-001-notifications.md)
 
 | Channel         | ID                | Importance |
 | --------------- | ----------------- | ---------- |
@@ -1010,7 +1010,7 @@ Notification channels, habit reminders, quiet hours, notification action handlin
 - Quiet hours pickers
 - Default reminder times by category
 
-### Messaging compliance (from 06-invariants.md D-2)
+### Messaging compliance (from 03-invariants.md D-2)
 
 - ❌ "Don't forget!", "You missed X days", "Your streak is at risk"
 - ✅ "Time for:", "Ready when you are", "After [anchor]: [habit]"
@@ -1032,7 +1032,7 @@ Notification channels, habit reminders, quiet hours, notification action handlin
 
 **Dependencies:** Step 11 (notifications for recovery prompts)
 **Priority:** P0
-**Docs:** `02-prd-recovery.md` (complete spec), `09-state-machines.md` §Recovery Session, `06-invariants.md` REC-1 through REC-4
+**Docs:** `01-PRD-002-recovery.md` (complete spec), `06-state-machines.md` §Recovery Session, `03-invariants.md` REC-1 through REC-4
 
 ### What to build
 
@@ -1049,7 +1049,7 @@ Background lapse detection, recovery session UI, fresh start flow.
 - At `lapseThresholdDays` (3): phase → LAPSED, create RecoverySession, notify
 - At `relapseThresholdDays` (7): LAPSED → RELAPSED, update session type
 
-### 12c. Recovery session UI (from 10-user-flows.md §Flow 6)
+### 12c. Recovery session UI (from 07-user-flows.md §Flow 6)
 
 Welcome → Blocker Selection (optional) → Action Selection → Confirmation
 
@@ -1086,7 +1086,7 @@ Welcome → Blocker Selection (optional) → Action Selection → Confirmation
 
 **Dependencies:** Step 12 (technically only needs Step 7, but 12 completes the core app)
 **Priority:** P1
-**Docs:** `03-prd-routines.md` (complete spec), `09-state-machines.md` §Routine Execution, `06-invariants.md` R-1 through R-5 + E-1 through E-3
+**Docs:** `01-PRD-003-routines.md` (complete spec), `06-state-machines.md` §Routine Execution, `03-invariants.md` R-1 through R-5 + E-1 through E-3
 
 ### What to build
 
@@ -1138,7 +1138,7 @@ Atomic Room transaction creates:
 
 **Dependencies:** Step 5 (Today screen use cases)
 **Priority:** P1
-**Docs:** `07-architecture.md` §High-Level Architecture
+**Docs:** `04-architecture.md` §High-Level Architecture
 
 ### What to build
 
@@ -1166,7 +1166,7 @@ Glance widget showing today's progress and pending habits.
 
 **Dependencies:** Step 13 (routines), Step 11 (notifications)
 **Priority:** P1
-**Docs:** `12-wearos-design.md` (complete spec)
+**Docs:** `09-PLAT-001-wearos.md` (complete spec)
 
 ### 15a. Data Layer sync (Wear Data Layer API, phone ↔ watch)
 
