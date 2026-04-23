@@ -17,9 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -49,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.getaltair.kairos.feature.routine.components.StepIndicator
 import com.getaltair.kairos.feature.routine.components.TimerDisplay
+import com.getaltair.kairos.ui.icons.filled.Pause
+import com.getaltair.kairos.ui.icons.filled.SkipNext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 

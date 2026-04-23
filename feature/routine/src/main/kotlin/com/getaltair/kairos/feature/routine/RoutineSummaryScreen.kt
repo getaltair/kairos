@@ -18,9 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.SelfImprovement
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -36,6 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.getaltair.kairos.ui.icons.filled.SelfImprovement
+import com.getaltair.kairos.ui.icons.filled.SkipNext
+import com.getaltair.kairos.ui.icons.filled.Timer
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 

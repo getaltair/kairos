@@ -18,15 +18,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bedtime
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.LocalDrink
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -47,6 +39,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.getaltair.kairos.domain.enums.HabitFrequency
+import com.getaltair.kairos.ui.icons.filled.Bedtime
+import com.getaltair.kairos.ui.icons.filled.Book
+import com.getaltair.kairos.ui.icons.filled.DirectionsRun
+import com.getaltair.kairos.ui.icons.filled.FitnessCenter
+import com.getaltair.kairos.ui.icons.filled.LocalDrink
+import com.getaltair.kairos.ui.icons.filled.MusicNote
+import com.getaltair.kairos.ui.icons.filled.Restaurant
+import com.getaltair.kairos.ui.icons.filled.SelfImprovement
 import java.time.DayOfWeek
 
 private data class HabitIcon(val name: String, val vector: ImageVector)
