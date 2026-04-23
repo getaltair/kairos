@@ -9,16 +9,22 @@ Use this skill for multi-phase implementations requiring coordination across spe
 
 ---
 
-## Quick Reference: Session Types
+## Session Type Detection
 
-| Type            | When to Use                           | Key Protocol                               |
-| --------------- | ------------------------------------- | ------------------------------------------ |
-| **Development** | Building features, implementing plans | Design-first, batch execution              |
-| **Debugging**   | Fixing bugs, investigating failures   | Iron law: root cause before fix            |
-| **Migration**   | Refactoring, replacing code           | Feature inventory required                 |
-| **Review**      | Code review (self or peer)            | Technical rigor, no performative agreement |
-| **TDD**         | Test-driven development               | RED-GREEN-REFACTOR cycle                   |
-| **Research**    | Investigation, exploration            | No implementation until complete           |
+Identify the session type early -- it determines which protocol file to load and what the plan must include. `/blueprint` consults this table during Phase 1 and loads the matching protocol file before producing Spec.md.
+
+| Type            | Detection Triggers                                                                       | Protocol File                  | Key Rule                                      |
+| --------------- | ---------------------------------------------------------------------------------------- | ------------------------------ | --------------------------------------------- |
+| **Development** | "build", "implement", "add feature", "create" + new functionality (default)              | `session-types/development.md` | Design-first, batch execution                 |
+| **Debugging**   | "fix", "debug", "broken", "not working", "investigate failure", reported bugs            | `session-types/debugging.md`   | Iron law: root cause before fix               |
+| **Migration**   | "refactor", "migrate", "replace", "upgrade to", "move from X to Y", architectural change | `session-types/migration.md`   | Feature inventory required                    |
+| **Repo Port**   | "port from", "rebuild", "based on", "inspired by" + repo URL, implementing from source   | `session-types/repo-port.md`   | Source code IS the design spec (data + UI/UX) |
+| **Review**      | "review", "audit", "look at this PR", pre-merge validation, code inspection              | `session-types/review.md`      | Technical rigor, no performative agreement    |
+| **TDD**         | "TDD", "test-driven", "tests first", critical business logic, high-reliability work      | `session-types/tdd.md`         | RED-GREEN-REFACTOR cycle                      |
+| **Research**    | "research", "investigate", "explore", "evaluate", "compare options", no implementation   | `session-types/research.md`    | No implementation until complete              |
+| **Growth**      | "marketing", "content", "growth", "validate idea", "GTM", "launch campaign"              | `session-types/growth.md`      | Foundation before execution                   |
+
+**Default**: When no triggers match, treat as Development. When multiple triggers match (e.g., a debugging task that also requires a migration), pick the more restrictive type and note the secondary aspect in the plan.
 
 **Session type files**: `session-types/*.md`
 
@@ -41,11 +47,11 @@ These apply to ALL session types:
 
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
-│                    /team-plan + /build PIPELINE                        │
+│                    /blueprint + /impl PIPELINE                        │
 ├───────────────────────────────────────────────────────────────────────┤
 │                                                                       │
 │  ┌──────────────┐    ┌─────────────────┐    ┌──────────────────────┐  │
-│  │ CENTRAL AI   │───►│ /team-plan      │───►│ PLAN FILES           │  │
+│  │ CENTRAL AI   │───►│ /blueprint      │───►│ PLAN FILES           │  │
 │  │ Coordinator  │    │ Plan Creation   │    │ .claude/tasks/*.md   │  │
 │  │ Auto-invokes │    │ Stop Hooks      │    │ Source of Truth      │  │
 │  └──────────────┘    └─────────────────┘    └──────────────────────┘  │
@@ -56,7 +62,7 @@ These apply to ALL session types:
 │         │            └────────┬────────┘                              │
 │         │                     │                                       │
 │         │            ┌────────▼────────┐                              │
-│         └───────────►│ /build          │                              │
+│         └───────────►│ /impl          │                              │
 │                      │ Plan Execution  │                              │
 │                      │ TaskList Sync   │                              │
 │                      └────────┬────────┘                              │
@@ -92,15 +98,15 @@ PENDING → IN_PROGRESS → COMPLETE → VERIFIED
 
 ---
 
-## 5-Phase Session Flow (SOP: `/team-plan` + `/build`)
+## 5-Phase Session Flow (SOP: `/blueprint` + `/impl`)
 
 The standard operating procedure for all non-trivial implementation work is:
 
 1. Assess complexity
 2. Gather context if needed
-3. Auto-invoke `/team-plan` to create a structured plan
+3. Auto-invoke `/blueprint` to create a structured plan
 4. Pause for user approval
-5. Execute via `/build`
+5. Execute via `/impl`
 
 ---
 
@@ -112,8 +118,8 @@ Central AI receives the user request and assesses complexity:
 | ------------ | -------------------------------------------------- | --------------------------------------- |
 | **Trivial**  | Single file, obvious fix, typo                     | Execute directly                        |
 | **Moderate** | 2-5 files, clear scope, single domain              | Direct sub-agent delegation             |
-| **Complex**  | Multi-phase, 5+ files, architectural, multi-domain | `/team-plan` → approval → `/build`      |
-| **Unclear**  | Vague but potentially complex                      | Gather context first, then `/team-plan` |
+| **Complex**  | Multi-phase, 5+ files, architectural, multi-domain | `/blueprint` → approval → `/impl`      |
+| **Unclear**  | Vague but potentially complex                      | Gather context first, then `/blueprint` |
 
 **Decision**: Route to Phase 2 (context gathering), Phase 3 (plan creation), or skip to direct execution.
 
@@ -121,7 +127,7 @@ Central AI receives the user request and assesses complexity:
 
 ### Phase 2: Context Gathering (if needed)
 
-Skip this phase if the initial request is already detailed enough for `/team-plan`.
+Skip this phase if the initial request is already detailed enough for `/blueprint`.
 
 **For vague or incomplete requests:**
 
@@ -133,21 +139,21 @@ Skip this phase if the initial request is already detailed enough for `/team-pla
 - Run quick Explore agents to understand architecture
 - Identify relevant patterns and existing implementations
 
-**Output**: A comprehensive prompt incorporating all gathered context, ready to feed into `/team-plan`.
+**Output**: A comprehensive prompt incorporating all gathered context, ready to feed into `/blueprint`.
 
 ---
 
-### Phase 3: Plan Creation (auto-invoke `/team-plan`)
+### Phase 3: Plan Creation (auto-invoke `/blueprint`)
 
-Central AI auto-invokes the `/team-plan` command:
+Central AI auto-invokes the `/blueprint` command:
 
 ```
-Skill({ skill: "team-plan", args: "<comprehensive prompt with all context>" })
+Skill({ skill: "blueprint", args: "<comprehensive prompt with all context>" })
 ```
 
 **What happens:**
 
-- `/team-plan` runs in the main thread with full codebase access
+- `/blueprint` runs in the main thread with full codebase access
 - Analyzes the codebase directly (no sub-agents during planning)
 - Creates a structured plan with team members, tasks, dependencies, acceptance criteria
 - Stop hooks validate the plan has all required sections
@@ -156,7 +162,7 @@ Skill({ skill: "team-plan", args: "<comprehensive prompt with all context>" })
 **After plan creation, Central AI PAUSES:**
 
 - Presents the plan summary to the user
-- Waits for approval ("go", `/build`, or feedback)
+- Waits for approval ("go", `/impl`, or feedback)
 - If user requests changes, adjust the plan and re-present
 
 **Prompt composition for auto-invocation should include:**
@@ -169,17 +175,17 @@ Skill({ skill: "team-plan", args: "<comprehensive prompt with all context>" })
 
 ---
 
-### Phase 4: Plan Execution (user-approved `/build`)
+### Phase 4: Plan Execution (user-approved `/impl`)
 
-After user approval, Central AI invokes the `/build` command:
+After user approval, Central AI invokes the `/impl` command:
 
 ```
-Skill({ skill: "build", args: ".claude/tasks/<plan-file>.md" })
+Skill({ skill: "impl", args: ".claude/tasks/<plan-file>.md" })
 ```
 
 **What happens:**
 
-- `/build` reads the plan and creates `TaskCreate` entries for each step
+- `/impl` reads the plan and creates `TaskCreate` entries for each step
 - Sets dependencies with `addBlockedBy` / `addBlocks`
 - Assigns owners to tasks matching team member names
 - Deploys specialist agents via `Task` tool (parallel where dependencies allow)
@@ -187,7 +193,7 @@ Skill({ skill: "build", args: ".claude/tasks/<plan-file>.md" })
 
 **Task List Synchronization:**
 
-- Plan tasks automatically become the TaskList (created by `/build`)
+- Plan tasks automatically become the TaskList (created by `/impl`)
 - `TaskUpdate` marks tasks `in_progress` when starting, `completed` when done
 - Press `Ctrl+T` to toggle task visibility during work
 - For cross-session work, set `CLAUDE_CODE_TASK_LIST_ID` environment variable
@@ -220,9 +226,9 @@ Apply `practices/branch-completion.md` for branch handling.
 
 ## Session File Template
 
-**Note:** For complex work, the `/team-plan` command generates the session/plan file automatically. Use this template only for moderate work where you create the session file manually.
+**Note:** For complex work, the `/blueprint` command generates the session/blueprint file automatically. Use this template only for moderate work where you create the session file manually.
 
-For `/team-plan` output format, see `.claude/commands/team-plan.md` (Plan Format section).
+For `/blueprint` output format, see `.claude/commands/blueprint.md` (Plan Format section).
 
 ```markdown
 # Session - [Title]

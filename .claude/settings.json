@@ -1,8 +1,4 @@
 {
-  "statusLine": {
-    "type": "command",
-    "command": "node .claude/hooks/ContextRecoveryHook/statusline-monitor.mjs"
-  },
   "permissions": {
     "allow": [
       "Edit",
@@ -32,7 +28,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/SkillActivationHook/skill-activation-prompt.mjs"
+            "command": "bun run .claude/hooks/skill-activation/skill-activation.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun run .claude/hooks/validators/secret-detector.ts"
           }
         ]
       }
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/ContextRecoveryHook/conv-backup.mjs",
+            "command": "bun run .claude/hooks/context-recovery/conv-backup.ts",
             "async": true
           }
         ]
@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/FormatterHook/formatter.mjs"
+            "command": "bun run .claude/hooks/formatter/formatter.ts"
           }
         ]
       }

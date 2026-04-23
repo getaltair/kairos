@@ -1,0 +1,174 @@
+{
+  "$schema": "./stacks.schema.json",
+  "version": 1,
+  "description": "Detection signals for Cortex-supported stacks. Consumed by /setup to detect what's in a project and filter which rules get activated. Applicability of agents/skills/rules to a stack is declared in the frontmatter of those files, NOT here — this file owns detection signals only.",
+  "stacks": {
+    "python-fastapi": {
+      "displayName": "Python / FastAPI",
+      "detect": {
+        "manifestFiles": ["pyproject.toml", "requirements.txt", "Pipfile", "setup.py"],
+        "extensions": [".py"],
+        "depsInManifest": {
+          "pyproject.toml": ["fastapi"],
+          "requirements.txt": ["fastapi"],
+          "Pipfile": ["fastapi"]
+        }
+      }
+    },
+    "python": {
+      "displayName": "Python (generic)",
+      "detect": {
+        "manifestFiles": ["pyproject.toml", "requirements.txt", "Pipfile", "setup.py"],
+        "extensions": [".py"]
+      },
+      "overriddenBy": ["python-fastapi"]
+    },
+    "vue-typescript": {
+      "displayName": "Vue.js / TypeScript",
+      "detect": {
+        "manifestFiles": ["package.json"],
+        "configFiles": ["vite.config.ts", "vite.config.js", "vue.config.js"],
+        "extensions": [".vue"],
+        "depsInManifest": {
+          "package.json": ["vue", "nuxt", "@vue/cli-service"]
+        }
+      }
+    },
+    "react": {
+      "displayName": "React / Next.js",
+      "detect": {
+        "manifestFiles": ["package.json"],
+        "configFiles": ["next.config.js", "next.config.ts", "next.config.mjs"],
+        "extensions": [".tsx", ".jsx"],
+        "depsInManifest": {
+          "package.json": ["react", "next", "react-dom"]
+        }
+      }
+    },
+    "svelte": {
+      "displayName": "Svelte / SvelteKit",
+      "detect": {
+        "manifestFiles": ["package.json"],
+        "configFiles": ["svelte.config.js", "svelte.config.ts"],
+        "extensions": [".svelte"],
+        "depsInManifest": {
+          "package.json": ["svelte", "@sveltejs/kit"]
+        }
+      }
+    },
+    "typescript": {
+      "displayName": "TypeScript (generic)",
+      "detect": {
+        "manifestFiles": ["package.json", "tsconfig.json"],
+        "extensions": [".ts"]
+      },
+      "overriddenBy": ["vue-typescript", "react", "svelte"]
+    },
+    "rust-tauri": {
+      "displayName": "Rust / Tauri",
+      "detect": {
+        "manifestFiles": ["Cargo.toml"],
+        "configFiles": ["tauri.conf.json", "src-tauri/tauri.conf.json"],
+        "directories": ["src-tauri"],
+        "extensions": [".rs"]
+      }
+    },
+    "rust": {
+      "displayName": "Rust (generic)",
+      "detect": {
+        "manifestFiles": ["Cargo.toml"],
+        "extensions": [".rs"]
+      },
+      "overriddenBy": ["rust-tauri"]
+    },
+    "cpp-qt": {
+      "displayName": "C++ / Qt",
+      "detect": {
+        "manifestFiles": ["CMakeLists.txt"],
+        "extensions": [".qml", ".cpp", ".h", ".hpp"],
+        "contentPatterns": {
+          "CMakeLists.txt": ["find_package\\s*\\(\\s*Qt[56]", "qt_add_executable", "qt_standard_project_setup"]
+        }
+      }
+    },
+    "embedded-c": {
+      "displayName": "Embedded C / C++ (ESP-IDF, Pico, PlatformIO)",
+      "detect": {
+        "manifestFiles": ["CMakeLists.txt", "platformio.ini", "sdkconfig", "sdkconfig.defaults"],
+        "directories": ["components", "main", "src/firmware"],
+        "extensions": [".c", ".h"],
+        "contentPatterns": {
+          "CMakeLists.txt": [
+            "idf_component_register",
+            "pico_sdk_init",
+            "pico_add_extra_outputs"
+          ]
+        }
+      }
+    },
+    "kotlin-kmp": {
+      "displayName": "Kotlin / KMP (Multiplatform)",
+      "detect": {
+        "manifestFiles": ["build.gradle.kts", "settings.gradle.kts"],
+        "extensions": [".kt"],
+        "contentPatterns": {
+          "build.gradle.kts": [
+            "kotlin\\(\"multiplatform\"\\)",
+            "org\\.jetbrains\\.kotlin\\.multiplatform"
+          ],
+          "settings.gradle.kts": ["kotlin-multiplatform"]
+        }
+      }
+    },
+    "kotlin-android": {
+      "displayName": "Kotlin / Android",
+      "detect": {
+        "manifestFiles": ["build.gradle.kts", "build.gradle", "settings.gradle.kts"],
+        "configFiles": [
+          "app/build.gradle.kts",
+          "app/build.gradle",
+          "AndroidManifest.xml",
+          "app/src/main/AndroidManifest.xml"
+        ],
+        "directories": ["app/src/main", "app/src/androidTest"],
+        "extensions": [".kt"],
+        "contentPatterns": {
+          "build.gradle.kts": [
+            "kotlin\\(\"android\"\\)",
+            "com\\.android\\.application",
+            "com\\.android\\.library"
+          ],
+          "app/build.gradle.kts": [
+            "kotlin\\(\"android\"\\)",
+            "com\\.android\\.application"
+          ],
+          "build.gradle": [
+            "com\\.android\\.application",
+            "com\\.android\\.library"
+          ]
+        }
+      }
+    },
+    "supabase": {
+      "displayName": "Supabase",
+      "detect": {
+        "directories": ["supabase", "supabase/migrations"],
+        "configFiles": ["supabase/config.toml"],
+        "envPatterns": [
+          "SUPABASE_URL",
+          "SUPABASE_ANON_KEY",
+          "SUPABASE_SERVICE_ROLE_KEY",
+          "NEXT_PUBLIC_SUPABASE_URL"
+        ]
+      }
+    }
+  },
+  "greenfieldFallback": {
+    "description": "When /setup cannot detect any stack (e.g., empty repo, greenfield), it prompts the user to free-text list intended stacks. Match free-text answers against displayName and the stack key (case-insensitive, fuzzy). Unknown entries should be recorded verbatim in Context/stack.md under an 'unrecognized' section so the user can populate rules manually later.",
+    "promptCopy": "No stacks detected. What will this project use? (comma-separated, e.g. 'Python/FastAPI, Supabase' or 'Rust/Tauri, Vue/TypeScript')"
+  },
+  "precedenceRules": {
+    "description": "When a more specific stack matches, its generic parent is suppressed via overriddenBy. E.g., a FastAPI project matches both 'python' and 'python-fastapi', but only 'python-fastapi' is recorded.",
+    "applyOrder": ["specific first", "then generic fallbacks"]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "90af14d2-703b-4cf0-a184-1b023acdfe9e": {
+    "skills": [
+      "git-commits"
+    ],
+    "agents": [],
+    "lastUpdated": "2026-04-04T17:40:36.445Z"
+  },
+  "c8c80ddd-22b1-48f5-9f4c-97b69ba2fcff": {
+    "skills": [
+      "git-commits"
+    ],
+    "agents": [],
+    "lastUpdated": "2026-04-04T17:42:31.506Z"
+  },
+  "e6d5b163-4838-46a3-93ce-aa56bebac296": {
+    "skills": [
+      "codebase-navigation"
+    ],
+    "agents": [
+      "debugger-detective"
+    ],
+    "lastUpdated": "2026-04-04T19:00:03.922Z"
+  },
+  "ffca967d-0cd0-452c-a944-357d9767f895": {
+    "skills": [
+      "git-commits"
+    ],
+    "agents": [],
+    "lastUpdated": "2026-04-04T19:44:01.145Z"
+  },
+  "7494841f-22ad-4539-b99a-a62989ef282b": {
+    "skills": [
+      "adr-create",
+      "git-commits"
+    ],
+    "agents": [],
+    "lastUpdated": "2026-04-04T20:45:50.383Z"
+  },
+  "78ac50a9-81da-4488-9fd2-8c74229355c3": {
+    "skills": [
+      "review-resolve",
+      "git-commits",
+      "review-capture",
+      "adr-create",
+      "session-management"
+    ],
+    "agents": [
+      "quality-engineer",
+      "debugger-detective"
+    ],
+    "lastUpdated": "2026-04-05T05:22:13.086Z"
+  },
+  "abf7cb64-08be-46df-8cfc-a2f90644de30": {
+    "skills": [
+      "review-capture"
+    ],
+    "agents": [
+      "debugger-detective"
+    ],
+    "lastUpdated": "2026-04-05T02:22:42.315Z"
+  }
+}

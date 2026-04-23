@@ -1,0 +1,27 @@
+{
+  "44b3adcd-8124-4324-a80b-472bbe0895d2": {
+    "skills": [
+      "git-commits"
+    ],
+    "agents": [],
+    "lastUpdated": "2026-04-20T19:33:53.541Z"
+  },
+  "d2d47a70-39ed-4e14-ae36-9502e50da5de": {
+    "skills": [
+      "impl-start"
+    ],
+    "agents": [
+      "debugger-detective"
+    ],
+    "lastUpdated": "2026-04-22T20:47:10.334Z"
+  },
+  "464999ca-3afc-4f32-a880-31d61552060b": {
+    "skills": [
+      "plan-spec",
+      "spec-init",
+      "git-commits"
+    ],
+    "agents": [],
+    "lastUpdated": "2026-04-23T03:13:43.572Z"
+  }
+}

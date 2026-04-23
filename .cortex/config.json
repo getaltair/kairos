@@ -1,0 +1,6 @@
+{
+  "issueTracker": {
+    "type": "github",
+    "cli": "gh"
+  }
+}
